@@ -14,28 +14,48 @@ namespace API {
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
 
-void Action::Build(const Order& order_) {
+void Action::Build(const Order& order_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id);
+    m_action->UnitCommand(&unit, order_.ability_id, queue_);
 }
 
-void Action::Build(const Order& order_, const sc2::Unit* unit_) {
+void Action::Build(const Order& order_, const sc2::Unit* unit_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, unit_);
+    m_action->UnitCommand(&unit, order_.ability_id, unit_, queue_);
 }
 
-void Action::Build(const Order& order_, const sc2::Point2D& point_) {
+void Action::Build(const Order& order_, const sc2::Point2D& point_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, point_);
+    m_action->UnitCommand(&unit, order_.ability_id, point_, queue_);
 }
 
-void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_);
+void Action::Attack(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+}
+
+void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+}
+
+void Action::MoveTo(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
+}
+
+void Action::MoveTo(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::MOVE, point_, queue_);
+}
+
+void Action::Stop(const sc2::Unit& unit_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::STOP, queue_);
+}
+
+void Action::Stop(const sc2::Units& units_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::STOP, queue_);
 }
 
 void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
-    const sc2::Unit& target_) {
-    m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_);
+    const sc2::Unit& target_, bool queue_) {
+    m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_, queue_);
 }
 
 void Action::OpenGate(const sc2::Unit& assignee_) {
@@ -258,6 +278,19 @@ uint32_t Observer::GetGameLoop() const {
     return m_observer->GetGameLoop();
 }
 
+float Observer::TerrainHeight(const sc2::Point2D& pos_) const
+{
+    auto& info = m_observer->GetGameInfo();
+    sc2::Point2DI posi(static_cast<int>(pos_.x), static_cast<int>(pos_.y));
+    if (posi.x < 0 || posi.x >= info.width || posi.y < 0 || posi.y >= info.width)
+        return 0.0f;
+
+    assert(info.terrain_height.data.size() == info.width * info.height);
+    unsigned char encodedHeight = info.terrain_height.data[posi.x + ((info.height - 1) - posi.y) * info.width];
+    float decodedHeight = -100.0f + 200.0f * float(encodedHeight) / 255.0f;
+    return decodedHeight;
+}
+
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
 }
 
@@ -268,6 +301,18 @@ bool Query::CanBePlaced(const Order& order_, const sc2::Point2D& point_) {
 std::vector<bool> Query::CanBePlaced(
     const std::vector<sc2::QueryInterface::PlacementQuery>& queries_) {
     return m_query->Placement(queries_);
+}
+
+float Query::PathingDistance(const sc2::Point2D& start_, const sc2::Point2D& end_) const {
+    return m_query->PathingDistance(start_, end_);
+}
+
+float Query::PathingDistance(const sc2::Unit& start_, const sc2::Point2D& end_) const {
+    return m_query->PathingDistance(&start_, end_);
+}
+
+std::vector<float> Query::PathingDistances(const std::vector<sc2::QueryInterface::PathingQuery>& queries_) const {
+    return m_query->PathingDistance(queries_);
 }
 
 Interface::Interface(sc2::ActionInterface* action_,
