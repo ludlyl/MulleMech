@@ -5,6 +5,7 @@
 #include "../Hub.h"
 #include "Miner.h"
 #include "core/API.h"
+#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Order.h"
 
@@ -121,6 +122,9 @@ void Miner::OnUnitCreated(const sc2::Unit* unit_) {
 void Miner::OnUnitIdle(const sc2::Unit* unit_, Builder*) {
     auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
         sc2::Unit::Alliance::Neutral);
+
+    if (gBrain->planner().IsUnitReserved(unit_))
+        return;
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
