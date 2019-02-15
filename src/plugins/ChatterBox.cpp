@@ -7,7 +7,7 @@
 #include "core/API.h"
 
 void ChatterBox::OnGameStart(Builder*) {
-    gAPI->action().SendMessage("Suvorov v0.0.2 by @alkurbatov");
+    gAPI->action().SendMessage("MulleMech (based off of Suvorov by @alkurbatov) v0.0.1");
     gAPI->action().SendMessage("gl hf");
 }
 

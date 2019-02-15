@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(Suvorov)
+project(MulleMech)
 
 # Specify output directories.
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")

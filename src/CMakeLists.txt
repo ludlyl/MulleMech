@@ -33,20 +33,20 @@ endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 # Create the executable.
-add_executable(Suvorov ${BOT_SOURCES})
-target_link_libraries(Suvorov
+add_executable(MulleMech ${BOT_SOURCES})
+target_link_libraries(MulleMech
     sc2api sc2lib sc2utils sc2protocol civetweb libprotobuf
 )
 
 if (MINGW)
-    target_link_libraries(Suvorov ssp)
+    target_link_libraries(MulleMech ssp)
 endif()
 
 if (APPLE)
-    target_link_libraries(Suvorov "-framework Carbon")
+    target_link_libraries(MulleMech "-framework Carbon")
 endif ()
 
 # Linux specific.
 if (UNIX AND NOT APPLE)
-    target_link_libraries(Suvorov pthread dl)
+    target_link_libraries(MulleMech pthread dl)
 endif ()
