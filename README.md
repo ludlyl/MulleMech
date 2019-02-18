@@ -1,8 +1,6 @@
-# suvorov-bot
+# MulleMech
 
-[![Build Status](https://travis-ci.org/alkurbatov/suvorov-bot.png?branch=master)](https://travis-ci.org/alkurbatov/suvorov-bot)
-
-- [suvorov-bot](#suvorov-bot)
+- [MulleMech](#MulleMech)
     - [About](#about)
     - [Build requirements](#build-requirements)
         - [Windows](#windows)
@@ -18,9 +16,9 @@
 About
 -----
 
-Starcraft 2 bot.
+Starcraft 2 bot based off of [Suvorov-bot](https://github.com/alkurbatov/suvorov-bot).
 
-Suvorov currently provides the following features:
+MulleMech currently provides the following features:
 * Supports Windows, OS X and Linux.
 * Plays all 3 races.
 * Manages resource gathering and worker allocation.
@@ -49,7 +47,7 @@ Build requirements
 * A compiler with C++14 support.
 
 ### Windows
-* Download and install [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+* Download and install [Visual Studio 2017](https://www.visualstudio.com/downloads/) or Clion with Clang
 
 ### Linux
 * Install 'gcc-c++'.
@@ -65,8 +63,8 @@ Build instructions
 
 ```bat
 :: Get the project.
-$ git clone --recursive https://github.com/alkurbatov/suvorov-bot.git
-$ cd suvorov-bot
+$ git clone --recursive https://github.com/ludlyl/MulleMech.git
+$ cd MulleMech
 
 :: Disable /WX compiler flag if you want to build the project
 :: under fresh compiler/new Visual Studio.
@@ -80,17 +78,17 @@ $ cd build
 $ cmake ../ -G "Visual Studio 15 2017 Win64"
 
 :: Build the project using Visual Studio.
-$ start Suvorov.sln
+$ start MulleMech.sln
 
 :: Launch the bot with the specified path to a SC2 map, e.g.
-$ bin\Debug\Suvorov.exe Ladder2017Season3\InterloperLE.SC2Map
+$ bin\Debug\MulleMech.exe Ladder2017Season3\InterloperLE.SC2Map
 ```
 
 ### Linux
 
 ```bash
 # Get the project.
-$ git clone --recursive https://github.com/alkurbatov/suvorov-bot.git && cd suvorov-bot
+$ git clone --recursive https://github.com/ludlyl/MulleMech.git && cd MulleMech
 
 # Create build directory.
 $ mkdir build && cd build
@@ -105,14 +103,14 @@ $ cmake ../
 $ make
 
 # Launch the bot with the specified absolute path to a SC2 map, e.g.
-$ ./bin/Suvorov "/Users/alkurbatov/work/tmp/Ladder2017Season3/InterloperLE.SC2Map"
+$ ./bin/MulleMech "/Users/alkurbatov/work/tmp/Ladder2017Season3/InterloperLE.SC2Map"
 ```
 
 ### OS X
 
 ```bash
 # Get the project.
-$ git clone --recursive https://github.com/alkurbatov/suvorov-bot.git && cd suvorov-bot
+$ git clone --recursive https://github.com/ludlyl/MulleMech.git && cd MulleMech
 
 # Apply compilation fixes for OS X.
 $ git apply hacks/civetweb_compilation_fix.patch
@@ -130,7 +128,7 @@ $ cmake ../
 $ make
 
 # OS X: Launch the bot with the specified path to a SC2 map, e.g.
-$ ./bin/Suvorov "Ladder2017Season3/InterloperLE.SC2Map"
+$ ./bin/MulleMech "Ladder2017Season3/InterloperLE.SC2Map"
 ```
 
 Coding Standard
