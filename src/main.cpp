@@ -21,6 +21,8 @@ int main(int argc, char* argv[]) {
     }
 
     gHistory.Init("history.log");
+    gHistory.SetSeverity(LogSeverity::debug);
+    gHistory.AddFilter(LogChannel::general);
 
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);
@@ -108,6 +110,7 @@ int main(int argc, char* argv[]) {
     ParseArguments(argc, argv, &options);
 
     gHistory.Init("history.log");
+    gHistory.SetSeverity(LogSeverity::info);
 
     sc2::Coordinator coordinator;
     Dispatcher bot(options.OpponentId);

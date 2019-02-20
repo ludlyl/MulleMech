@@ -8,32 +8,81 @@
 
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <unordered_set>
 
-struct Historican {
+enum class LogSeverity {
+    debug,
+    info,
+    warning,
+    error
+};
+
+enum class LogChannel {
+    general
+};
+
+inline std::string LogChannel_str(LogChannel channel) {
+    switch (channel) {
+    case LogChannel::general:       return "[GENERAL]";
+    default: break;
+    }
+    throw std::runtime_error("Invalid channel");
+}
+
+class Historican {
+public:
+    Historican();
     ~Historican();
+
+    class HistoricianOut {
+    public:
+        HistoricianOut(std::ofstream& file, bool ignore_logging) :
+            m_file(file), m_ignore_logging(ignore_logging) { }
+
+        template <class T>
+        HistoricianOut& operator<<(const T& data_) {
+            if (m_ignore_logging)
+                return *this;
+
+            if (m_file.is_open())
+                m_file << data_;
+
+            std::cout << data_;
+
+            return *this;
+        }
+
+        HistoricianOut& operator<<(std::ostream& (*manipulator_)(std::ostream&));
+
+    private:
+        std::ofstream& m_file;
+        bool m_ignore_logging;
+    };
 
     void Init(const std::string &filename_);
 
-    Historican& info();
+    // Filter away debug & info comments from said channel
+    void AddFilter(LogChannel filter);
 
-    Historican& warning();
+    void RemoveFilter(LogChannel filter);
 
-    Historican& error();
+    void SetSeverity(LogSeverity severity);
 
-    template <class T>
-    Historican& operator<<(const T& data_) {
-        if (m_file.is_open())
-            m_file << data_;
+    HistoricianOut debug(LogChannel channel = LogChannel::general);
 
-        std::cout << data_;
+    HistoricianOut info(LogChannel channel = LogChannel::general);
 
-        return *this;
-    }
+    HistoricianOut warning();
 
-    Historican& operator<<(std::ostream& (*manipulator_)(std::ostream&));
+    HistoricianOut error();
 
  private:
+     bool IsFiltered(LogChannel channel) const;
+
     std::ofstream m_file;
+    LogSeverity m_severity;
+    std::unordered_set<LogChannel> m_filters;
 };
 
 extern Historican gHistory;
