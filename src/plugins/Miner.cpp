@@ -108,6 +108,7 @@ void Miner::OnUnitIdle(const sc2::Unit* unit_, Builder*) {
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
+        case sc2::UNIT_TYPEID::TERRAN_MULE:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
             const sc2::Unit* mineral_target = units.GetClosestUnit(
                 gAPI->observer().StartingLocation());
