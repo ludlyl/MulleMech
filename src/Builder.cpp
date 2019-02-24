@@ -24,6 +24,7 @@ void Builder::OnStep() {
     m_available_food = gAPI->observer().GetAvailableFood();
 
     auto it = m_construction_orders.begin();
+    // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
         if (!Build(&(*it)))
             break;
