@@ -42,7 +42,6 @@ void Builder::OnStep() {
             ++it;
             continue;
         }
-
         it = m_training_orders.erase(it);
     }
 }
@@ -64,7 +63,7 @@ void Builder::OnUnitCreated(const sc2::Unit& unit_) {
     gHistory.info() << "Reserved vespene left: " << m_reserved_vespene << std::endl;
 }
 
-void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
+void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     sc2::UnitTypeData structure = gAPI->observer().GetUnitTypeData(id_);
 
     // Prevent deadlock.
@@ -75,19 +74,18 @@ void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
     }
 
     if (urgent) {
-        m_construction_orders.emplace_front(structure);
+        m_construction_orders.emplace_front(structure, unit_);
         return;
     }
 
-    m_construction_orders.emplace_back(structure);
+    m_construction_orders.emplace_back(structure, unit_);
 }
 
 void Builder::ScheduleUpgrade(sc2::UPGRADE_ID id_) {
     m_construction_orders.emplace_back(gAPI->observer().GetUpgradeData(id_));
 }
 
-void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_,
-    const sc2::Unit* unit_, bool urgent) {
+void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     auto data = gAPI->observer().GetUnitTypeData(id_);
 
     if (urgent) {
@@ -133,11 +131,18 @@ bool Builder::Build(Order* order_) {
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
 
+    // "tech_requirement" doesn't really seem to work fully for Terran and Protoss.
+    // An example is how the tech requirement for Marauder is "TECHLAB" and not "BARRACKSTECHLAB".
+    // It isn't always complete either, e.g. for Thors the requirement is just armory ("FACTORYTECHLAB" is needed too)
+    // It is fine to uncomment this, if the requirements aren't fulfilled blueprint->Build will fail (return false) instead.
+    // An alternative to uncommenting this would be to have a wrapper function around tech requirement or hard-code the
+    // correct requirements into order or something like that.
+
     // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-    if (order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
-            return false;
-    }
+//    if (order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
+//        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
+//            return false;
+//    }
 
     if (m_available_food < order_->food_required)
         return false;
