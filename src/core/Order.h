@@ -28,8 +28,7 @@ struct Order {
         food_required(0.0f),
         tech_requirement(sc2::UNIT_TYPEID::INVALID),
         unit_type_id(sc2::UNIT_TYPEID::INVALID),
-        ability_id(data_.ability_id),
-        assignee(0) {
+        ability_id(data_.ability_id) {
     }
 
     std::string name;
@@ -44,5 +43,5 @@ struct Order {
     sc2::AbilityID ability_id;
     std::vector<sc2::UnitTypeID> tech_alias;
 
-    sc2::Tag assignee;
+    sc2::Tag assignee = sc2::NullTag;
 };
