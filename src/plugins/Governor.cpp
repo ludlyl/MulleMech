@@ -11,17 +11,13 @@ void Governor::OnGameStart(Builder* builder_) {
     switch (gHub->GetCurrentRace()) {
         case sc2::Race::Terran:
             gHistory.info() << "Started game as Terran" << std::endl;
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
             return;
 
         case sc2::Race::Zerg:

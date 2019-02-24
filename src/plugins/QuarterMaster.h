@@ -14,6 +14,8 @@ struct QuarterMaster : Plugin {
 
     void OnUnitCreated(const sc2::Unit* unit_) final;
 
+    void OnUnitDestroyed(const sc2::Unit*, Builder*) final;
+
  private:
     bool m_skip_turn;
 };

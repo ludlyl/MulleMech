@@ -142,3 +142,9 @@ void QuarterMaster::OnUnitCreated(const sc2::Unit* unit_) {
         m_skip_turn = false;
     }
 }
+
+void QuarterMaster::OnUnitDestroyed(const sc2::Unit* unit_, Builder* builder_) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+        m_skip_turn = false;
+    }
+}
