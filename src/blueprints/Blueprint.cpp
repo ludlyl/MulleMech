@@ -1,19 +1,7 @@
-#include <memory>
-
-#include <memory>
-
-#include <memory>
-
-#include <memory>
-
-#include <memory>
-
-#include <memory>
-
 // The MIT License (MIT)
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
-
+#include <memory>
 #include "Blueprint.h"
 #include "Building.h"
 #include "Creature.h"
