@@ -91,3 +91,9 @@ struct IsOrdered {
  private:
     sc2::UNIT_TYPEID m_type;
 };
+
+// These should maybe be public on be placed somewhere else
+static constexpr float ADDON_DISPLACEMENT_IN_X = 2.5f;
+static constexpr float ADDON_DISPLACEMENT_IN_Y = -0.5f;
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Unit& unit_);
