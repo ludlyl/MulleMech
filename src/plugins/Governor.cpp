@@ -17,14 +17,12 @@ void Governor::OnGameStart(Builder* builder_) {
             gHistory.info() << "Started game as Terran" << std::endl;
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FUSIONCORE);
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
             return;
 
         case sc2::Race::Zerg:

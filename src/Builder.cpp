@@ -135,15 +135,18 @@ bool Builder::Build(Order* order_) {
     // "tech_requirement" doesn't really seem to work fully for Terran and Protoss.
     // An example is how the tech requirement for Marauder is "TECHLAB" and not "BARRACKSTECHLAB".
     // It isn't always complete either, e.g. for Thors the requirement is just armory ("FACTORYTECHLAB" is needed too)
-    // It is fine to uncomment this, if the requirements aren't fulfilled blueprint->Build will fail (return false) instead.
-    // An alternative to uncommenting this would be to have a wrapper function around tech requirement or hard-code the
-    // correct requirements into order or something like that.
+
+    // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
+    // to disable the check for all units (it's the Units that seem to be problematic for terran)
+    // this has the effect that units that are assigned to a specific structure will fail "silently"
+    // (this function, Build, will return true) if they can't be built.
+    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
 
     // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-//    if (order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-//        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
-//            return false;
-//    }
+    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
+        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
+            return false;
+    }
 
     if (m_available_food < order_->food_required)
         return false;
