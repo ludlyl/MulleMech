@@ -20,11 +20,27 @@ Blueprint::~Blueprint() {
 
 std::shared_ptr<Blueprint> Blueprint::Plot(sc2::ABILITY_ID ability_) {
     switch (ability_) {
+        // Buildings
         case sc2::ABILITY_ID::BUILD_REFINERY:
         case sc2::ABILITY_ID::BUILD_EXTRACTOR:
         case sc2::ABILITY_ID::BUILD_ASSIMILATOR:
             return std::make_shared<Refinery>();
 
+        case sc2::ABILITY_ID::BUILD_COMMANDCENTER:
+        case sc2::ABILITY_ID::BUILD_HATCHERY:
+        case sc2::ABILITY_ID::BUILD_NEXUS:
+            return std::make_shared<TownHall>();
+
+        // Add-ons
+        case sc2::ABILITY_ID::BUILD_TECHLAB_BARRACKS:
+        case sc2::ABILITY_ID::BUILD_REACTOR_BARRACKS:
+        case sc2::ABILITY_ID::BUILD_TECHLAB_FACTORY:
+        case sc2::ABILITY_ID::BUILD_REACTOR_FACTORY:
+        case sc2::ABILITY_ID::BUILD_TECHLAB_STARPORT:
+        case sc2::ABILITY_ID::BUILD_REACTOR_STARPORT:
+            return std::make_shared<Addon>();
+
+        // Mutations
         case sc2::ABILITY_ID::MORPH_BROODLORD:
         case sc2::ABILITY_ID::MORPH_GREATERSPIRE:
         case sc2::ABILITY_ID::MORPH_HIVE:
@@ -37,15 +53,7 @@ std::shared_ptr<Blueprint> Blueprint::Plot(sc2::ABILITY_ID ability_) {
         case sc2::ABILITY_ID::TRAIN_BANELING:
             return std::make_shared<Mutation>();
 
-        // Add-ons
-        case sc2::ABILITY_ID::BUILD_TECHLAB_BARRACKS:
-        case sc2::ABILITY_ID::BUILD_REACTOR_BARRACKS:
-        case sc2::ABILITY_ID::BUILD_TECHLAB_FACTORY:
-        case sc2::ABILITY_ID::BUILD_REACTOR_FACTORY:
-        case sc2::ABILITY_ID::BUILD_TECHLAB_STARPORT:
-        case sc2::ABILITY_ID::BUILD_REACTOR_STARPORT:
-            return std::make_shared<Addon>();
-
+        // Units
         case sc2::ABILITY_ID::TRAIN_ADEPT:
         case sc2::ABILITY_ID::TRAIN_DARKTEMPLAR:
         case sc2::ABILITY_ID::TRAIN_HIGHTEMPLAR:
@@ -120,20 +128,21 @@ std::shared_ptr<Blueprint> Blueprint::Plot(sc2::ABILITY_ID ability_) {
         case sc2::ABILITY_ID::TRAIN_ZERGLING:
             return std::make_shared<Creature>();
 
+        // Upgrades
+
+        // NOTE (alkurbatov): Yes, this is weird from the first glance
+        // but anyway the code required for research is completely the same. :)
+
+        case sc2::ABILITY_ID::RESEARCH_BATTLECRUISERWEAPONREFIT:
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_FUSIONCORE);
+
         case sc2::ABILITY_ID::RESEARCH_WARPGATE:
-            // NOTE (alkurbatov): Yes, this is weird from the first glance
-            // but anyway the code required for research is completely the same. :)
             return std::make_shared<Unit>(sc2::UNIT_TYPEID::PROTOSS_CYBERNETICSCORE);
 
         case sc2::ABILITY_ID::RESEARCH_ADEPTRESONATINGGLAIVES:
         case sc2::ABILITY_ID::RESEARCH_BLINK:
         case sc2::ABILITY_ID::RESEARCH_CHARGE:
             return std::make_shared<Unit>(sc2::UNIT_TYPEID::PROTOSS_TWILIGHTCOUNCIL);
-
-        case sc2::ABILITY_ID::BUILD_COMMANDCENTER:
-        case sc2::ABILITY_ID::BUILD_HATCHERY:
-        case sc2::ABILITY_ID::BUILD_NEXUS:
-            return std::make_shared<TownHall>();
 
         case sc2::ABILITY_ID::RESEARCH_ZERGLINGADRENALGLANDS:
         case sc2::ABILITY_ID::RESEARCH_ZERGLINGMETABOLICBOOST:
