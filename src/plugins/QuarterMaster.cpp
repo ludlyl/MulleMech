@@ -82,11 +82,14 @@ QuarterMaster::QuarterMaster():
     Plugin(), m_skip_turn(false) {
 }
 
+
+//Currently deadlocks the construction queue after 39 supply has been built.
+//After that it can no longer build if a supplydepot has been destoryed
 void QuarterMaster::OnStep(Builder* builder_) {
     if (m_skip_turn)
         return;
 
-    auto units = gAPI->observer().GetUnits();
+    auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self); // Does this return a list of ALL units in the game?
     const std::list<Order> construction_orders = builder_->GetConstructionOrders();
     const std::list<Order> training_orders = builder_->GetTrainingOrders();
 
