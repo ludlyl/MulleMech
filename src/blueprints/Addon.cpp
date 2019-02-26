@@ -22,6 +22,7 @@ bool Addon::Build(Order *order_) {
                 // Check if the addon can be placed
                 if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
                     order_->assignee = building->tag;
+                    break;
                 }
             }
         }
