@@ -1,6 +1,6 @@
-#include <core/API.h>
-#include <core/Helpers.h>
-#include <Historican.h>
+#include "core/API.h"
+#include "core/Helpers.h"
+#include "Historican.h"
 #include "Addon.h"
 
 bool Addon::Build(Order *order_) {
@@ -17,7 +17,7 @@ bool Addon::Build(Order *order_) {
             return false;
 
         // Build the add-on in the first parent building that doesn't already have an add-on
-        for (auto &building : parent_buildings()) {
+        for (auto& building : parent_buildings()) {
             if (building->add_on_tag == 0) {
                 // Check if the addon can be placed
                 if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {

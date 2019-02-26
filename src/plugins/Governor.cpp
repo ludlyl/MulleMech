@@ -2,13 +2,13 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include "core/Helpers.h"
+#include "core/Converter.h"
 #include "../Historican.h"
 #include "../Hub.h"
 #include "Governor.h"
 
 #include <sc2api/sc2_agent.h>
-#include <core/Helpers.h>
-#include <core/Converter.h>
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
