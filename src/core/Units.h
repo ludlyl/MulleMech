@@ -22,6 +22,7 @@ public:
     Unit* GetClosestUnit(sc2::Tag tag_) const;
 
     Unit* GetRandomUnit() const;
+    const sc2::Unit* GetSecondClosestUnit(const sc2::Point2D& point_) const;
 
     // Returns a copy of Units as an API-recognizable vector with sc2::Unit objects
     sc2::Units ToAPI() const;
