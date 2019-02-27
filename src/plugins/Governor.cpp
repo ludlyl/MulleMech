@@ -2,26 +2,27 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include "core/Helpers.h"
+#include "core/Converter.h"
 #include "../Historican.h"
 #include "../Hub.h"
 #include "Governor.h"
+
+#include <sc2api/sc2_agent.h>
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
     switch (gHub->GetCurrentRace()) {
         case sc2::Race::Terran:
             gHistory.info() << "Started game as Terran" << std::endl;
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_REFINERY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
             builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FUSIONCORE);
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
             return;
 
         case sc2::Race::Zerg:
@@ -55,19 +56,25 @@ void Governor::OnGameStart(Builder* builder_) {
     }
 }
 
-void Governor::OnStep(Builder*) {
+void Governor::OnStep(Builder* builder_) {
 }
 
-void Governor::OnUnitIdle(const sc2::Unit* unit_, Builder* builder_) {
+void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BARRACKS) {
-        builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARINE, unit_);
-        gHistory.info() << "Schedule Marine training" << std::endl;
-        return;
+        if (unit_->add_on_tag != 0) {
+            auto addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+            auto type = addOnAsUnit->unit_type.ToType();
+            if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
+                gHistory.info() << "Schedule Marauder training" << std::endl;
+                return;
+            }
+        }
     }
 
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_GATEWAY ||
             unit_->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_WARPGATE) {
-        builder_->ScheduleTraining(sc2::UNIT_TYPEID::PROTOSS_ZEALOT, unit_);
+        builder_->ScheduleTraining(sc2::UNIT_TYPEID::PROTOSS_ZEALOT, false, unit_);
         gHistory.info() << "Schedule Zealot training" << std::endl;
         return;
     }

@@ -18,7 +18,7 @@ bool Building::Build(Order* order_) {
 
         if (++attempt > 150)
             return false;
-    } while (!gAPI->query().CanBePlaced(*order_, point));
+    } while (!gAPI->query().CanBePlaced(*order_, point)); // TODO: Fix placement for add-ons
 
     return gHub->AssignBuildTask(order_, point);
 }

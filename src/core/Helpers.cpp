@@ -5,6 +5,7 @@
 #include "Converter.h"
 #include "Helpers.h"
 #include "Hub.h"
+#include "API.h"
 
 IsUnit::IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished):
     m_type(type_), m_build_progress(1.0f) {
@@ -198,4 +199,11 @@ IsOrdered::IsOrdered(sc2::UNIT_TYPEID type_): m_type(type_) {
 
 bool IsOrdered::operator()(const Order& order_) const {
     return order_.unit_type_id == m_type;
+}
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
+    sc2::Point2D pos = unit_.pos;
+    pos.x += ADDON_DISPLACEMENT_IN_X;
+    pos.y += ADDON_DISPLACEMENT_IN_Y;
+    return pos;
 }

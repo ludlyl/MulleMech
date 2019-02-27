@@ -126,7 +126,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
             return;
 
         case sc2::Race::Zerg:
-            builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_OVERLORD, nullptr, true);
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_OVERLORD, true);
             return;
 
         default:

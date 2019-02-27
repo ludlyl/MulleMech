@@ -24,6 +24,7 @@ void Builder::OnStep() {
     m_available_food = gAPI->observer().GetAvailableFood();
 
     auto it = m_construction_orders.begin();
+    // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
         if (!Build(&(*it)))
             break;
@@ -42,7 +43,6 @@ void Builder::OnStep() {
             ++it;
             continue;
         }
-
         it = m_training_orders.erase(it);
     }
 }
@@ -64,7 +64,7 @@ void Builder::OnUnitCreated(const sc2::Unit& unit_) {
     gHistory.info() << "Reserved vespene left: " << m_reserved_vespene << std::endl;
 }
 
-void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
+void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     sc2::UnitTypeData structure = gAPI->observer().GetUnitTypeData(id_);
 
     // Prevent deadlock.
@@ -75,19 +75,18 @@ void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
     }
 
     if (urgent) {
-        m_construction_orders.emplace_front(structure);
+        m_construction_orders.emplace_front(structure, unit_);
         return;
     }
 
-    m_construction_orders.emplace_back(structure);
+    m_construction_orders.emplace_back(structure, unit_);
 }
 
 void Builder::ScheduleUpgrade(sc2::UPGRADE_ID id_) {
     m_construction_orders.emplace_back(gAPI->observer().GetUpgradeData(id_));
 }
 
-void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_,
-    const sc2::Unit* unit_, bool urgent) {
+void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     auto data = gAPI->observer().GetUnitTypeData(id_);
 
     if (urgent) {
@@ -133,8 +132,18 @@ bool Builder::Build(Order* order_) {
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
 
+    // "tech_requirement" doesn't really seem to work fully for Terran and Protoss.
+    // An example is how the tech requirement for Marauder is "TECHLAB" and not "BARRACKSTECHLAB".
+    // It isn't always complete either, e.g. for Thors the requirement is just armory ("FACTORYTECHLAB" is needed too)
+
+    // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
+    // to disable the check for all units (it's the Units that seem to be problematic for terran)
+    // this has the effect that units that are assigned to a specific structure will fail "silently"
+    // (this function, Build, will return true) if they can't be built.
+    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
+
     // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-    if (order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
+    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
         gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
             return false;
     }
