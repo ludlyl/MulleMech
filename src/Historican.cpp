@@ -3,6 +3,7 @@
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
 #include "Historican.h"
+#include <iomanip>
 
 Historican::Historican() : m_severity(LogSeverity::info) {
 
@@ -18,6 +19,10 @@ void Historican::Init(const std::string& filename_) {
         m_file.close();
 
     m_file.open(filename_.c_str());
+
+    std::cout << std::fixed << std::setprecision(3);
+    if (m_file.is_open())
+        m_file << std::fixed << std::setprecision(3);
 }
 
 void Historican::AddFilter(LogChannel filter) {

@@ -80,7 +80,14 @@ void Dispatcher::OnStep() {
 
     m_builder->OnStep();
 
-    clock.Finish();
+    auto duration = clock.Finish();
+    // 60ms is disqualification threshold of the ladder
+    if (duration > 60.0f)
+        gHistory.error() << "Step processing took: " << duration << " ms" << std::endl;
+
+    // 44.4ms is highest allowed step time by the ladder
+    if (duration > 44.4f)
+        gHistory.warning() << "Step processing took: " << duration << " ms" << std::endl;
 }
 
 void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
