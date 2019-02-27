@@ -12,6 +12,7 @@
 #include <sc2api/sc2_unit.h>
 
 #include <list>
+#include <memory>
 
 template <typename T>
 struct Cache {
@@ -146,6 +147,8 @@ struct Hub {
     const Cache<GameObject>&  GetLarvas() const;
 
     const Expansions& GetExpansions() const;
+
+    std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
 
  private:
     sc2::Race m_current_race;
