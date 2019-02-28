@@ -46,12 +46,29 @@ void SecureMineralsIncome(Builder* builder_) {
 
 void SecureVespeneIncome() {
     auto refineries = gAPI->observer().GetUnits(IsRefinery());
-
+    Units workers = gAPI->observer().GetUnits(IsGasWorker());
     for (const auto& i : refineries()) {
-        if (i->assigned_harvesters >= i->ideal_harvesters)
+     
+       if (i->assigned_harvesters == i->ideal_harvesters)
             continue;
+       else if (i->assigned_harvesters > i->ideal_harvesters) { // Makes sure that we never have more than 3 workers on gas.
+           for (const auto& j : workers()) {
+               if (i->tag == j->orders.front().target_unit_tag) {
+                   auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+                       sc2::Unit::Alliance::Neutral);
+                   const sc2::Unit* mineral_target = units.GetClosestUnit(
+                       gAPI->observer().StartingLocation());
+                   if (!mineral_target)
+                       return;
 
-        gHub->AssignVespeneHarvester(*i);
+                   gAPI->action().Cast(*j, sc2::ABILITY_ID::SMART, *mineral_target); // If to many workers on gas -> put one to mine minerals
+                   break;
+               }
+           }
+           continue;
+       }
+
+       gHub->AssignVespeneHarvester(*i);
     }
 }
 
