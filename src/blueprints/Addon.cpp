@@ -11,7 +11,7 @@ bool Addon::Build(Order *order_) {
 
     if (!order_->assignee) {
         auto parent_buildings = gAPI->observer().GetUnits(
-                IsIdleUnit(GetParentStructureFromAbilityId(order_->ability_id)));
+                IsIdleUnit(GetParentStructureFromAbilityId(order_->ability_id)), sc2::Unit::Alliance::Self);
         // Return false if no such parent building for the add-on is found
         if (parent_buildings().empty())
             return false;
