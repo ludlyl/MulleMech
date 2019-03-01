@@ -11,7 +11,8 @@
 struct Timer {
     void Start();
 
-    void Finish();
+    // Returns milliseconds passed between Start() and Finish()
+    float Finish();
 
  private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_start;

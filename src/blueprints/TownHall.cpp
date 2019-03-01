@@ -7,6 +7,11 @@
 #include "core/API.h"
 
 bool TownHall::Build(Order* order_) {
-    return gHub->AssignBuildTask(order_,
-        gHub->GetExpansions().front().town_hall_location);
+    for (auto& exp : gHub->GetExpansions()) {
+        if (exp->alliance == sc2::Unit::Alliance::Neutral) {
+            return gHub->AssignBuildTask(order_, exp->town_hall_location);
+        }
+    }
+
+    return false;
 }

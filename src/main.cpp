@@ -22,7 +22,8 @@ int main(int argc, char* argv[]) {
 
     gHistory.Init("history.log");
     gHistory.SetSeverity(LogSeverity::debug);
-    gHistory.AddFilter(LogChannel::general);
+    // gHistory.AddFilter(LogChannel::general);
+    // gHistory.AddFilter(LogChannel::scouting);
 
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);
