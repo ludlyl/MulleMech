@@ -35,11 +35,15 @@ bool Planner::IsUnitReserved(sc2::Tag tag) const {
     return m_reservedUnits.find(tag) != m_reservedUnits.end();
 }
 
-std::optional<std::shared_ptr<Expansion>> Memory::GetEnemyBase(std::size_t index) {
+std::shared_ptr<Expansion> Memory::GetEnemyBase(std::size_t index) const {
     if (m_enemyBases.size() <= index)
-        return std::nullopt;
+        return nullptr;
     
     return m_enemyBases[index];
+}
+
+bool Memory::EnemyHasBase(std::size_t index) const {
+    return m_enemyBases.size() > index;
 }
 
 void Memory::MarkEnemyMainBase(const sc2::Point2D& point) {
@@ -86,7 +90,8 @@ std::vector<sc2::Point3D>& Memory::GetEnemyBuildings(sc2::UNIT_TYPEID type) {
 }
 
 std::vector<std::shared_ptr<Expansion>> Reasoning::GetLikelyEnemyExpansions() {
-    if (!gBrain->memory().GetEnemyBase(0).has_value())
+    auto main = gBrain->memory().GetEnemyBase(0);
+    if (!main)
         return std::vector<std::shared_ptr<Expansion>>();
 
     // Assumption: All neutral expansion locations are possible targets
@@ -98,7 +103,6 @@ std::vector<std::shared_ptr<Expansion>> Reasoning::GetLikelyEnemyExpansions() {
     }
 
     // Assumption: The closer a base is to the enemy's main base, the more attractive they'll find it
-    auto& main = gBrain->memory().GetEnemyBase(0).value();
     std::sort(locations.begin(), locations.end(), [&main](auto& a, auto& b) {
         return main->distanceTo(a) < main->distanceTo(b);
     });

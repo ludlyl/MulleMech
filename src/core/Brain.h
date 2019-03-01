@@ -6,7 +6,6 @@
 #include <sc2api/sc2_unit.h>
 
 #include <memory>
-#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -34,7 +33,9 @@ private:
 class Memory {
 public:
     // Get enemy base location if one has been made; index: 0=>main base, 1=>natural, etc
-    std::optional<std::shared_ptr<Expansion>> GetEnemyBase(std::size_t index);
+    std::shared_ptr<Expansion> GetEnemyBase(std::size_t index) const;
+
+    bool EnemyHasBase(std::size_t index) const;
 
     // Note down where enemy main base is
     void MarkEnemyMainBase(const sc2::Point2D& point);

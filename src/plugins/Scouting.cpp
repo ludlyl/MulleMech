@@ -64,18 +64,18 @@ void Scouting::OnUnitEnterVision(const sc2::Unit* unit) {
         }
 
         // Is it THE main base or an expansion at another spawn location?
-        if (main_base && gBrain->memory().GetEnemyBase(0).has_value()) {
-            if (sc2::Distance2D(pos, gBrain->memory().GetEnemyBase(0).value()->town_hall_location) > 5.0f)
+        if (main_base && gBrain->memory().EnemyHasBase(0)) {
+            if (sc2::Distance2D(pos, gBrain->memory().GetEnemyBase(0)->town_hall_location) > 5.0f)
                 main_base = false;
         }
 
         // Save base location
         if (main_base) {
-            if (!gBrain->memory().GetEnemyBase(0).has_value())
+            if (!gBrain->memory().EnemyHasBase(0))
                 gBrain->memory().MarkEnemyMainBase(pos);
         } else {
             // NOTE: Currently we must know where the main base is before we save expansions
-            if (gBrain->memory().GetEnemyBase(0).has_value()) {
+            if (gBrain->memory().EnemyHasBase(0)) {
                 gBrain->memory().MarkEnemyExpansion(unit->pos);
                 gHistory.info(LogChannel::scouting) << "Found enemy expansion!" << std::endl;
             } else {
@@ -126,7 +126,6 @@ void Scouting::ScvOffensiveScout() {
         // Add all potential enemy base locations to our scout plan
         m_scoutPhase = ScvScoutPhase::approaching;
         auto locations = gAPI->observer().GameInfo().enemy_start_locations;
-        auto scvPos = scv->pos;
         m_unscoutedBases.insert(m_unscoutedBases.end(), locations.begin(), locations.end());
         assert(m_unscoutedBases.size() > 0 && "Must have at least one enemy start location");
 
@@ -136,7 +135,7 @@ void Scouting::ScvOffensiveScout() {
     // APPROACHING ENEMY BASE
     else if (m_scoutPhase == ScvScoutPhase::approaching && scv->orders.empty()) {
         // If we found main base of enemy; go into exploring mode
-        if (gBrain->memory().GetEnemyBase(0).has_value()) {
+        if (gBrain->memory().EnemyHasBase(0)) {
             m_scoutPhase = ScvScoutPhase::explore_enemy_base;
             gHistory.debug(LogChannel::scouting) << "Found enemy main base!" << std::endl;
         }
@@ -159,7 +158,7 @@ void Scouting::ScvOffensiveScout() {
     }
     // EXPLORING ENEMY BASE
     else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && scv->orders.empty()) {
-        auto& mainBase = gBrain->memory().GetEnemyBase(0).value();
+        auto mainBase = gBrain->memory().GetEnemyBase(0);
 
         // Scout the main base of the enemy
         gHistory.debug(LogChannel::scouting) << "Exploring main base" << std::endl;
@@ -167,7 +166,7 @@ void Scouting::ScvOffensiveScout() {
 
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
-        if (!gBrain->memory().GetEnemyBase(1).has_value())
+        if (!gBrain->memory().EnemyHasBase(1))
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL

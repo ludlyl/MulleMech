@@ -232,8 +232,8 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     for (int i = 0; i < numPoints; ++i) {
         sc2::Point2D p;
 
-        p.x = std::cosf(i * angleSplit) * radius;
-        p.y = std::sinf(i * angleSplit) * radius;
+        p.x = std::cos(i * angleSplit) * radius;
+        p.y = std::sin(i * angleSplit) * radius;
         p += center;
 
         points.push_back(p);
@@ -254,8 +254,8 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
         bool found = false;
         for (int j = 0; j < 3 && !found; ++j) {
             // Reduce radius a bit for each attempt
-            p.x = std::cosf(i * angleSplit) * (radius - j * (radius / 8.0f));
-            p.y = std::sinf(i * angleSplit) * (radius - j * (radius / 8.0f));
+            p.x = std::cos(i * angleSplit) * (radius - j * (radius / 8.0f));
+            p.y = std::sin(i * angleSplit) * (radius - j * (radius / 8.0f));
             p += center;
 
             if (std::abs(gAPI->observer().TerrainHeight(p) - forcedHeight) < 0.05f)
