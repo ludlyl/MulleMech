@@ -56,7 +56,7 @@ void Governor::OnGameStart(Builder* builder_) {
     }
 }
 
-void Governor::OnStep(Builder* builder_) {
+void Governor::OnStep(Builder*) {
 }
 
 void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {

@@ -6,8 +6,7 @@
 #include "Hub.h"
 
 Scouting::Scouting() :
-    m_offensiveScv(sc2::NullTag), m_defensiveScv(sc2::NullTag),
-    m_scoutPhase(ScvScoutPhase::not_started) {
+        m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(sc2::NullTag), m_defensiveScv(sc2::NullTag) {
 }
 
 void Scouting::OnStep(Builder*) {
@@ -127,7 +126,7 @@ void Scouting::ScvOffensiveScout() {
         m_scoutPhase = ScvScoutPhase::approaching;
         auto locations = gAPI->observer().GameInfo().enemy_start_locations;
         m_unscoutedBases.insert(m_unscoutedBases.end(), locations.begin(), locations.end());
-        assert(m_unscoutedBases.size() > 0 && "Must have at least one enemy start location");
+        assert(!m_unscoutedBases.empty() && "Must have at least one enemy start location");
 
         gHistory.debug(LogChannel::scouting) << "Initiating SCV scouting with " << m_unscoutedBases.size() <<
             " possible enemy base locations" << std::endl;
@@ -172,7 +171,7 @@ void Scouting::ScvOffensiveScout() {
     // CHECKING FOR NATURAL
     else if (m_scoutPhase == ScvScoutPhase::check_for_natural && scv->orders.empty()) {
         auto likelyExpansions = gBrain->reasoning().GetLikelyEnemyExpansions();
-        assert(likelyExpansions.size() > 0);
+        assert(!likelyExpansions.empty());
         gAPI->action().MoveTo(*scv, likelyExpansions[0]->town_hall_location);
         gHistory.debug(LogChannel::scouting) << "Checking if the natural expansion has been started" << std::endl;
 
