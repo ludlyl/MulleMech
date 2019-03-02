@@ -182,14 +182,14 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
         case sc2::UNIT_TYPEID::ZERG_BANELING:
             data.mineral_cost = 25;
             data.food_required = 0.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
             break;
 
         case sc2::UNIT_TYPEID::ZERG_BROODLORD:
             data.mineral_cost = 150;
             data.vespene_cost = 150;
             data.food_required = 2.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_GREATERSPIRE;
             break;
 
@@ -207,7 +207,7 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
             data.mineral_cost = 25;
             data.vespene_cost = 75;
             data.food_required = 1.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_ROACH);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ROACH);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_ROACHWARREN;
             break;
 
@@ -222,7 +222,7 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
             data.vespene_cost = 100;
             data.ability_id = sc2::ABILITY_ID::MORPH_LURKER;
             data.food_required = 1.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_LURKERDENMP;
             break;
 
@@ -285,8 +285,8 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
     if (posi.x < 0 || posi.x >= info.width || posi.y < 0 || posi.y >= info.width)
         return 0.0f;
 
-    assert(info.terrain_height.data.size() == info.width * info.height);
-    unsigned char encodedHeight = info.terrain_height.data[posi.x + ((info.height - 1) - posi.y) * info.width];
+    assert(static_cast<int>(info.terrain_height.data.size()) == info.width * info.height);
+    int encodedHeight = info.terrain_height.data[static_cast<unsigned>(posi.x + ((info.height - 1) - posi.y) * info.width)];
     float decodedHeight = -100.0f + 200.0f * float(encodedHeight) / 255.0f;
     return decodedHeight;
 }

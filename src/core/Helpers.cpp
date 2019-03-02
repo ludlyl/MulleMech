@@ -226,7 +226,7 @@ sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
     std::vector<sc2::Point2D> points;
-    points.reserve(numPoints);
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
 
     float angleSplit = F_2PI / numPoints;
     for (int i = 0; i < numPoints; ++i) {
@@ -244,7 +244,7 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints) {
     std::vector<sc2::Point2D> points;
-    points.reserve(numPoints);
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
 
     float angleSplit = F_2PI / numPoints;
     for (int i = 0; i < numPoints; ++i) {
