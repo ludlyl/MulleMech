@@ -86,7 +86,7 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (auto i : m_expansions) {
+            for (const auto& i : m_expansions) {
                 if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
                         std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
                     continue;
@@ -139,7 +139,7 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (auto i : m_expansions) {
+            for (const auto& i : m_expansions) {
                 if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
                         std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
                     continue;
@@ -169,7 +169,7 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
         }
 
         case sc2::UNIT_TYPEID::ZERG_LARVA: {
-            GameObject obj = GameObject(unit_);
+            auto obj = GameObject(unit_);
             if (!m_larva.IsCached(obj)) {
                 m_larva.Add(obj);
                 gHistory.info() << "Picked up an idle larva." << std::endl;
@@ -263,7 +263,7 @@ const Expansions& Hub::GetExpansions() const {
 }
 
 std::shared_ptr<Expansion> Hub::GetClosestExpansion(const sc2::Point2D& location_) const {
-    assert(m_expansions.size() > 0);
+    assert(!m_expansions.empty());
 
     auto closest = m_expansions[0];
     for (auto& exp : m_expansions) {

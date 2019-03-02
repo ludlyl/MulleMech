@@ -22,10 +22,11 @@
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
+#include <memory>
 
 Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()) {
-    gAPI.reset(new API::Interface(Actions(), Control(), Debug(), Observation(), Query()));
-    gBrain.reset(new Brain());
+    gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
+    gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
@@ -40,7 +41,7 @@ void Dispatcher::OnGameStart() {
     gHistory.info() << "New game started!" << std::endl;
 
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
-    gHub.reset(new Hub(current_race, CalculateExpansionLocations()));
+    gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
 
     m_plugins.emplace_back(new Governor());
     m_plugins.emplace_back(new Miner());
