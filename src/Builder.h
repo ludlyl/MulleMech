@@ -16,8 +16,6 @@ struct Builder {
 
     void OnStep();
 
-    void OnUnitCreated(const sc2::Unit& unit_);
-
     // Unit is passed for e.g. add-ons
     void ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent = false, const sc2::Unit* unit_ = nullptr);
 
@@ -40,9 +38,6 @@ struct Builder {
 
     int32_t m_minerals;
     int32_t m_vespene;
-
-    int32_t m_reserved_minerals;
-    int32_t m_reserved_vespene;
 
     float m_available_food;
 
