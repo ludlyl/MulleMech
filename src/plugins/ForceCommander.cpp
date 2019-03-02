@@ -10,8 +10,24 @@
 #include <sc2api/sc2_map_info.h>
 
 #include <algorithm>
+#include <Hub.h>
+
 
 ForceCommander::ForceCommander(): m_attack_limit(16) {
+}
+
+void ForceCommander::AttackEnemiesCloseToBase(){
+    auto enemyUnits = gAPI->observer().GetUnits(sc2::Unit::Alliance::Enemy);
+    sc2::Point3D baseLocation3D = gAPI->observer().StartingLocation();
+    sc2::Point2D baseLocation2D = sc2::Point2D(baseLocation3D.x, baseLocation3D.y);
+    const sc2::Unit* closestEnemyUnit = enemyUnits.GetClosestUnit(baseLocation2D);
+    sc2::Point3D enemyPos3D = closestEnemyUnit->pos;
+    sc2::Point2D enemyPos2D = sc2::Point2D(enemyPos3D.x, enemyPos3D.y);
+    double lengthToEnemy = sqrt(std::pow(baseLocation3D.x-enemyPos3D.x, 2) + std::pow(baseLocation3D.y-enemyPos3D.y, 2));
+    int limit = 50;
+    if(lengthToEnemy < limit){
+        gAPI->action().Attack(m_units, enemyPos2D);
+    }
 }
 
 void ForceCommander::OnStep(Builder*) {
@@ -31,6 +47,8 @@ void ForceCommander::OnStep(Builder*) {
 
     m_units.clear();
     m_attack_limit = std::min<float>(m_attack_limit * 1.5f, 170.0f);
+
+    AttackEnemiesCloseToBase();
 }
 
 void ForceCommander::OnUnitCreated(const sc2::Unit* unit_) {

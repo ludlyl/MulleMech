@@ -13,6 +13,8 @@ struct ForceCommander : Plugin {
 
     void OnUnitCreated(const sc2::Unit* unit_) final;
 
+    void AttackEnemiesCloseToBase();
+
  private:
     float m_attack_limit;
     sc2::Units m_units;
