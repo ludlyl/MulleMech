@@ -27,7 +27,7 @@ void SecureMineralsIncome(Builder* builder_) {
         if (!i->orders.empty())
             continue;
 
-        if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
+        if (builder_->CountScheduledScv(gHub->GetCurrentWorkerType()) > 0)
             continue;
 
         // FIXME (alkurbatov): We should set an assignee for drones

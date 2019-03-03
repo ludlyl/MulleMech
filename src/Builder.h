@@ -29,9 +29,13 @@ struct Builder {
 
     const std::list<Order>& GetTrainingOrders() const;
 
+    const std::list<Order>& GetScvOrders() const;
+
     int64_t CountScheduledStructures(sc2::UNIT_TYPEID id_) const;
 
     int64_t CountScheduledTrainings(sc2::UNIT_TYPEID id_) const;
+
+    int64_t CountScheduledScv(sc2::UNIT_TYPEID id_) const;
 
  private:
     bool Build(Order* order_);
@@ -43,4 +47,5 @@ struct Builder {
 
     std::list<Order> m_construction_orders;
     std::list<Order> m_training_orders;
+    std::list<Order> m_training_scv_orders;
 };
