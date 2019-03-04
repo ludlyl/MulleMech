@@ -39,6 +39,8 @@ void ForceCommander::OnStep(Builder*) {
 
     m_units.erase(it, m_units.end());
 
+    AttackEnemiesCloseToBase();
+
     if (m_units.size() < m_attack_limit)
         return;
 
@@ -47,8 +49,6 @@ void ForceCommander::OnStep(Builder*) {
 
     m_units.clear();
     m_attack_limit = std::min<float>(m_attack_limit * 1.5f, 170.0f);
-
-    AttackEnemiesCloseToBase();
 }
 
 void ForceCommander::OnUnitCreated(const sc2::Unit* unit_) {
