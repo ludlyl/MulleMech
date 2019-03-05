@@ -18,11 +18,26 @@ const int mule_energy_cost = 50;
 
 void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
+    std::vector<sc2::Unit> workers;
     auto town_halls = gAPI->observer().GetUnits(IsTownHall());
+    const int mineral_overproduction = 5;
 
     for (const auto& i : town_halls()) {
-        if (i->assigned_harvesters >= i->ideal_harvesters)
+        if (i->assigned_harvesters > i->ideal_harvesters) {
+            if (town_halls().size() <= 1)
+                continue;
+            int overproduction = i->assigned_harvesters - i->ideal_harvesters;
+            while (overproduction--) {
+                Worker* worker = gHub->GetClosestFreeWorker(i->pos);
+                if (!worker)
+                    break;
+                workers.emplace_back(worker->ToUnit());
+            }
+        }
+
+        if (i->assigned_harvesters >= (i->ideal_harvesters + mineral_overproduction)) {
             continue;
+        }
 
         if (!i->orders.empty())
             continue;
@@ -42,8 +57,33 @@ void SecureMineralsIncome(Builder* builder_) {
             gHub->GetCurrentWorkerType()), i);
     }
 
-    builder_->ScheduleOrders(orders);
+    builder_->ScheduleOrders(orders); 
+    if (workers.size() == 0)
+        return;
+
+    for (const auto& i : town_halls()) {
+        if (i->ideal_harvesters <= i->assigned_harvesters)
+            continue;
+        int underproduction = i->ideal_harvesters - i->assigned_harvesters;
+        while (underproduction--) {
+            if (workers.size() == 0)
+                return;
+            sc2::Unit move_worker = workers.front();
+            workers.erase(workers.begin());
+
+            auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+                sc2::Unit::Alliance::Neutral);
+            const sc2::Unit* mineral_target = units.GetClosestUnit(i->pos);
+            if (!mineral_target)
+                return;
+
+            gAPI->action().Cast(move_worker, sc2::ABILITY_ID::SMART, *mineral_target); // If to many workers on gas -> put one to mine minerals
+            break;
+
+        }
+    } 
 }
+
 
 void SecureVespeneIncome() {
     auto refineries = gAPI->observer().GetUnits(IsRefinery());
@@ -57,8 +97,7 @@ void SecureVespeneIncome() {
                if (i->tag == j->orders.front().target_unit_tag) {
                    auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
                        sc2::Unit::Alliance::Neutral);
-                   const sc2::Unit* mineral_target = units.GetClosestUnit(
-                       gAPI->observer().StartingLocation());
+                   const sc2::Unit* mineral_target = units.GetClosestUnit(i->pos);
                    if (!mineral_target)
                        return;
 
