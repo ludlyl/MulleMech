@@ -7,8 +7,6 @@
 #include "Diagnosis.h"
 #include "core/API.h"
 
-#include "BuildingPlacer.h"
-
 void Diagnosis::OnStep(Builder* builder_) {
     gAPI->debug().DrawText("Build order:");
 

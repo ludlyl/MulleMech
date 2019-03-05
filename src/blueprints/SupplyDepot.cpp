@@ -9,7 +9,7 @@
 bool SupplyDepot::Build(Order* order_) {
     Timer timer;
     timer.Start();
-    auto pos = BuildingPlacer::PlaceBehindMinerals(*order_, gAPI->observer().StartingLocation());
+    auto pos = BuildingPlacer::CalculateFreePlaceBehindMinerals(*order_, gAPI->observer().StartingLocation());
     auto ms = timer.Finish();
     gHistory.debug() << "Placing supply depot took " << ms << " ms" << std::endl;
     if (pos.has_value())

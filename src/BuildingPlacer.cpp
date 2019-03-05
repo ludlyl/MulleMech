@@ -32,7 +32,8 @@ sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLoca
     return baseLocation + directionVector * (maxDist + 1.5f);
 }
 
-std::optional<sc2::Point3D> BuildingPlacer::PlaceBehindMinerals(const Order& order, const sc2::Point3D baseLocation) {
+std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceBehindMinerals(
+    const Order &order, const sc2::Point3D baseLocation) {
     auto center = GetCenterBehindMinerals(baseLocation);
     auto startDirection = sc2::Point2D(center - baseLocation);
     sc2::Normalize2D(startDirection);
