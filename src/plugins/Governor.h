@@ -13,4 +13,6 @@ struct Governor : Plugin {
     void OnStep(Builder* builder_) final;
 
     void OnUnitIdle(const sc2::Unit* unit_, Builder* builder_) final;
+
+    void OnBuildingConstructionComplete(const sc2::Unit* unit_) final;
 };

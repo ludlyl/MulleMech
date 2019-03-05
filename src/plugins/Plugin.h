@@ -23,6 +23,9 @@ struct Plugin {
     virtual void OnUnitDestroyed(const sc2::Unit*, Builder*) {
     }
 
+    virtual void OnBuildingConstructionComplete(const sc2::Unit*) {
+    }
+
     virtual void OnUnitIdle(const sc2::Unit*, Builder*) {
     }
 

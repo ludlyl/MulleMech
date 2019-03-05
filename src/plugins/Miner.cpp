@@ -18,7 +18,7 @@ const int mule_energy_cost = 50;
 
 void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
-    auto town_halls = gAPI->observer().GetUnits(IsTownHall());
+    auto town_halls = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
 
     for (const auto& i : town_halls()) {
         if (i->assigned_harvesters >= i->ideal_harvesters)
@@ -46,8 +46,8 @@ void SecureMineralsIncome(Builder* builder_) {
 }
 
 void SecureVespeneIncome() {
-    auto refineries = gAPI->observer().GetUnits(IsRefinery());
-    Units workers = gAPI->observer().GetUnits(IsGasWorker());
+    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    Units workers = gAPI->observer().GetUnits(IsGasWorker(), sc2::Unit::Alliance::Self);
     for (const auto& i : refineries()) {
      
        if (i->assigned_harvesters == i->ideal_harvesters)
@@ -75,7 +75,7 @@ void SecureVespeneIncome() {
 
 void CallDownMULE() {
     auto orbitals = gAPI->observer().GetUnits(
-        IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND));
+        IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
 
     if (orbitals().empty())
         return;

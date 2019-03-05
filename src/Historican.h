@@ -27,9 +27,7 @@ inline std::string LogChannel_str(LogChannel channel) {
     switch (channel) {
     case LogChannel::general:       return "[GENERAL]";
     case LogChannel::scouting:      return "[SCOUTING]";
-    default: break;
     }
-    throw std::runtime_error("Invalid channel");
 }
 
 class Historican {

@@ -58,6 +58,14 @@ void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
     m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_, queue_);
 }
 
+void Action::LowerDepot(const sc2::Unit& assignee_) {
+    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+}
+
+void Action::RaiseDepot(const sc2::Unit& assignee_) {
+    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+}
+
 void Action::OpenGate(const sc2::Unit& assignee_) {
     m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_WARPGATE);
 }
@@ -113,8 +121,19 @@ const sc2::Unit* Observer::GetUnit(sc2::Tag tag_) const {
     return m_observer->GetUnit(tag_);
 }
 
+Units Observer::GetUnits() const {
+    return Units(m_observer->GetUnits());
+}
+
 Units Observer::GetUnits(sc2::Unit::Alliance alliance_) const {
     return Units(m_observer->GetUnits(alliance_));
+}
+
+Units Observer::GetUnits(const sc2::Filter& filter_) const {
+    // NOTE: The documentation for this function is wrong, in sc2_client.cc it
+    //       does ForEachExistingUnit, and only applies the filter, it doesn't
+    //       force alliance Self
+    return Units(m_observer->GetUnits(filter_));
 }
 
 Units Observer::GetUnits(const sc2::Filter& filter_,

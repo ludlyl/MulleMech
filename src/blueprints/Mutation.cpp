@@ -8,7 +8,7 @@
 
 bool Mutation::Build(Order* order_) {
     auto targets = gAPI->observer().GetUnits(
-        IsIdleUnit(order_->tech_alias.back()));
+        IsIdleUnit(order_->tech_alias.back()), sc2::Unit::Alliance::Self);
 
     if (targets().empty())
         return false;
