@@ -20,7 +20,7 @@ void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
     std::vector<sc2::Unit> workers;
     auto command_centers = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
-    auto num_of_workers = gAPI->observer().GetUnits(IsWorker());
+    auto num_of_workers = gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self)().size();
     const int max_workers = 70; // TODO: optimize this constant.
 
     for (const auto& i : command_centers()) {
@@ -36,7 +36,7 @@ void SecureMineralsIncome(Builder* builder_) {
             }
         }
 
-        if (max_workers < num_of_workers().size())
+        if (max_workers < num_of_workers)
             continue;
 
         // we want to produce ~40% more workers than ideal.
