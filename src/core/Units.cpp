@@ -36,7 +36,7 @@ const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D
     const sc2::Unit* targetLowest = nullptr;
     const sc2::Unit* targetSecondLowest = nullptr;
 
-    for (const auto& i : m_units) {
+    for (const auto& i : m_wrappedUnits) {
         float d = sc2::DistanceSquared2D(i->pos, point_);
         bool lowest = false;
         if (d < lowestDistance) {
@@ -78,7 +78,14 @@ Unit* Units::GetRandomUnit() const {
 sc2::Units Units::ToAPI() const {
     sc2::Units apiUnits;
     apiUnits.reserve(m_wrappedUnits.size());
-    for (auto& unit : m_wrappedUnits)
+    for (auto &unit : m_wrappedUnits)
         apiUnits.push_back(unit);
     return apiUnits;
 }
+/*const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
+    const sc2::Unit* unit = gAPI->observer().GetUnit(tag_);
+    if (!unit)
+        return nullptr;
+
+    return GetTwoClosestUnits(unit->pos);
+}*/
