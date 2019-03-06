@@ -142,7 +142,7 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
 }
 
 size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
-    return m_observer->GetUnits(IsUnit(type_, with_not_finished)).size();
+    return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
 }
 
 const sc2::GameInfo& Observer::GameInfo() const {
