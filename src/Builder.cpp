@@ -117,13 +117,9 @@ bool Builder::Build(Order* order_) {
     // to disable the check for all units (it's the Units that seem to be problematic for terran)
     // this has the effect that units that are assigned to a specific structure will fail "silently"
     // (this function, Build, will return true) if they can't be built.
-    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
 
-    // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
-            return false;
-    }
+    if (!HasTechRequirements(order_))
+        return false;
 
     if (m_available_food < order_->food_required)
         return false;
@@ -136,5 +132,24 @@ bool Builder::Build(Order* order_) {
     m_available_food -= order_->food_required;
 
     gHistory.info() << "Gave order to start building a " << order_->name << std::endl;
+    return true;
+}
+
+bool Builder::HasTechRequirements(Order* order_) const {
+    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
+
+    // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
+    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID) {
+        // TODO: Supply depot counts as a different unit type when lowered; see if we can't solve this some nicer way
+        if (order_->tech_requirement == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+            if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 0 &&
+                gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED) == 0)
+                return false;
+        } else {
+            if (gAPI->observer().CountUnitType(order_->tech_requirement) == 0)
+                return false;
+        }
+    }
+
     return true;
 }
