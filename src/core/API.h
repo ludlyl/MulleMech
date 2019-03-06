@@ -92,6 +92,7 @@ struct Observer {
     // Get Units by alliance and a filter
     Units GetUnits(const sc2::Filter& filter_, sc2::Unit::Alliance alliance_) const;
 
+    // Count how many we have of said unit type
     size_t CountUnitType(sc2::UNIT_TYPEID type_,
         bool with_not_finished = false) const;
 
