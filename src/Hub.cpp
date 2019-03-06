@@ -55,6 +55,7 @@ Hub::Hub(sc2::Race current_race_, const Expansions& expansions_):
 }
 
 void Hub::OnStep() {
+    m_assignedBuildings.clear();
 }
 
 void Hub::OnUnitCreated(const sc2::Unit& unit_) {
@@ -223,6 +224,25 @@ void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
         return;
 
     worker->GatherVespene(refinery_);
+}
+
+bool Hub::AssignBuildingProduction(sc2::UNIT_TYPEID building_, Order* order_) {
+    if (order_->assignee) {
+        if (m_assignedBuildings.find(order_->assignee) == m_assignedBuildings.end()) {
+            m_assignedBuildings.insert(order_->assignee);
+            return true;
+        }
+    } else {
+        for (auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)()) {
+            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+                m_assignedBuildings.insert(unit->tag);
+                order_->assignee = unit->tag;
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 const Expansions& Hub::GetExpansions() const {

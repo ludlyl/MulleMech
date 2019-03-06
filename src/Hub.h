@@ -13,6 +13,7 @@
 
 #include <list>
 #include <memory>
+#include <unordered_set>
 
 template <typename T>
 struct Cache {
@@ -142,6 +143,9 @@ struct Hub {
 
     void AssignVespeneHarvester(const sc2::Unit& refinery_);
 
+    // Find first free building to produce Units/Upgrades/Addons from/on
+    bool AssignBuildingProduction(sc2::UNIT_TYPEID building_, Order* order_);
+
     const Expansions& GetExpansions() const;
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
@@ -155,6 +159,8 @@ struct Hub {
 
     Cache<Worker> m_busy_workers;
     Cache<Worker> m_free_workers;
+
+    std::unordered_set<sc2::Tag> m_assignedBuildings;
 };
 
 extern std::unique_ptr<Hub> gHub;
