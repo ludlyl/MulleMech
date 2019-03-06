@@ -13,7 +13,7 @@ struct Units {
 
     const sc2::Unit* GetClosestUnit(const sc2::Point2D& point_) const;
 
-    const sc2::Unit* GetSecondClosestUnit(const sc2::Point2D& point_) const;
+    const std::vector<const sc2::Unit*> GetTwoClosestUnits(const sc2::Point2D& point_) const;
 
     const sc2::Unit* GetClosestUnit(sc2::Tag tag_) const;
 

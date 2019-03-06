@@ -30,7 +30,7 @@ const sc2::Unit* Units::GetClosestUnit(const sc2::Point2D& point_) const {
     return target;
 }
 
-const /*std::vector<sc2::Unit*>*/ sc2::Unit* Units::GetSecondClosestUnit(const sc2::Point2D& point_) const {
+const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D& point_) const {
     float lowestDistance = std::numeric_limits<float>::max();
     float secondLowestDistance = std::numeric_limits<float>::max();
 
@@ -39,24 +39,26 @@ const /*std::vector<sc2::Unit*>*/ sc2::Unit* Units::GetSecondClosestUnit(const s
 
     for (const auto& i : m_units) {
         float d = sc2::DistanceSquared2D(i->pos, point_);
+        bool lowest = false;
         if (d < lowestDistance) {
             secondLowestDistance = lowestDistance;
             lowestDistance = d;
             targetSecondLowest = targetLowest;
             targetLowest = i;
+            lowest = true;
         }
-        if (d < secondLowestDistance) {
+        if (d < secondLowestDistance && !lowest) {
             secondLowestDistance = d;
             targetSecondLowest = i;
         }
     }
 
-    //std::vector<sc2::Unit*> closeUnits (targetLowest, targetSecondLowest);
+    std::vector<const sc2::Unit*> targetTwoClosestUnits;
 
-    //closeUnits.insert(closeUnits.begin(), targetLowest);
-    //closeUnits.insert(closeUnits.begin(), targetSecondLowest);
+    targetTwoClosestUnits.emplace_back(targetLowest);
+    targetTwoClosestUnits.emplace_back(targetSecondLowest);
 
-    return targetSecondLowest;
+    return targetTwoClosestUnits;
 }
 
 const sc2::Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
