@@ -36,6 +36,8 @@ struct Builder {
  private:
     bool Build(Order* order_);
 
+    bool HasTechRequirements(Order* order_) const;
+
     int32_t m_minerals;
     int32_t m_vespene;
 

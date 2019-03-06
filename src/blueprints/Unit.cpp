@@ -12,7 +12,7 @@ Unit::Unit(sc2::UNIT_TYPEID who_builds_): m_who_builds(who_builds_) {
 // TODO: Fix for add-ons
 bool Unit::Build(Order* order_) {
     if (!order_->assignee) {
-        auto producers = gAPI->observer().GetUnits(IsIdleUnit(m_who_builds));
+        auto producers = gAPI->observer().GetUnits(IsIdleUnit(m_who_builds), sc2::Unit::Alliance::Self);
         if (producers().empty())
             return false;
 

@@ -72,6 +72,9 @@ void Dispatcher::OnGameEnd() {
 void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
+
+    for (auto& plugin : m_plugins)
+        plugin->OnBuildingConstructionComplete(building_);
 }
 
 void Dispatcher::OnStep() {

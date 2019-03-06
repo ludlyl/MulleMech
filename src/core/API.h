@@ -35,6 +35,8 @@ struct Action {
     void Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
         const sc2::Unit& target_, bool queue_ = false);
 
+    void LowerDepot(const sc2::Unit& assignee_);
+    void RaiseDepot(const sc2::Unit& assignee_);
     void OpenGate(const sc2::Unit& assignee_);
 
     void SendMessage(const std::string& text_);
@@ -78,12 +80,19 @@ struct Observer {
 
     const sc2::Unit* GetUnit(sc2::Tag tag_) const;
 
-    Units GetUnits(
-        sc2::Unit::Alliance alliance_ = sc2::Unit::Alliance::Self) const;
+    // Get all visible units
+    Units GetUnits() const;
 
-    Units GetUnits(const sc2::Filter& filter_,
-        sc2::Unit::Alliance alliance_ = sc2::Unit::Alliance::Self) const;
+    // Get Units by alliance
+    Units GetUnits(sc2::Unit::Alliance alliance_) const;
 
+    // Get Units by filter
+    Units GetUnits(const sc2::Filter& filter_) const;
+
+    // Get Units by alliance and a filter
+    Units GetUnits(const sc2::Filter& filter_, sc2::Unit::Alliance alliance_) const;
+
+    // Count how many we have of said unit type
     size_t CountUnitType(sc2::UNIT_TYPEID type_,
         bool with_not_finished = false) const;
 

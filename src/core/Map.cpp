@@ -183,7 +183,7 @@ Expansions CalculateExpansionLocations() {
     Expansions expansions;
 
     // Manually add our starting location which can never be considered buildable due to having a CC
-    auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
+    auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
     if (!ccs().empty()) {
         auto exp = std::make_shared<Expansion>(ccs().front()->pos);
         exp->alliance = sc2::Unit::Alliance::Self;
