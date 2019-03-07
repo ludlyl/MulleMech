@@ -4,6 +4,7 @@
 #include "core/Helpers.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "../BuildingPlacer.h"
 
 ReaperHarass::ReaperHarass() :
         m_ReaperStrikePhase(ReaperStrikePhase::not_started), m_harassReapers(sc2::NullTag) {
@@ -11,7 +12,26 @@ ReaperHarass::ReaperHarass() :
 
 void ReaperHarass::OnStep(Builder*) {
 
-    if (m_ReaperStrikePhase != ReaperStrikePhase::finished && m_reaperStrikeTeam.size() > 4) {
+    auto it = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
+        return !unit_->is_alive;
+    });
+
+    m_reaperStrikeTeam.erase(it, m_reaperStrikeTeam.end());
+
+    auto it2 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
+        if((unit_->health)<(30)){
+
+
+            gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x, gAPI->observer().StartingLocation().y));
+
+
+        }
+        return (unit_->health)<(30);
+    });
+
+    m_reaperStrikeTeam.erase(it2, m_reaperStrikeTeam.end());
+
+    if (m_ReaperStrikePhase == ReaperStrikePhase::not_started && m_reaperStrikeTeam.size() > 4) {
         WorkerHunt();
         gHistory.debug(LogChannel::reaperharass) << "RAIDERS ROLL" << std::endl;
     }
@@ -101,13 +121,15 @@ void ReaperHarass::WorkerHunt() {
         return !unit_->is_alive;
     });
 
+    m_reaperStrikeTeam.erase(it, m_reaperStrikeTeam.end());
+
     auto reaper = m_reaperStrikeTeam.front();
 
     // If our SCV dies during scouting; we consider that finished for now
     // TODO: This seems a bit fragile; maybe we should have code to try again if we never found our enemy,
     // or to determine our enemy's base location by where we were killed and/or the fact he wasn't at the other locations
     if (m_ReaperStrikePhase != ReaperStrikePhase::not_started && m_reaperStrikeTeam.empty()) {
-        m_ReaperStrikePhase = ReaperStrikePhase::finished;
+        m_ReaperStrikePhase = ReaperStrikePhase::not_started;
         m_harassReapers = sc2::NullTag;
         return;
     }
@@ -158,16 +180,9 @@ void ReaperHarass::WorkerHunt() {
     }
         // EXPLORING ENEMY BASE
     else if (m_ReaperStrikePhase == ReaperStrikePhase::explore_enemy_base && m_reaperStrikeTeam.front()->orders.empty()) {
-        auto mainBase = gBrain->memory().GetEnemyBase(0);
 
-        // Scout the main base of the enemy
-        gHistory.debug(LogChannel::reaperharass) << "Reapers exploring main base" << std::endl;
-        ScoutBase(m_reaperStrikeTeam, mainBase->town_hall_location);
+        gAPI->action().MoveTo(m_reaperStrikeTeam, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetEnemyBase(0)->town_hall_location));
 
-        // If we haven't seen a natural expansion => go into check for natural state, which will execute
-        // after our main base scout finishes
-        if (!gBrain->memory().EnemyHasBase(1))
-            m_ReaperStrikePhase = ReaperStrikePhase::check_for_natural;
     }
         // CHECKING FOR NATURAL
     else if (m_ReaperStrikePhase == ReaperStrikePhase::check_for_natural && m_reaperStrikeTeam.front()->orders.empty()) {

@@ -17,3 +17,35 @@ cpplint.py
 
 # Clion
 .idea/
+*.cmake
+*.log
+*.obj
+*.rsp
+*.internal
+*.make
+*.includecache
+*.cbp
+*.txt
+*.marks
+cmake-build-debug/src/Makefile
+*.exe
+*.bin
+*.txt
+s2client-api
+cmake-build-debug/CMakeFiles/3.13.2/CompilerIdC/CMakeCCompilerId.c
+cmake-build-debug/CMakeFiles/3.13.2/CompilerIdCXX/CMakeCXXCompilerId.cpp
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/HAVE_ALLOCA_H.c
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/HAVE_MALLOC_H.c
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/HAVE_STDARG_H.c
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/HAVE_STDIO_H.c
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/HAVE_STRING_H.c
+cmake-build-debug/CMakeFiles/CheckIncludeFiles/STDC_HEADERS.c
+cmake-build-debug/CMakeFiles/CheckTypeSize/SIZEOF_SIZE_T.c
+*.check_cache
+cmake-build-debug/CMakeFiles/feature_tests.c
+*.cxx
+cmake-build-debug/CMakeFiles/Makefile2
+cmake-build-debug/Makefile
+*.a
+s2client-api
+src/CMakeLists.txt
