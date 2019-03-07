@@ -78,15 +78,6 @@ void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
         gHistory.info() << "Schedule Zealot training" << std::endl;
         return;
     }
-
-    if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_LARVA) {
-        if (gHub->GetLarvas().Count() <= builder_->GetTrainingOrders().size())
-            return;
-
-        builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_ZERGLING);
-        gHistory.info() << "Schedule Zerglings training" << std::endl;
-        return;
-    }
 }
 
 void Governor::OnBuildingConstructionComplete(const sc2::Unit* unit_) {
