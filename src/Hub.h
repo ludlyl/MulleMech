@@ -142,10 +142,6 @@ struct Hub {
 
     void AssignVespeneHarvester(const sc2::Unit& refinery_);
 
-    bool AssignLarva(Order* order_);
-
-    const Cache<GameObject>&  GetLarvas() const;
-
     const Expansions& GetExpansions() const;
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
@@ -159,7 +155,6 @@ struct Hub {
 
     Cache<Worker> m_busy_workers;
     Cache<Worker> m_free_workers;
-    Cache<GameObject> m_larva;
 };
 
 extern std::unique_ptr<Hub> gHub;

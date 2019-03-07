@@ -65,10 +65,6 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
             m_free_workers.Add(Worker(unit_));
             return;
 
-        case sc2::UNIT_TYPEID::ZERG_LARVA:
-            m_larva.Add(GameObject(unit_));
-            return;
-
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
@@ -121,10 +117,6 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
             return;
         }
 
-        case sc2::UNIT_TYPEID::ZERG_LARVA:
-            m_larva.Remove(GameObject(unit_));
-            return;
-
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
@@ -164,16 +156,6 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
             if (m_free_workers.Swap(Worker(unit_), m_busy_workers))
                 gHistory.info() << "Our busy worker has finished task" << std::endl;
-
-            return;
-        }
-
-        case sc2::UNIT_TYPEID::ZERG_LARVA: {
-            auto obj = GameObject(unit_);
-            if (!m_larva.IsCached(obj)) {
-                m_larva.Add(obj);
-                gHistory.info() << "Picked up an idle larva." << std::endl;
-            }
 
             return;
         }
@@ -241,21 +223,6 @@ void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
         return;
 
     worker->GatherVespene(refinery_);
-}
-
-bool Hub::AssignLarva(Order* order_) {
-    if (m_larva.Empty())
-        return false;
-
-    order_->assignee = m_larva.Back().Tag();
-    gAPI->action().Build(*order_);
-
-    m_larva.PopBack();
-    return true;
-}
-
-const Cache<GameObject>&  Hub::GetLarvas() const {
-    return m_larva;
 }
 
 const Expansions& Hub::GetExpansions() const {
