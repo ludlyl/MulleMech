@@ -20,7 +20,8 @@ enum class LogSeverity {
 
 enum class LogChannel {
     general,
-    scouting
+    scouting,
+    reaperharass
 };
 
 inline std::string LogChannel_str(LogChannel channel) {

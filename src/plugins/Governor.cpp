@@ -61,6 +61,8 @@ void Governor::OnStep(Builder*) {
 
 void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BARRACKS) {
+        builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_REAPER, false, unit_);
+        gHistory.info() << "Schedule Reaper training" << std::endl;
         if (unit_->add_on_tag != 0) {
             auto addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
             auto type = addOnAsUnit->unit_type.ToType();

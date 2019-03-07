@@ -21,9 +21,10 @@ int main(int argc, char* argv[]) {
     }
 
     gHistory.Init("history.log");
-    gHistory.SetSeverity(LogSeverity::debug);
+    //gHistory.SetSeverity(LogSeverity::debug);
     // gHistory.AddFilter(LogChannel::general);
     // gHistory.AddFilter(LogChannel::scouting);
+    gHistory.AddFilter(LogChannel::reaperharass);
 
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);
@@ -31,7 +32,7 @@ int main(int argc, char* argv[]) {
     Dispatcher bot("TrainingDummy");
     coordinator.SetParticipants({
         CreateParticipant(sc2::Race::Terran, &bot),
-        CreateComputer(sc2::Race::Random, sc2::Difficulty::CheatInsane)
+        CreateComputer(sc2::Race::Random, sc2::Difficulty::VeryEasy)
     });
 
     coordinator.LaunchStarcraft();
