@@ -18,6 +18,11 @@ void RepairMan::OnUnitDestroyed(const sc2::Unit* unit_, Builder* builder_) {
         return;
 
     switch (unit_->unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_REACTOR:
+            // As we don't know how to rebuild "generic" add-ons we ignore them for now
+            return;
+
         case sc2::UNIT_TYPEID::PROTOSS_PYLON:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED:

@@ -307,3 +307,92 @@ sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
 
     return vector_prime;
 }
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_) {
+    return GetAllTechRequirements(gAPI->observer().GetUnitTypeData(id_));
+}
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData &data_) {
+    return GetAllTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
+}
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_) {
+    switch (id_.ToType()) {
+        case sc2::ABILITY_ID::RESEARCH_COMBATSHIELD:
+        case sc2::ABILITY_ID::RESEARCH_CONCUSSIVESHELLS:
+        case sc2::ABILITY_ID::RESEARCH_STIMPACK:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_PERSONALCLOAKING:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, sc2::UNIT_TYPEID::TERRAN_GHOSTACADEMY};
+
+        case sc2::ABILITY_ID::RESEARCH_INFERNALPREIGNITER:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_DRILLINGCLAWS:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::RESEARCH_HIGHCAPACITYFUELTANKS:
+        case sc2::ABILITY_ID::RESEARCH_RAVENCORVIDREACTOR:
+        case sc2::ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD:
+        case sc2::ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_ADVANCEDBALLISTICS:
+        case sc2::ABILITY_ID::RESEARCH_BATTLECRUISERWEAPONREFIT:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB, sc2::UNIT_TYPEID::TERRAN_FUSIONCORE};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_HISECAUTOTRACKING:
+        case sc2::ABILITY_ID::RESEARCH_NEOSTEELFRAME:
+            return {sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3:
+            return {sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3:
+            return {sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_MARAUDER:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_GHOST:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, sc2::UNIT_TYPEID::TERRAN_GHOSTACADEMY};
+
+        case sc2::ABILITY_ID::TRAIN_HELLBAT:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORY, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_CYCLONE:
+        case sc2::ABILITY_ID::TRAIN_SIEGETANK:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_THOR:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_BANSHEE:
+        case sc2::ABILITY_ID::TRAIN_RAVEN:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_BATTLECRUISER:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB, sc2::UNIT_TYPEID::TERRAN_FUSIONCORE};
+
+        default: {
+            if (suppliedTechRequirement_ == sc2::UNIT_TYPEID::INVALID) {
+                return {};
+            }
+            return {suppliedTechRequirement_};
+        }
+    }
+}
