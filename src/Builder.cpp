@@ -129,22 +129,18 @@ bool Builder::Build(Order* order_) {
     return true;
 }
 
-void Builder::ScheduleRequiredStructures(const Order& order_, bool urgent) {
-    if (!order_.tech_requirements.empty()) {
-        for (sc2::UnitTypeID unitTypeID : order_.tech_requirements) {
-            if (gAPI->observer().CountUnitType(unitTypeID) == 0 && CountScheduledStructures(unitTypeID) == 0) {
-                ScheduleConstruction(unitTypeID, urgent);
-            }
+void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
+    for (sc2::UnitTypeID unitTypeID : order_.tech_requirements) {
+        if (gAPI->observer().CountUnitType(unitTypeID) == 0 && CountScheduledStructures(unitTypeID) == 0) {
+            ScheduleConstruction(unitTypeID, urgent);
         }
     }
 }
 
 bool Builder::HasTechRequirements(Order *order_) const {
-    if (!order_->tech_requirements.empty()) {
-        for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
-            if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
-                return false;
-            }
+    for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
+        if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
+            return false;
         }
     }
     return true;
