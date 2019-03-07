@@ -9,6 +9,13 @@
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
 
+#include <functional>
+#include <initializer_list>
+#include <vector>
+
+constexpr float F_PI = 3.1415927f;
+constexpr float F_2PI = 2.0f * 3.1415927f;
+
 struct IsUnit {
     explicit IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished = false);
 
@@ -20,6 +27,10 @@ struct IsUnit {
 };
 
 struct IsCombatUnit {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
@@ -91,3 +102,53 @@ struct IsOrdered {
  private:
     sc2::UNIT_TYPEID m_type;
 };
+
+struct IsWithinDist {
+    explicit IsWithinDist(sc2::Point3D center, float dist_) : m_center(center), m_distSq(dist_ * dist_) { }
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::Point3D m_center;
+    float m_distSq;
+};
+
+struct MultiFilter {
+    enum class Selector {
+        And,
+        Or
+    };
+
+    MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    std::vector<std::function<bool(const sc2::Unit& unit)>> m_functors;
+    Selector m_selector;
+};
+
+// These should maybe be public on be placed somewhere else
+static constexpr float ADDON_DISPLACEMENT_IN_X = 2.5f;
+static constexpr float ADDON_DISPLACEMENT_IN_Y = -0.5f;
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Unit& unit_);
+
+struct ClosestToPoint2D {
+    explicit ClosestToPoint2D(sc2::Point2D point) : m_point(point) {
+
+    }
+
+    bool operator()(const sc2::Point2D& a, const sc2::Point2D& b) const {
+        return sc2::DistanceSquared2D(m_point, a) < sc2::DistanceSquared2D(m_point, b);
+    }
+
+private:
+    sc2::Point2D m_point;
+};
+
+std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints = 12);
+
+std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints = 12);
+
+sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation);

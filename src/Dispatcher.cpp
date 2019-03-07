@@ -6,6 +6,7 @@
 #include "Historican.h"
 #include "Hub.h"
 #include "core/API.h"
+#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Map.h"
 #include "core/Timer.h"
@@ -16,13 +17,16 @@
 #include "plugins/Miner.h"
 #include "plugins/RepairMan.h"
 #include "plugins/QuarterMaster.h"
+#include "plugins/Scouting.h"
 #include "plugins/WarpSmith.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
+#include <memory>
 
 Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()) {
-    gAPI.reset(new API::Interface(Actions(), Control(), Debug(), Observation(), Query()));
+    gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
+    gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
@@ -37,7 +41,7 @@ void Dispatcher::OnGameStart() {
     gHistory.info() << "New game started!" << std::endl;
 
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
-    gHub.reset(new Hub(current_race, CalculateExpansionLocations()));
+    gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
 
     m_plugins.emplace_back(new Governor());
     m_plugins.emplace_back(new Miner());
@@ -45,6 +49,7 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new RepairMan());
     m_plugins.emplace_back(new ForceCommander());
     m_plugins.emplace_back(new ChatterBox());
+    m_plugins.emplace_back(new Scouting());
 
     if (current_race == sc2::Race::Protoss)
         m_plugins.emplace_back(new WarpSmith());
@@ -67,6 +72,9 @@ void Dispatcher::OnGameEnd() {
 void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
+
+    for (auto& plugin : m_plugins)
+        plugin->OnBuildingConstructionComplete(building_);
 }
 
 void Dispatcher::OnStep() {
@@ -80,7 +88,14 @@ void Dispatcher::OnStep() {
 
     m_builder->OnStep();
 
-    clock.Finish();
+    auto duration = clock.Finish();
+    // 60ms is disqualification threshold of the ladder
+    if (duration > 60.0f)
+        gHistory.error() << "Step processing took: " << duration << " ms" << std::endl;
+
+    // 44.4ms is highest allowed step time by the ladder
+    if (duration > 44.4f)
+        gHistory.warning() << "Step processing took: " << duration << " ms" << std::endl;
 }
 
 void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
@@ -92,7 +107,6 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
         " was created" << std::endl;
 
     gHub->OnUnitCreated(*unit_);
-    m_builder->OnUnitCreated(*unit_);
 
     for (const auto& i : m_plugins)
         i->OnUnitCreated(unit_);
@@ -123,6 +137,11 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
 
     for (const auto& i : m_plugins)
         i->OnUpgradeCompleted(id_);
+}
+
+void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit) {
+    for (const auto& i : m_plugins)
+        i->OnUnitEnterVision(unit);
 }
 
 void Dispatcher::OnError(const std::vector<sc2::ClientError>& client_errors,

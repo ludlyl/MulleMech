@@ -86,7 +86,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
     if (m_skip_turn)
         return;
 
-    auto units = gAPI->observer().GetUnits();
+    auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self);
     const std::list<Order> construction_orders = builder_->GetConstructionOrders();
     const std::list<Order> training_orders = builder_->GetTrainingOrders();
 
@@ -126,7 +126,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
             return;
 
         case sc2::Race::Zerg:
-            builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_OVERLORD, nullptr, true);
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_OVERLORD, true);
             return;
 
         default:

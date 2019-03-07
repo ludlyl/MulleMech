@@ -23,10 +23,17 @@ struct Plugin {
     virtual void OnUnitDestroyed(const sc2::Unit*, Builder*) {
     }
 
+    virtual void OnBuildingConstructionComplete(const sc2::Unit*) {
+    }
+
     virtual void OnUnitIdle(const sc2::Unit*, Builder*) {
     }
 
     virtual void OnUpgradeCompleted(sc2::UpgradeID) {
+    }
+
+    virtual void OnUnitEnterVision(const sc2::Unit*) {
+
     }
 
     virtual void OnGameEnd() {

@@ -14,28 +14,56 @@ namespace API {
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
 
-void Action::Build(const Order& order_) {
+void Action::Build(const Order& order_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id);
+    m_action->UnitCommand(&unit, order_.ability_id, queue_);
 }
 
-void Action::Build(const Order& order_, const sc2::Unit* unit_) {
+void Action::Build(const Order& order_, const sc2::Unit* unit_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, unit_);
+    m_action->UnitCommand(&unit, order_.ability_id, unit_, queue_);
 }
 
-void Action::Build(const Order& order_, const sc2::Point2D& point_) {
+void Action::Build(const Order& order_, const sc2::Point2D& point_, bool queue_) {
     sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, point_);
+    m_action->UnitCommand(&unit, order_.ability_id, point_, queue_);
 }
 
-void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_);
+void Action::Attack(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+}
+
+void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+}
+
+void Action::MoveTo(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
+}
+
+void Action::MoveTo(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::MOVE, point_, queue_);
+}
+
+void Action::Stop(const sc2::Unit& unit_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::STOP, queue_);
+}
+
+void Action::Stop(const sc2::Units& units_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::STOP, queue_);
 }
 
 void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
-    const sc2::Unit& target_) {
-    m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_);
+    const sc2::Unit& target_, bool queue_) {
+    m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_, queue_);
+}
+
+void Action::LowerDepot(const sc2::Unit& assignee_) {
+    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+}
+
+void Action::RaiseDepot(const sc2::Unit& assignee_) {
+    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
 }
 
 void Action::OpenGate(const sc2::Unit& assignee_) {
@@ -93,8 +121,19 @@ const sc2::Unit* Observer::GetUnit(sc2::Tag tag_) const {
     return m_observer->GetUnit(tag_);
 }
 
+Units Observer::GetUnits() const {
+    return Units(m_observer->GetUnits());
+}
+
 Units Observer::GetUnits(sc2::Unit::Alliance alliance_) const {
     return Units(m_observer->GetUnits(alliance_));
+}
+
+Units Observer::GetUnits(const sc2::Filter& filter_) const {
+    // NOTE: The documentation for this function is wrong, in sc2_client.cc it
+    //       does ForEachExistingUnit, and only applies the filter, it doesn't
+    //       force alliance Self
+    return Units(m_observer->GetUnits(filter_));
 }
 
 Units Observer::GetUnits(const sc2::Filter& filter_,
@@ -103,7 +142,7 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
 }
 
 size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
-    return m_observer->GetUnits(IsUnit(type_, with_not_finished)).size();
+    return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
 }
 
 const sc2::GameInfo& Observer::GameInfo() const {
@@ -162,14 +201,14 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
         case sc2::UNIT_TYPEID::ZERG_BANELING:
             data.mineral_cost = 25;
             data.food_required = 0.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
             break;
 
         case sc2::UNIT_TYPEID::ZERG_BROODLORD:
             data.mineral_cost = 150;
             data.vespene_cost = 150;
             data.food_required = 2.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_GREATERSPIRE;
             break;
 
@@ -187,7 +226,7 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
             data.mineral_cost = 25;
             data.vespene_cost = 75;
             data.food_required = 1.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_ROACH);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ROACH);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_ROACHWARREN;
             break;
 
@@ -202,7 +241,7 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
             data.vespene_cost = 100;
             data.ability_id = sc2::ABILITY_ID::MORPH_LURKER;
             data.food_required = 1.0f;
-            data.tech_alias.push_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
+            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
             data.tech_requirement = sc2::UNIT_TYPEID::ZERG_LURKERDENMP;
             break;
 
@@ -258,6 +297,19 @@ uint32_t Observer::GetGameLoop() const {
     return m_observer->GetGameLoop();
 }
 
+float Observer::TerrainHeight(const sc2::Point2D& pos_) const
+{
+    auto& info = m_observer->GetGameInfo();
+    sc2::Point2DI posi(static_cast<int>(pos_.x), static_cast<int>(pos_.y));
+    if (posi.x < 0 || posi.x >= info.width || posi.y < 0 || posi.y >= info.width)
+        return 0.0f;
+
+    assert(static_cast<int>(info.terrain_height.data.size()) == info.width * info.height);
+    int encodedHeight = info.terrain_height.data[static_cast<unsigned>(posi.x + ((info.height - 1) - posi.y) * info.width)];
+    float decodedHeight = -100.0f + 200.0f * float(encodedHeight) / 255.0f;
+    return decodedHeight;
+}
+
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
 }
 
@@ -268,6 +320,18 @@ bool Query::CanBePlaced(const Order& order_, const sc2::Point2D& point_) {
 std::vector<bool> Query::CanBePlaced(
     const std::vector<sc2::QueryInterface::PlacementQuery>& queries_) {
     return m_query->Placement(queries_);
+}
+
+float Query::PathingDistance(const sc2::Point2D& start_, const sc2::Point2D& end_) const {
+    return m_query->PathingDistance(start_, end_);
+}
+
+float Query::PathingDistance(const sc2::Unit& start_, const sc2::Point2D& end_) const {
+    return m_query->PathingDistance(&start_, end_);
+}
+
+std::vector<float> Query::PathingDistances(const std::vector<sc2::QueryInterface::PathingQuery>& queries_) const {
+    return m_query->PathingDistance(queries_);
 }
 
 Interface::Interface(sc2::ActionInterface* action_,

@@ -5,6 +5,7 @@
 #include "../Hub.h"
 #include "Miner.h"
 #include "core/API.h"
+#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Order.h"
 
@@ -17,7 +18,7 @@ const int mule_energy_cost = 50;
 
 void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
-    auto town_halls = gAPI->observer().GetUnits(IsTownHall());
+    auto town_halls = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
 
     for (const auto& i : town_halls()) {
         if (i->assigned_harvesters >= i->ideal_harvesters)
@@ -45,19 +46,36 @@ void SecureMineralsIncome(Builder* builder_) {
 }
 
 void SecureVespeneIncome() {
-    auto refineries = gAPI->observer().GetUnits(IsRefinery());
-
+    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    Units workers = gAPI->observer().GetUnits(IsGasWorker(), sc2::Unit::Alliance::Self);
     for (const auto& i : refineries()) {
-        if (i->assigned_harvesters >= i->ideal_harvesters)
+     
+       if (i->assigned_harvesters == i->ideal_harvesters)
             continue;
+       else if (i->assigned_harvesters > i->ideal_harvesters) { // Makes sure that we never have more than 3 workers on gas.
+           for (const auto& j : workers()) {
+               if (i->tag == j->orders.front().target_unit_tag) {
+                   auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+                       sc2::Unit::Alliance::Neutral);
+                   const sc2::Unit* mineral_target = units.GetClosestUnit(
+                       gAPI->observer().StartingLocation());
+                   if (!mineral_target)
+                       return;
 
-        gHub->AssignVespeneHarvester(*i);
+                   gAPI->action().Cast(*j, sc2::ABILITY_ID::SMART, *mineral_target); // If to many workers on gas -> put one to mine minerals
+                   break;
+               }
+           }
+           continue;
+       }
+
+       gHub->AssignVespeneHarvester(*i);
     }
 }
 
 void CallDownMULE() {
     auto orbitals = gAPI->observer().GetUnits(
-        IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND));
+        IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
 
     if (orbitals().empty())
         return;
@@ -104,6 +122,9 @@ void Miner::OnUnitCreated(const sc2::Unit* unit_) {
 void Miner::OnUnitIdle(const sc2::Unit* unit_, Builder*) {
     auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
         sc2::Unit::Alliance::Neutral);
+
+    if (gBrain->planner().IsUnitReserved(unit_))
+        return;
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:

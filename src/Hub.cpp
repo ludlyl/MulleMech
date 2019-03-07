@@ -13,7 +13,7 @@ namespace {
 struct SortByDistance {
     explicit SortByDistance(const sc2::Point3D& point_);
 
-    bool operator()(const Expansion& lhs_, const Expansion& rhs_) const;
+    bool operator()(const std::shared_ptr<Expansion>& lhs_, const std::shared_ptr<Expansion>& rhs_) const;
 
  private:
     sc2::Point3D m_point;
@@ -23,9 +23,9 @@ SortByDistance::SortByDistance(const sc2::Point3D& point_):
     m_point(point_) {
 }
 
-bool SortByDistance::operator()(const Expansion& lhs_, const Expansion& rhs_) const {
-    return sc2::DistanceSquared2D(lhs_.town_hall_location, m_point) <
-        sc2::DistanceSquared2D(rhs_.town_hall_location, m_point);
+bool SortByDistance::operator()(const std::shared_ptr<Expansion>& lhs_, const std::shared_ptr<Expansion>& rhs_) const {
+    return sc2::DistanceSquared2D(lhs_->town_hall_location, m_point) <
+        sc2::DistanceSquared2D(rhs_->town_hall_location, m_point);
 }
 
 }  // namespace
@@ -86,12 +86,15 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (auto i : m_expansions) {
-                if (std::floor(i.town_hall_location.x) != std::floor(unit_.pos.x) ||
-                        std::floor(i.town_hall_location.y) != std::floor(unit_.pos.y))
+            for (const auto& i : m_expansions) {
+                if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
+                        std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
                     continue;
 
-                i.alliance = sc2::Unit::Alliance::Self;
+                if (i->alliance == sc2::Unit::Alliance::Self)
+                    return;
+
+                i->alliance = sc2::Unit::Alliance::Self;
                 gHistory.info() << "Captured region: (" <<
                     unit_.pos.x << ", " << unit_.pos.y <<
                     ")" << std::endl;
@@ -136,12 +139,12 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (auto i : m_expansions) {
-                if (std::floor(i.town_hall_location.x) != std::floor(unit_.pos.x) ||
-                        std::floor(i.town_hall_location.y) != std::floor(unit_.pos.y))
+            for (const auto& i : m_expansions) {
+                if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
+                        std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
                     continue;
 
-                i.alliance = sc2::Unit::Alliance::Neutral;
+                i->alliance = sc2::Unit::Alliance::Neutral;
                 gHistory.info() << "Lost region: (" <<
                     unit_.pos.x << ", " << unit_.pos.y <<
                     ")" << std::endl;
@@ -166,7 +169,7 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
         }
 
         case sc2::UNIT_TYPEID::ZERG_LARVA: {
-            GameObject obj = GameObject(unit_);
+            auto obj = GameObject(unit_);
             if (!m_larva.IsCached(obj)) {
                 m_larva.Add(obj);
                 gHistory.info() << "Picked up an idle larva." << std::endl;
@@ -257,6 +260,20 @@ const Cache<GameObject>&  Hub::GetLarvas() const {
 
 const Expansions& Hub::GetExpansions() const {
     return m_expansions;
+}
+
+std::shared_ptr<Expansion> Hub::GetClosestExpansion(const sc2::Point2D& location_) const {
+    assert(!m_expansions.empty());
+
+    auto closest = m_expansions[0];
+    for (auto& exp : m_expansions) {
+        if (sc2::DistanceSquared2D(location_, exp->town_hall_location) <
+            sc2::DistanceSquared2D(location_, closest->town_hall_location)) {
+            closest = exp;
+        }
+    }
+
+    return closest;
 }
 
 std::unique_ptr<Hub> gHub;

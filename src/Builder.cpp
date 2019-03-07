@@ -13,25 +13,20 @@
 #include <algorithm>
 #include <memory>
 
-Builder::Builder(): m_minerals(0), m_vespene(0),
-    m_reserved_minerals(0), m_reserved_vespene(0), m_available_food(0.0f) {
+Builder::Builder(): m_minerals(0), m_vespene(0), m_available_food(0.0f) {
 }
 
 void Builder::OnStep() {
-    m_minerals = gAPI->observer().GetMinerals() - m_reserved_minerals;
-    m_vespene = gAPI->observer().GetVespene() - m_reserved_vespene;
+    m_minerals = gAPI->observer().GetMinerals();
+    m_vespene = gAPI->observer().GetVespene();
 
     m_available_food = gAPI->observer().GetAvailableFood();
 
     auto it = m_construction_orders.begin();
+    // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
         if (!Build(&(*it)))
             break;
-
-        if (it->tech_alias.empty()) {  // Skip building upgrades.
-            m_reserved_minerals += it->mineral_cost;
-            m_reserved_vespene += it->vespene_cost;
-        }
 
         it = m_construction_orders.erase(it);
     }
@@ -42,29 +37,11 @@ void Builder::OnStep() {
             ++it;
             continue;
         }
-
         it = m_training_orders.erase(it);
     }
 }
 
-void Builder::OnUnitCreated(const sc2::Unit& unit_) {
-    if (unit_.build_progress > 0.0f)
-        return;
-
-    sc2::UnitTypeData data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
-
-    gHistory.info() << "Decreasing reserved resources: -" <<
-        data.mineral_cost << " minerals, -" <<
-        data.vespene_cost << " vespene" << std::endl;
-
-    m_reserved_minerals -= data.mineral_cost;
-    m_reserved_vespene -= data.vespene_cost;
-
-    gHistory.info() << "Reserved minerals left: " << m_reserved_minerals << std::endl;
-    gHistory.info() << "Reserved vespene left: " << m_reserved_vespene << std::endl;
-}
-
-void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
+void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     sc2::UnitTypeData structure = gAPI->observer().GetUnitTypeData(id_);
 
     // Prevent deadlock.
@@ -75,19 +52,18 @@ void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent) {
     }
 
     if (urgent) {
-        m_construction_orders.emplace_front(structure);
+        m_construction_orders.emplace_front(structure, unit_);
         return;
     }
 
-    m_construction_orders.emplace_back(structure);
+    m_construction_orders.emplace_back(structure, unit_);
 }
 
 void Builder::ScheduleUpgrade(sc2::UPGRADE_ID id_) {
     m_construction_orders.emplace_back(gAPI->observer().GetUpgradeData(id_));
 }
 
-void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_,
-    const sc2::Unit* unit_, bool urgent) {
+void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
     auto data = gAPI->observer().GetUnitTypeData(id_);
 
     if (urgent) {
@@ -133,11 +109,17 @@ bool Builder::Build(Order* order_) {
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
 
-    // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-    if (order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
-            return false;
-    }
+    // "tech_requirement" doesn't really seem to work fully for Terran and Protoss.
+    // An example is how the tech requirement for Marauder is "TECHLAB" and not "BARRACKSTECHLAB".
+    // It isn't always complete either, e.g. for Thors the requirement is just armory ("FACTORYTECHLAB" is needed too)
+
+    // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
+    // to disable the check for all units (it's the Units that seem to be problematic for terran)
+    // this has the effect that units that are assigned to a specific structure will fail "silently"
+    // (this function, Build, will return true) if they can't be built.
+
+    if (!HasTechRequirements(order_))
+        return false;
 
     if (m_available_food < order_->food_required)
         return false;
@@ -149,6 +131,25 @@ bool Builder::Build(Order* order_) {
     m_vespene -= order_->vespene_cost;
     m_available_food -= order_->food_required;
 
-    gHistory.info() << "Started building a " << order_->name << std::endl;
+    gHistory.info() << "Gave order to start building a " << order_->name << std::endl;
+    return true;
+}
+
+bool Builder::HasTechRequirements(Order* order_) const {
+    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
+
+    // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
+    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID) {
+        // TODO: Supply depot counts as a different unit type when lowered; see if we can't solve this some nicer way
+        if (order_->tech_requirement == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+            if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) == 0 &&
+                gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED) == 0)
+                return false;
+        } else {
+            if (gAPI->observer().CountUnitType(order_->tech_requirement) == 0)
+                return false;
+        }
+    }
+
     return true;
 }

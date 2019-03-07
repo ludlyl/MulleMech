@@ -2,9 +2,14 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "Converter.h"
 #include "Helpers.h"
+
+#include "API.h"
+#include "Converter.h"
 #include "Hub.h"
+#include "API.h"
+
+#include <cmath>
 
 IsUnit::IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished):
     m_type(type_), m_build_progress(1.0f) {
@@ -83,6 +88,18 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        default:
             return false;
     }
+}
+
+bool IsBuilding::operator()(const sc2::Unit& unit_) const {
+    // NOTE: All units except overlord, larva & eggs require food,
+    // thus we can use that to assume what is a building and what's not
+    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    return data.food_required == 0 &&
+        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_LARVA &&
+        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_EGG;
 }
 
 bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
@@ -198,4 +215,95 @@ IsOrdered::IsOrdered(sc2::UNIT_TYPEID type_): m_type(type_) {
 
 bool IsOrdered::operator()(const Order& order_) const {
     return order_.unit_type_id == m_type;
+}
+
+bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+    return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
+}
+
+MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
+    : m_functors(fns_), m_selector(selector)
+{
+}
+
+bool MultiFilter::operator()(const sc2::Unit& unit_) const {
+    if (m_selector == Selector::And) {
+        for (auto& fn : m_functors) {
+            if (!fn(unit_))
+                return false;
+        }
+        return true;
+    }
+    else if (m_selector == Selector::Or) {
+        for (auto& fn : m_functors) {
+            if (fn(unit_))
+                return true;
+        }
+        return false;
+    }
+
+    return false;
+}
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
+    sc2::Point2D pos = unit_.pos;
+    pos.x += ADDON_DISPLACEMENT_IN_X;
+    pos.y += ADDON_DISPLACEMENT_IN_Y;
+    return pos;
+}
+
+std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
+    std::vector<sc2::Point2D> points;
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
+
+    float angleSplit = F_2PI / numPoints;
+    for (int i = 0; i < numPoints; ++i) {
+        sc2::Point2D p;
+
+        p.x = std::cos(i * angleSplit) * radius;
+        p.y = std::sin(i * angleSplit) * radius;
+        p += center;
+
+        points.push_back(p);
+    }
+
+    return points;
+}
+
+std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints) {
+    std::vector<sc2::Point2D> points;
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
+
+    float angleSplit = F_2PI / numPoints;
+    for (int i = 0; i < numPoints; ++i) {
+        sc2::Point2D p;
+
+        // At most 3 attempts per point
+        bool found = false;
+        for (int j = 0; j < 3 && !found; ++j) {
+            // Reduce radius a bit for each attempt
+            p.x = std::cos(i * angleSplit) * (radius - j * (radius / 8.0f));
+            p.y = std::sin(i * angleSplit) * (radius - j * (radius / 8.0f));
+            p += center;
+
+            if (std::abs(gAPI->observer().TerrainHeight(p) - forcedHeight) < 0.05f)
+                found = true;
+        }
+
+        if (found)
+            points.push_back(p);
+    }
+
+    return points;
+}
+
+sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
+    sc2::Point2D vector_prime;
+    float cos_angle = std::cos(rotation);
+    float sin_angle = std::sin(rotation);
+
+    vector_prime.x = vector.x * cos_angle - vector.y * sin_angle;
+    vector_prime.y = vector.x * sin_angle + vector.y * cos_angle;
+
+    return vector_prime;
 }

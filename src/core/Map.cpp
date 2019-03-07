@@ -5,6 +5,7 @@
 #include "Helpers.h"
 #include "Map.h"
 #include "../Historican.h"
+#include "Timer.h"
 
 #include "sc2lib/sc2_search.h"
 
@@ -89,6 +90,51 @@ sc2::Point3D Cluster::Center() const {
     return sc2::Point3D(center_of_mass.x, center_of_mass.y, Height());
 }
 
+void CalculateGroundDistances(Expansions& expansions) {
+    for (auto& exp : expansions) {
+        // Use pathing queries to calculate distance to other expansions
+        std::vector<sc2::QueryInterface::PathingQuery> queries;
+        queries.reserve(expansions.size());
+        for (auto& inner : expansions) {
+            if (exp == inner || exp->distanceTo(inner) != 0.0f) // MUST be same skip logic as below
+                continue;
+
+            sc2::QueryInterface::PathingQuery query;
+            query.start_ = exp->town_hall_location;
+            query.end_ = inner->town_hall_location;
+            queries.push_back(query);
+        }
+
+        // Query SC2 API for distances
+        auto results = gAPI->query().PathingDistances(queries);
+
+        // Save down the results
+        std::size_t i = 0;
+        for (auto& inner : expansions) {
+            if (exp == inner || exp->distanceTo(inner) != 0.0f) // MUST be same skip logic as above
+                continue;
+
+            exp->ground_distances[inner] = results[i];
+            inner->ground_distances[exp] = results[i];
+            ++i;
+        }
+    }
+}
+
+void CalculateAirDistances(Expansions& expansions) {
+    for (auto& exp : expansions) {
+        for (auto& inner : expansions) {
+            if (exp->distanceTo(inner) != 0.0f)
+                continue;
+
+            float dist = sc2::Distance3D(exp->town_hall_location, inner->town_hall_location);
+
+            exp->ground_distances[inner] = dist;
+            inner->ground_distances[exp] = dist;
+        }
+    }
+}
+
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
@@ -130,10 +176,21 @@ Expansions CalculateExpansionLocations() {
     for (auto& i : clusters)
         query_size.push_back(CalculateQueries(5.3f, 0.5f, i.Center(), &queries));
 
+    // TODO: This method sometimes fails and we'll end up missing a base location
     std::vector<bool> results = gAPI->query().CanBePlaced(queries);
 
     size_t start_index = 0;
     Expansions expansions;
+
+    // Manually add our starting location which can never be considered buildable due to having a CC
+    auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
+    if (!ccs().empty()) {
+        auto exp = std::make_shared<Expansion>(ccs().front()->pos);
+        exp->alliance = sc2::Unit::Alliance::Self;
+        expansions.emplace_back(std::move(exp));
+    }
+
+    // Add all derived locations
     for (auto& i : clusters) {
         for (size_t j = start_index, e = start_index + query_size[i.id]; j < e; ++j) {
             if (!results[j])
@@ -143,12 +200,21 @@ Expansions CalculateExpansionLocations() {
                 queries[j].target_pos.x,
                 queries[j].target_pos.y,
                 i.Height());
-            expansions.emplace_back(town_hall_location);
+            expansions.emplace_back(std::make_shared<Expansion>(town_hall_location));
             break;
         }
 
         start_index += query_size[i.id];
     }
+
+    Timer t;
+    t.Start();
+#ifndef FAST_STARTUP
+    CalculateGroundDistances(expansions);
+#else
+    CalculateAirDistances(expansions);
+#endif
+    gHistory.info() << "Calculating distances between expansions took " << t.Finish() << " ms" << std::endl;
 
     return expansions;
 }
