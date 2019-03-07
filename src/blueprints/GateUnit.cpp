@@ -9,12 +9,12 @@
 
 bool GateUnit::Build(Order* order_) {
     auto warp_gates = gAPI->observer().GetUnits(
-        IsIdleUnit(sc2::UNIT_TYPEID::PROTOSS_WARPGATE));
+        IsIdleUnit(sc2::UNIT_TYPEID::PROTOSS_WARPGATE), sc2::Unit::Alliance::Self);
     if (warp_gates().empty())
         return Unit(sc2::UNIT_TYPEID::PROTOSS_GATEWAY).Build(order_);
 
     auto pylons = gAPI->observer().GetUnits(
-        IsUnit(sc2::UNIT_TYPEID::PROTOSS_PYLON));
+        IsUnit(sc2::UNIT_TYPEID::PROTOSS_PYLON), sc2::Unit::Alliance::Self);
     if (pylons().empty())
         return false;
 

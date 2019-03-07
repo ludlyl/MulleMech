@@ -7,7 +7,7 @@
 #include "core/Helpers.h"
 
 bool Queen::Build(Order* order_) {
-    auto town_halls = gAPI->observer().GetUnits(IsIdleTownHall());
+    auto town_halls = gAPI->observer().GetUnits(IsIdleTownHall(), sc2::Unit::Alliance::Self);
     if (town_halls().empty())
         return false;
 

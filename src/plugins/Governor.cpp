@@ -90,3 +90,10 @@ void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
         return;
     }
 }
+
+void Governor::OnBuildingConstructionComplete(const sc2::Unit* unit_) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+        gHistory.debug() << "Lowering new Supply Depot" << std::endl;
+        gAPI->action().LowerDepot(*unit_);
+    }
+}

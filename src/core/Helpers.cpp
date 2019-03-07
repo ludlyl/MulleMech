@@ -217,6 +217,34 @@ bool IsOrdered::operator()(const Order& order_) const {
     return order_.unit_type_id == m_type;
 }
 
+bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+    return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
+}
+
+MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
+    : m_functors(fns_), m_selector(selector)
+{
+}
+
+bool MultiFilter::operator()(const sc2::Unit& unit_) const {
+    if (m_selector == Selector::And) {
+        for (auto& fn : m_functors) {
+            if (!fn(unit_))
+                return false;
+        }
+        return true;
+    }
+    else if (m_selector == Selector::Or) {
+        for (auto& fn : m_functors) {
+            if (fn(unit_))
+                return true;
+        }
+        return false;
+    }
+
+    return false;
+}
+
 sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
     sc2::Point2D pos = unit_.pos;
     pos.x += ADDON_DISPLACEMENT_IN_X;
@@ -267,4 +295,15 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     }
 
     return points;
+}
+
+sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
+    sc2::Point2D vector_prime;
+    float cos_angle = std::cos(rotation);
+    float sin_angle = std::sin(rotation);
+
+    vector_prime.x = vector.x * cos_angle - vector.y * sin_angle;
+    vector_prime.y = vector.x * sin_angle + vector.y * cos_angle;
+
+    return vector_prime;
 }
