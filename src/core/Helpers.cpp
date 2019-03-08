@@ -278,15 +278,18 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     for (int i = 0; i < numPoints; ++i) {
         sc2::Point2D p;
 
-        // At most 3 attempts per point
+        // At most 4 attempts per point
         bool found = false;
-        for (int j = 0; j < 3 && !found; ++j) {
+        for (int j = 0; j < 4 && !found; ++j) {
             // Reduce radius a bit for each attempt
-            p.x = std::cos(i * angleSplit) * (radius - j * (radius / 8.0f));
-            p.y = std::sin(i * angleSplit) * (radius - j * (radius / 8.0f));
+            float magnitude = radius - j * (radius / 5.0f);
+            p.x = std::cos(i * angleSplit) * magnitude;
+            p.y = std::sin(i * angleSplit) * magnitude;
+            auto testVec = p * (magnitude + 0.75f) / magnitude; // Test with a slightly longer vector
+            testVec += center;
             p += center;
 
-            if (std::abs(gAPI->observer().TerrainHeight(p) - forcedHeight) < 0.05f)
+            if (std::abs(gAPI->observer().TerrainHeight(testVec) - forcedHeight) < 0.05f)
                 found = true;
         }
 
