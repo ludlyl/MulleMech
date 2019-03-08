@@ -11,6 +11,7 @@ bool Addon::Build(Order *order_) {
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
     Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
     auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
+    bool preSelected = order_->assignee != sc2::NullTag;
 
     if (!order_->assignee) {
         auto parent_buildings = gAPI->observer().GetUnits(IsIdleUnit(buildingType), sc2::Unit::Alliance::Self);
@@ -45,7 +46,8 @@ bool Addon::Build(Order *order_) {
     }
 
     if (!gHub->AssignBuildingProduction(buildingType, order_)) {
-        order_->assignee = sc2::NullTag;
+        if (!preSelected)
+            order_->assignee = sc2::NullTag;
         return false;
     }
 
