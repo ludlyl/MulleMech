@@ -5,16 +5,13 @@
 #include "Mutation.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "../Hub.h"
 
 bool Mutation::Build(Order* order_) {
-    auto targets = gAPI->observer().GetUnits(
-        IsIdleUnit(order_->tech_alias.back()), sc2::Unit::Alliance::Self);
+    if (gHub->AssignBuildingProduction(order_->tech_alias.back(), order_)) {
+        gAPI->action().Build(*order_);
+        return true;
+    }
 
-    if (targets().empty())
-        return false;
-
-    order_->assignee = targets().front()->tag;
-    gAPI->action().Build(*order_);
-
-    return true;
+    return false;
 }

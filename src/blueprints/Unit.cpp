@@ -5,19 +5,15 @@
 #include "Unit.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "Hub.h"
 
 Unit::Unit(sc2::UNIT_TYPEID who_builds_): m_who_builds(who_builds_) {
 }
 
 // TODO: Fix for add-ons
 bool Unit::Build(Order* order_) {
-    if (!order_->assignee) {
-        auto producers = gAPI->observer().GetUnits(IsIdleUnit(m_who_builds), sc2::Unit::Alliance::Self);
-        if (producers().empty())
-            return false;
-
-        order_->assignee = producers().front()->tag;
-    }
+    if (!gHub->AssignBuildingProduction(m_who_builds, order_))
+        return false;
 
     gAPI->action().Build(*order_);
 

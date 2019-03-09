@@ -1,17 +1,20 @@
+#include "Addon.h"
+
 #include "core/API.h"
 #include "core/Helpers.h"
 #include "Historican.h"
-#include "Addon.h"
+#include "Hub.h"
 
 bool Addon::Build(Order *order_) {
     // TODO: If there isn't any space for the add-on (on any parent building), lift and re-place the building
 
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
     Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+    auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
+    bool preSelected = order_->assignee != sc2::NullTag;
 
     if (!order_->assignee) {
-        auto parent_buildings = gAPI->observer().GetUnits(
-                IsIdleUnit(GetParentStructureFromAbilityId(order_->ability_id)), sc2::Unit::Alliance::Self);
+        auto parent_buildings = gAPI->observer().GetUnits(IsIdleUnit(buildingType), sc2::Unit::Alliance::Self);
         // Return false if no such parent building for the add-on is found
         if (parent_buildings().empty())
             return false;
@@ -41,7 +44,15 @@ bool Addon::Build(Order *order_) {
             return false;
         }
     }
+
+    if (!gHub->AssignBuildingProduction(buildingType, order_)) {
+        if (!preSelected)
+            order_->assignee = sc2::NullTag;
+        return false;
+    }
+
     gAPI->action().Build(*order_);
+
     return true;
 }
 
