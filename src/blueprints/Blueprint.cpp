@@ -38,27 +38,33 @@ std::shared_ptr<Blueprint> Blueprint::Plot(sc2::ABILITY_ID ability_) {
         // Barracks
         case sc2::ABILITY_ID::TRAIN_MARINE:
         case sc2::ABILITY_ID::TRAIN_REAPER:
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
+
         case sc2::ABILITY_ID::TRAIN_MARAUDER:
         case sc2::ABILITY_ID::TRAIN_GHOST:
-            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_BARRACKS, sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB);
 
         // Factory
         case sc2::ABILITY_ID::TRAIN_HELLION:
         case sc2::ABILITY_ID::TRAIN_WIDOWMINE:
-        case sc2::ABILITY_ID::TRAIN_CYCLONE:
-        case sc2::ABILITY_ID::TRAIN_SIEGETANK:
         case sc2::ABILITY_ID::TRAIN_HELLBAT:
-        case sc2::ABILITY_ID::TRAIN_THOR:
             return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+
+        case sc2::ABILITY_ID::TRAIN_THOR:
+        case sc2::ABILITY_ID::TRAIN_SIEGETANK:
+        case sc2::ABILITY_ID::TRAIN_CYCLONE:
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_FACTORY, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
 
         // Starport
         case sc2::ABILITY_ID::TRAIN_VIKINGFIGHTER:
         case sc2::ABILITY_ID::TRAIN_MEDIVAC:
         case sc2::ABILITY_ID::TRAIN_LIBERATOR:
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+
         case sc2::ABILITY_ID::TRAIN_RAVEN:
         case sc2::ABILITY_ID::TRAIN_BANSHEE:
         case sc2::ABILITY_ID::TRAIN_BATTLECRUISER:
-            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_STARPORT, sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
 
         case sc2::ABILITY_ID::TRAIN_SCV:
             return std::make_shared<Unit>(sc2::UNIT_TYPEID::INVALID);

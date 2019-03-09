@@ -113,6 +113,16 @@ private:
     float m_distSq;
 };
 
+// Send in sc2::UNIT_TYPEID::INVALID to check if the building doesn't have an add-on
+struct HasAddon {
+    explicit HasAddon(sc2::UNIT_TYPEID addon_type_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::UNIT_TYPEID m_addon_type;
+};
+
 struct MultiFilter {
     enum class Selector {
         And,

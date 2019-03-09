@@ -221,6 +221,25 @@ bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
     return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
 }
 
+HasAddon::HasAddon(sc2::UNIT_TYPEID addon_type_): m_addon_type(addon_type_) {
+}
+
+bool HasAddon::operator()(const sc2::Unit& unit_) const {
+    // I.e. does unit_ have "no add-on" (INVALID)?
+    if (unit_.add_on_tag == sc2::NullTag && m_addon_type == sc2::UNIT_TYPEID::INVALID) {
+        return true;
+    }
+    if (unit_.add_on_tag == sc2::NullTag && m_addon_type != sc2::UNIT_TYPEID::INVALID) {
+        return false;
+    }
+
+    auto addonAsUnit = gAPI->observer().GetUnit(unit_.add_on_tag);
+    auto addonType = addonAsUnit->unit_type.ToType();
+    // The second part (after the or) is needed for the function to return true
+    // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
+    return addonType == m_addon_type || gAPI->observer().GetUnitTypeData(addonType).tech_alias.front() == m_addon_type;
+}
+
 MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
     : m_functors(fns_), m_selector(selector)
 {

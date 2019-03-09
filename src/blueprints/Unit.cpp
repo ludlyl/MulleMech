@@ -7,12 +7,11 @@
 #include "core/Helpers.h"
 #include "Hub.h"
 
-Unit::Unit(sc2::UNIT_TYPEID who_builds_): m_who_builds(who_builds_) {
+Unit::Unit(sc2::UNIT_TYPEID who_builds_, std::optional<sc2::UNIT_TYPEID> required_addon_): m_who_builds(who_builds_), m_required_addon(required_addon_) {
 }
 
-// TODO: Fix for add-ons
 bool Unit::Build(Order* order_) {
-    if (!gHub->AssignBuildingProduction(m_who_builds, order_))
+    if (!gHub->AssignBuildingProduction(order_, m_who_builds, m_required_addon))
         return false;
 
     gAPI->action().Build(*order_);
