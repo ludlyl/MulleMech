@@ -57,25 +57,15 @@ private:
     std::unordered_map<sc2::UNIT_TYPEID, std::vector<sc2::Point3D>> m_enemyBuildings;
 };
 
-// Makes assumptions based on reasoning (inferred from memory, etc)
-class Reasoning {
-public:
-    // Return: Vector of Expansions sorted by likelihood
-    std::vector<std::shared_ptr<Expansion>> GetLikelyEnemyExpansions();
-};
-
 class Brain {
 public:
     Planner& planner() { return m_planner; }
 
     Memory& memory() { return m_memory; }
 
-    Reasoning& reasoning() { return m_reasoning; }
-
 private:
     Planner m_planner;
     Memory m_memory;
-    Reasoning m_reasoning;
 };
 
 extern std::unique_ptr<Brain> gBrain;
