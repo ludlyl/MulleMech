@@ -4,7 +4,6 @@
 #include <memory>
 #include "Blueprint.h"
 #include "Building.h"
-#include "GateUnit.h"
 #include "Mutation.h"
 #include "Queen.h"
 #include "Refinery.h"
