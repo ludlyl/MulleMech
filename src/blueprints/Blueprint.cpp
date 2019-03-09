@@ -5,7 +5,6 @@
 #include "Blueprint.h"
 #include "Building.h"
 #include "Mutation.h"
-#include "Queen.h"
 #include "Refinery.h"
 #include "SupplyDepot.h"
 #include "TownHall.h"
