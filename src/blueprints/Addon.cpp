@@ -27,7 +27,7 @@ bool Addon::Build(Order *order_) {
             }
         }
 
-        // Return false if all parent building that fulfilled the requirements was found
+        // Return false if no parent building that fulfilled the requirements was found
         if (!order_->assignee) {
             return false;
         }
