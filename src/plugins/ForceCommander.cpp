@@ -21,6 +21,7 @@ void ForceCommander::AttackEnemiesCloseToBase(){
     sc2::Point3D baseLocation3D = gAPI->observer().StartingLocation();
     sc2::Point2D baseLocation2D = sc2::Point2D(baseLocation3D.x, baseLocation3D.y);
     const sc2::Unit* closestEnemyUnit = enemyUnits.GetClosestUnit(baseLocation2D);
+    if(closestEnemyUnit == nullptr) return;
     sc2::Point3D enemyPos3D = closestEnemyUnit->pos;
     sc2::Point2D enemyPos2D = sc2::Point2D(enemyPos3D.x, enemyPos3D.y);
     double lengthToEnemy = sqrt(std::pow(baseLocation3D.x-enemyPos3D.x, 2) + std::pow(baseLocation3D.y-enemyPos3D.y, 2));
