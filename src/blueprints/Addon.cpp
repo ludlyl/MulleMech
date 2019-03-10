@@ -14,23 +14,20 @@ bool Addon::Build(Order *order_) {
     bool preSelected = order_->assignee != sc2::NullTag;
 
     if (!order_->assignee) {
-        auto parent_buildings = gAPI->observer().GetUnits(IsIdleUnit(buildingType), sc2::Unit::Alliance::Self);
-        // Return false if no such parent building for the add-on is found
-        if (parent_buildings().empty())
-            return false;
+        // Get all idle parent buildings that doesn't already have an add-on
+        auto parent_buildings = gAPI->observer().GetUnits(
+                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
+                            sc2::Unit::Alliance::Self);
 
-        // Build the add-on in the first parent building that doesn't already have an add-on
         for (auto& building : parent_buildings()) {
-            if (building->add_on_tag == 0) {
-                // Check if the addon can be placed
-                if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
-                    order_->assignee = building->tag;
-                    break;
-                }
+            // Check if the addon can be placed
+            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
+                order_->assignee = building->tag;
+                break;
             }
         }
 
-        // Return false if all parent buildings already had add-ons
+        // Return false if no parent building that fulfilled the requirements was found
         if (!order_->assignee) {
             return false;
         }
@@ -45,7 +42,7 @@ bool Addon::Build(Order *order_) {
         }
     }
 
-    if (!gHub->AssignBuildingProduction(buildingType, order_)) {
+    if (!gHub->AssignBuildingProduction(order_, buildingType)) {
         if (!preSelected)
             order_->assignee = sc2::NullTag;
         return false;

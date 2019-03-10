@@ -8,7 +8,7 @@
 #include "../Hub.h"
 
 bool Mutation::Build(Order* order_) {
-    if (gHub->AssignBuildingProduction(order_->tech_alias.back(), order_)) {
+    if (gHub->AssignBuildingProduction(order_, order_->tech_alias.back())) {
         gAPI->action().Build(*order_);
         return true;
     }
