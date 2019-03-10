@@ -30,6 +30,20 @@ bool SortByDistance::operator()(const std::shared_ptr<Expansion>& lhs_, const st
 
 }  // namespace
 
+Construction::Construction(const sc2::Unit* building_, const sc2::Unit* scv_)
+    : building(building_->tag), scv(scv_->tag) { }
+
+const sc2::Unit* Construction::GetBuilding() const {
+    return gAPI->observer().GetUnit(building);
+}
+
+const sc2::Unit* Construction::GetScv() const {
+    auto scvUnit = gAPI->observer().GetUnit(scv);
+    if (scvUnit && !scvUnit->is_alive)
+        return nullptr;
+    return scvUnit;
+}
+
 Hub::Hub(sc2::Race current_race_, const Expansions& expansions_):
     m_current_race(current_race_), m_expansions(expansions_),
     m_current_worker_type(sc2::UNIT_TYPEID::INVALID) {
@@ -59,6 +73,29 @@ void Hub::OnStep() {
 }
 
 void Hub::OnUnitCreated(const sc2::Unit& unit_) {
+    // Record newly started constructions, noting which SCV is constructing it
+    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
+        auto buildingData = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+
+        // Find the SCV that's constructing this building
+        auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
+            [&unit_, &buildingData](const sc2::Unit& scv) {
+                for (auto& order : scv.orders) {
+                    if (order.ability_id == buildingData.ability_id && order.target_pos.x == unit_.pos.x &&
+                        order.target_pos.y == unit_.pos.y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }), sc2::Unit::Alliance::Self)();
+
+        // Make (and record) a new Construction data
+        if (!scvs.empty()) {
+            m_constructions.emplace_back(&unit_, scvs[0]);
+        }
+    }
+
     switch (unit_.unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
@@ -105,6 +142,16 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
 }
 
 void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
+    // Erase on-going construction if building was destroyed
+    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
+        for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
+            if (itr->building == unit_.tag) {
+                m_constructions.erase(itr);
+                break;
+            }
+        }
+    }
+
     switch (unit_.unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
@@ -163,6 +210,16 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
 
         default:
             break;
+    }
+}
+
+void Hub::OnBuildingConstructionComplete(const sc2::Unit& building_) {
+    // Remove finished building from our on-going constructions list
+    for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
+        if (itr->building == building_.tag) {
+            m_constructions.erase(itr);
+            break;
+        }
     }
 }
 

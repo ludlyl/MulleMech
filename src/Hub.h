@@ -114,6 +114,14 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     return &(*closest_worker);
 }
 
+struct Construction {
+    Construction(const sc2::Unit* building_, const sc2::Unit* scv_);
+    const sc2::Unit* GetBuilding() const;
+    const sc2::Unit* GetScv() const;
+    sc2::Tag building;
+    sc2::Tag scv;
+};
+
 struct Hub {
     Hub(sc2::Race current_race_, const Expansions& expansions_);
 
@@ -124,6 +132,8 @@ struct Hub {
     void OnUnitDestroyed(const sc2::Unit& unit_);
 
     void OnUnitIdle(const sc2::Unit& unit_);
+
+    void OnBuildingConstructionComplete(const sc2::Unit& building_);
 
     bool IsOccupied(const sc2::Unit& unit_) const;
 
@@ -150,6 +160,8 @@ struct Hub {
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
 
+    std::vector<Construction>& GetConstructions() { return m_constructions; }
+
  private:
     sc2::Race m_current_race;
     Expansions m_expansions;
@@ -161,6 +173,7 @@ struct Hub {
     Cache<Worker> m_free_workers;
 
     std::unordered_set<sc2::Tag> m_assignedBuildings;
+    std::vector<Construction> m_constructions;
 };
 
 extern std::unique_ptr<Hub> gHub;

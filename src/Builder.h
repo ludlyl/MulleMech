@@ -41,6 +41,8 @@ struct Builder {
 
     bool HasTechRequirements(Order* order_) const;
 
+    void ResolveMissingWorkers();
+
     int32_t m_minerals;
     int32_t m_vespene;
 
