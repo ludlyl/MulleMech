@@ -7,11 +7,12 @@
 #include "Blueprint.h"
 
 struct Unit: Blueprint {
-    explicit Unit(sc2::UNIT_TYPEID who_builds_, std::optional<sc2::UNIT_TYPEID> required_addon_ = std::nullopt);
+    // Here if required_addon_ = INVALID it means the add-on doesn't matter
+    explicit Unit(sc2::UNIT_TYPEID who_builds_, sc2::UNIT_TYPEID required_addon_ = sc2::UNIT_TYPEID::INVALID);
 
     bool Build(Order* order_) final;
 
  private:
     sc2::UNIT_TYPEID m_who_builds;
-    std::optional<sc2::UNIT_TYPEID> m_required_addon;
+    sc2::UNIT_TYPEID m_required_addon;
 };

@@ -144,8 +144,10 @@ struct Hub {
     void AssignVespeneHarvester(const sc2::Unit& refinery_);
 
     // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
+    bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);
+
     // If INVALID is sent in as a addon_requirement (and no assignee is provided) the order is assigned to a unit with no add-on
-    bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID, std::optional<sc2::UNIT_TYPEID> addon_requirement_ = std::nullopt);
+    bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_);
 
     const Expansions& GetExpansions() const;
 

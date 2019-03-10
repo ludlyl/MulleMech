@@ -226,24 +226,36 @@ void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
     worker->GatherVespene(refinery_);
 }
 
-bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_, std::optional<sc2::UNIT_TYPEID> addon_requirement_) {
+bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
         if (m_assignedBuildings.find(order_->assignee) == m_assignedBuildings.end()) {
             m_assignedBuildings.insert(order_->assignee);
             return true;
         }
     } else {
-        // If an add-on requirement is supplied, use a multi-filter to check for a building that is both idle and fulfills the add-on requirement
-        const auto& units = addon_requirement_.has_value() ?
-                            gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_.value())}), sc2::Unit::Alliance::Self)() :
-                            gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)();
-
-        for (const auto& unit : units) {
+        for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)()) {
             if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
                 m_assignedBuildings.insert(unit->tag);
                 order_->assignee = unit->tag;
                 return true;
             }
+        }
+    }
+    return false;
+}
+
+bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
+    if (order_->assignee) {
+        return AssignBuildingProduction(order_);
+    }
+
+    for (const auto& unit : gAPI->observer().GetUnits(
+            MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
+            sc2::Unit::Alliance::Self)()) {
+        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+            m_assignedBuildings.insert(unit->tag);
+            order_->assignee = unit->tag;
+            return true;
         }
     }
     return false;
