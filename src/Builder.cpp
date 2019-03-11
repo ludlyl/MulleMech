@@ -29,8 +29,11 @@ void Builder::OnStep() {
         it = m_training_scv_orders.erase(it);
     }
     sc2::UnitTypeData scv = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SCV);
+    int num_of_workers = gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Self)().size();
+    int const max_workers = 70;
     //reserve minerals for scv's
-    m_minerals -= scv.mineral_cost; 
+    if (num_of_workers < max_workers)
+        m_minerals -= scv.mineral_cost; 
     it = m_construction_orders.begin();
     // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
@@ -121,11 +124,8 @@ int64_t Builder::CountScheduledTrainings(sc2::UNIT_TYPEID id_) const {
         IsOrdered(id_));
 }
 
-int64_t Builder::CountScheduledScv(sc2::UNIT_TYPEID id_) const {
-    return std::count_if(
-        m_training_scv_orders.begin(),
-        m_training_scv_orders.end(),
-        IsOrdered(id_));
+int64_t Builder::CountScheduledScv(sc2::UNIT_TYPEID id_) const{
+    return m_training_scv_orders.size();
 }
 
 bool Builder::Build(Order* order_) {
