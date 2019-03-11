@@ -19,21 +19,24 @@ void ReaperHarass::OnStep(Builder*) {
     m_reaperStrikeTeam.erase(it, m_reaperStrikeTeam.end());
 
     auto it2 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
-        if((unit_->health)<(30)){
+        if((unit_->health)<(40)){
 
 
             gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x, gAPI->observer().StartingLocation().y));
 
 
         }
-        return (unit_->health)<(30);
+        return (unit_->health)<(40);
     });
 
     m_reaperStrikeTeam.erase(it2, m_reaperStrikeTeam.end());
+    if(m_reaperStrikeTeam.empty()){
+        m_ReaperStrikePhase = ReaperStrikePhase::not_started;
+    }
 
-    if (m_ReaperStrikePhase == ReaperStrikePhase::not_started && m_reaperStrikeTeam.size() > 4) {
+    if (m_ReaperStrikePhase != ReaperStrikePhase::finished && m_reaperStrikeTeam.size() > 4) {
         WorkerHunt();
-        gHistory.debug(LogChannel::reaperharass) << "RAIDERS ROLL" << std::endl;
+        gHistory.debug(LogChannel::general) << "RAIDERS ROLL" << std::endl;
     }
 }
 
@@ -46,8 +49,14 @@ void ReaperHarass::OnUnitCreated(const sc2::Unit* unit_) {
     }
 }
 
-void ReaperHarass::OnUnitIdle(const sc2::Unit* unit, Builder*) {
-//
+void ReaperHarass::OnUnitIdle(const sc2::Unit* unit_, Builder*) {
+    if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER && m_ReaperStrikePhase == ReaperStrikePhase::not_started){
+        gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
+                        " added to reaper strike team" << std::endl;
+        if ((std::find(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(), unit_) == m_reaperStrikeTeam.end())) {
+            m_reaperStrikeTeam.push_back(unit_);
+        }
+    }
 }
 
 void ReaperHarass::OnUnitDestroyed(const sc2::Unit* unit, Builder*) {
@@ -55,6 +64,7 @@ void ReaperHarass::OnUnitDestroyed(const sc2::Unit* unit, Builder*) {
         if (m_reaperStrikeTeam.empty()) {
             gHistory.debug(LogChannel::reaperharass) << "Reapers died, mission cancelled" << std::endl;
             m_harassReapers = sc2::NullTag;
+            m_ReaperStrikePhase = ReaperStrikePhase::not_started;
         }
     }
 }
@@ -181,7 +191,7 @@ void ReaperHarass::WorkerHunt() {
         // EXPLORING ENEMY BASE
     else if (m_ReaperStrikePhase == ReaperStrikePhase::explore_enemy_base && m_reaperStrikeTeam.front()->orders.empty()) {
 
-        gAPI->action().MoveTo(m_reaperStrikeTeam, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetEnemyBase(0)->town_hall_location));
+        gAPI->action().Attack(m_reaperStrikeTeam, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetEnemyBase(0)->town_hall_location));
 
     }
         // CHECKING FOR NATURAL
