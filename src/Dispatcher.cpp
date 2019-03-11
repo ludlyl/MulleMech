@@ -52,7 +52,6 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
     m_plugins.emplace_back(new ReaperHarass());
-//    m_plugins.emplace_back(new ReaperBehavior());
 
     if (current_race == sc2::Race::Protoss)
         m_plugins.emplace_back(new WarpSmith());
