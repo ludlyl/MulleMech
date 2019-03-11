@@ -39,6 +39,9 @@ void Builder::OnStep() {
         }
         it = m_training_orders.erase(it);
     }
+
+    // Find new SCVs if construction stopped on any building due to SCV's getting killed off
+    ResolveMissingWorkers();
 }
 
 void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
@@ -105,8 +108,6 @@ bool Builder::Build(Order* order_) {
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
 
-
-
     // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
     // to disable the check for all units (it's the Units that seem to be problematic for terran)
     // this has the effect that units that are assigned to a specific structure will fail "silently"
@@ -144,4 +145,22 @@ bool Builder::HasTechRequirements(Order *order_) const {
         }
     }
     return true;
+}
+
+void Builder::ResolveMissingWorkers() {
+    // Find any unfinished buildings that lacks SCV's working on them
+    auto& constructions = gHub->GetConstructions();
+
+    for (auto& construction : constructions) {
+        auto building = construction.GetBuilding();
+        if (construction.GetScv() == nullptr && building) {
+            auto worker = gHub->GetClosestFreeWorker(building->pos);
+            if (worker) {
+                gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
+                    "; other one died" << std::endl;
+                gAPI->action().Cast(worker->ToUnit(), sc2::ABILITY_ID::SMART, *building);
+                construction.scv = worker->Tag();
+            }
+        }
+    }
 }
