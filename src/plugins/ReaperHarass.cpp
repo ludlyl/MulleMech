@@ -191,7 +191,7 @@ void ReaperHarass::WorkerHunt() {
         // EXPLORING ENEMY BASE
     else if (m_ReaperStrikePhase == ReaperStrikePhase::explore_enemy_base && m_reaperStrikeTeam.front()->orders.empty()) {
 
-        gAPI->action().Attack(m_reaperStrikeTeam, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetEnemyBase(0)->town_hall_location));
+        gAPI->action().Attack(m_reaperStrikeTeam, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetLatestEnemyBase()->town_hall_location));
 
     }
         // CHECKING FOR NATURAL

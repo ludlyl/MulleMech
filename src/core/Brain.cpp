@@ -42,6 +42,13 @@ std::shared_ptr<Expansion> Memory::GetEnemyBase(std::size_t index) const {
     return m_enemyBases[index];
 }
 
+std::shared_ptr<Expansion> Memory::GetLatestEnemyBase() const {
+    if (m_enemyBases.empty())
+        return nullptr;
+
+    return m_enemyBases[m_enemyBases.size()-1];
+}
+
 bool Memory::EnemyHasBase(std::size_t index) const {
     return m_enemyBases.size() > index;
 }

@@ -28,6 +28,7 @@ inline std::string LogChannel_str(LogChannel channel) {
     switch (channel) {
     case LogChannel::general:       return "[GENERAL]";
     case LogChannel::scouting:      return "[SCOUTING]";
+    case LogChannel::reaperharass:  return "[REAPERS]";
     }
 }
 
