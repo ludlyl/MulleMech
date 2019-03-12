@@ -49,6 +49,13 @@ void RepairMan::OnUnitDestroyed(const sc2::Unit* unit_, Builder* builder_) {
             return;
 
         default:
+            // Schedule an addon if the building had one
+            if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {
+                // NOTE: The addon is not orphaned yet at this point, as such we can just reconstruct its type
+                builder_->ScheduleConstruction(addon->unit_type, true);
+            }
+
+            // Schedule the building for reconstruction
             builder_->ScheduleConstruction(unit_->unit_type.ToType(), true);
             return;
     }
