@@ -37,6 +37,14 @@ void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_, bool q
     m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
 }
 
+void Action::Attack(const sc2::Unit& unit_, const sc2::Unit& target_, bool queue_) {
+    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::ATTACK_ATTACK, &target_, queue_);
+}
+
+void Action::Attack(const sc2::Units& units_, const sc2::Unit& target_, bool queue_) {
+    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, &target_, queue_);
+}
+
 void Action::MoveTo(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(&unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
 }
@@ -51,6 +59,10 @@ void Action::Stop(const sc2::Unit& unit_, bool queue_) {
 
 void Action::Stop(const sc2::Units& units_, bool queue_) {
     m_action->UnitCommand(units_, sc2::ABILITY_ID::STOP, queue_);
+}
+
+void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_, bool queue_) {
+    m_action->UnitCommand(&assignee_, ability_, queue_);
 }
 
 void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
@@ -338,6 +350,10 @@ float Query::PathingDistance(const sc2::Unit& start_, const sc2::Point2D& end_) 
 
 std::vector<float> Query::PathingDistances(const std::vector<sc2::QueryInterface::PathingQuery>& queries_) const {
     return m_query->PathingDistance(queries_);
+}
+
+sc2::AvailableAbilities Query::GetAbilitiesForUnit(const sc2::Unit& unit_, bool ignore_resource_requirements_) const {
+    return m_query->GetAbilitiesForUnit(&unit_, ignore_resource_requirements_);
 }
 
 Interface::Interface(sc2::ActionInterface* action_,
