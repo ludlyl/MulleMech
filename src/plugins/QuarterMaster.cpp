@@ -86,7 +86,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
     if (m_skip_turn)
         return;
 
-    auto units = gAPI->observer().GetUnits();
+    auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self);
     const std::list<Order> construction_orders = builder_->GetConstructionOrders();
     const std::list<Order> training_orders = builder_->GetTrainingOrders();
 

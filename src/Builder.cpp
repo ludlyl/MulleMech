@@ -51,24 +51,23 @@ void Builder::OnStep() {
         }
         it = m_training_orders.erase(it);
     }
+
+    // Find new SCVs if construction stopped on any building due to SCV's getting killed off
+    ResolveMissingWorkers();
 }
 
 void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Unit* unit_) {
-    sc2::UnitTypeData structure = gAPI->observer().GetUnitTypeData(id_);
-
-    // Prevent deadlock.
-    if (structure.tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-        gAPI->observer().CountUnitType(structure.tech_requirement) == 0 &&
-        CountScheduledStructures(structure.tech_requirement) == 0) {
-            ScheduleConstruction(structure.tech_requirement);
-    }
+    Order order(gAPI->observer().GetUnitTypeData(id_), unit_);
 
     if (urgent) {
-        m_construction_orders.emplace_front(structure, unit_);
-        return;
+        m_construction_orders.emplace_front(order);
+        // Prevent deadlock
+        ScheduleRequiredStructures(order, true);
+    } else {
+        // Prevent deadlock
+        ScheduleRequiredStructures(order, false);
+        m_construction_orders.emplace_back(std::move(order));
     }
-
-    m_construction_orders.emplace_back(structure, unit_);
 }
 
 void Builder::ScheduleUpgrade(sc2::UPGRADE_ID id_) {
@@ -137,21 +136,13 @@ bool Builder::Build(Order* order_) {
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
 
-    // "tech_requirement" doesn't really seem to work fully for Terran and Protoss.
-    // An example is how the tech requirement for Marauder is "TECHLAB" and not "BARRACKSTECHLAB".
-    // It isn't always complete either, e.g. for Thors the requirement is just armory ("FACTORYTECHLAB" is needed too)
-
     // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
     // to disable the check for all units (it's the Units that seem to be problematic for terran)
     // this has the effect that units that are assigned to a specific structure will fail "silently"
     // (this function, Build, will return true) if they can't be built.
-    // TODO: This should be fixed by making a function that return the correct tech requirements (or hard-coding it into Orders constructor)
 
-    // Here sc2::UNIT_TYPEID::INVALID means that no tech requirements needed.
-    if (order_->food_required == 0 && order_->tech_requirement != sc2::UNIT_TYPEID::INVALID &&
-        gAPI->observer().CountUnitType(order_->tech_requirement) == 0) {
-            return false;
-    }
+    if (!HasTechRequirements(order_))
+        return false;
 
     if (m_available_food < order_->food_required)
         return false;
@@ -165,4 +156,39 @@ bool Builder::Build(Order* order_) {
 
     gHistory.info() << "Gave order to start building a " << order_->name << std::endl;
     return true;
+}
+
+void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
+    for (sc2::UnitTypeID unitTypeID : order_.tech_requirements) {
+        if (gAPI->observer().CountUnitType(unitTypeID) == 0 && CountScheduledStructures(unitTypeID) == 0) {
+            ScheduleConstruction(unitTypeID, urgent);
+        }
+    }
+}
+
+bool Builder::HasTechRequirements(Order *order_) const {
+    for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
+        if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Builder::ResolveMissingWorkers() {
+    // Find any unfinished buildings that lacks SCV's working on them
+    auto& constructions = gHub->GetConstructions();
+
+    for (auto& construction : constructions) {
+        auto building = construction.GetBuilding();
+        if (construction.GetScv() == nullptr && building) {
+            auto worker = gHub->GetClosestFreeWorker(building->pos);
+            if (worker) {
+                gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
+                    "; other one died" << std::endl;
+                gAPI->action().Cast(worker->ToUnit(), sc2::ABILITY_ID::SMART, *building);
+                construction.scv = worker->Tag();
+            }
+        }
+    }
 }

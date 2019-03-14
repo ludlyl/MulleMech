@@ -5,21 +5,24 @@
 #include "Unit.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "Hub.h"
 
-Unit::Unit(sc2::UNIT_TYPEID who_builds_): m_who_builds(who_builds_) {
+Unit::Unit(sc2::UNIT_TYPEID who_builds_, sc2::UNIT_TYPEID required_addon_): m_who_builds(who_builds_), m_required_addon(required_addon_) {
 }
 
-// TODO: Fix for add-ons
 bool Unit::Build(Order* order_) {
-    if (!order_->assignee) {
-        auto producers = gAPI->observer().GetUnits(IsIdleUnit(m_who_builds));
-        if (producers().empty())
-            return false;
+    bool buildingAssignationSucceeded;
 
-        order_->assignee = producers().front()->tag;
+    if (m_required_addon == sc2::UNIT_TYPEID::INVALID) {
+        buildingAssignationSucceeded = gHub->AssignBuildingProduction(order_, m_who_builds);
+    } else {
+        buildingAssignationSucceeded = gHub->AssignBuildingProduction(order_, m_who_builds, m_required_addon);
     }
 
-    gAPI->action().Build(*order_);
+    if (buildingAssignationSucceeded) {
+        gAPI->action().Build(*order_);
+        return true;
+    }
 
-    return true;
+    return false;
 }

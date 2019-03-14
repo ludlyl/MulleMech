@@ -30,6 +30,20 @@ bool SortByDistance::operator()(const std::shared_ptr<Expansion>& lhs_, const st
 
 }  // namespace
 
+Construction::Construction(const sc2::Unit* building_, const sc2::Unit* scv_)
+    : building(building_->tag), scv(scv_->tag) { }
+
+const sc2::Unit* Construction::GetBuilding() const {
+    return gAPI->observer().GetUnit(building);
+}
+
+const sc2::Unit* Construction::GetScv() const {
+    auto scvUnit = gAPI->observer().GetUnit(scv);
+    if (scvUnit && !scvUnit->is_alive)
+        return nullptr;
+    return scvUnit;
+}
+
 Hub::Hub(sc2::Race current_race_, const Expansions& expansions_):
     m_current_race(current_race_), m_expansions(expansions_),
     m_current_worker_type(sc2::UNIT_TYPEID::INVALID) {
@@ -55,18 +69,38 @@ Hub::Hub(sc2::Race current_race_, const Expansions& expansions_):
 }
 
 void Hub::OnStep() {
+    m_assignedBuildings.clear();
 }
 
 void Hub::OnUnitCreated(const sc2::Unit& unit_) {
+    // Record newly started constructions, noting which SCV is constructing it
+    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
+        auto buildingData = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+
+        // Find the SCV that's constructing this building
+        auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
+            [&unit_, &buildingData](const sc2::Unit& scv) {
+                for (auto& order : scv.orders) {
+                    if (order.ability_id == buildingData.ability_id && order.target_pos.x == unit_.pos.x &&
+                        order.target_pos.y == unit_.pos.y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }), sc2::Unit::Alliance::Self)();
+
+        // Make (and record) a new Construction data
+        if (!scvs.empty()) {
+            m_constructions.emplace_back(&unit_, scvs[0]);
+        }
+    }
+
     switch (unit_.unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE:
             m_free_workers.Add(Worker(unit_));
-            return;
-
-        case sc2::UNIT_TYPEID::ZERG_LARVA:
-            m_larva.Add(GameObject(unit_));
             return;
 
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
@@ -108,6 +142,16 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
 }
 
 void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
+    // Erase on-going construction if building was destroyed
+    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
+        for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
+            if (itr->building == unit_.tag) {
+                m_constructions.erase(itr);
+                break;
+            }
+        }
+    }
+
     switch (unit_.unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
@@ -120,10 +164,6 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
             m_free_workers.Remove(Worker(unit_));
             return;
         }
-
-        case sc2::UNIT_TYPEID::ZERG_LARVA:
-            m_larva.Remove(GameObject(unit_));
-            return;
 
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
@@ -168,18 +208,18 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
             return;
         }
 
-        case sc2::UNIT_TYPEID::ZERG_LARVA: {
-            auto obj = GameObject(unit_);
-            if (!m_larva.IsCached(obj)) {
-                m_larva.Add(obj);
-                gHistory.info() << "Picked up an idle larva." << std::endl;
-            }
-
-            return;
-        }
-
         default:
             break;
+    }
+}
+
+void Hub::OnBuildingConstructionComplete(const sc2::Unit& building_) {
+    // Remove finished building from our on-going constructions list
+    for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
+        if (itr->building == building_.tag) {
+            m_constructions.erase(itr);
+            break;
+        }
     }
 }
 
@@ -243,19 +283,39 @@ void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
     worker->GatherVespene(refinery_);
 }
 
-bool Hub::AssignLarva(Order* order_) {
-    if (m_larva.Empty())
-        return false;
-
-    order_->assignee = m_larva.Back().Tag();
-    gAPI->action().Build(*order_);
-
-    m_larva.PopBack();
-    return true;
+bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
+    if (order_->assignee) {
+        if (m_assignedBuildings.find(order_->assignee) == m_assignedBuildings.end()) {
+            m_assignedBuildings.insert(order_->assignee);
+            return true;
+        }
+    } else {
+        for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)()) {
+            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+                m_assignedBuildings.insert(unit->tag);
+                order_->assignee = unit->tag;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
-const Cache<GameObject>&  Hub::GetLarvas() const {
-    return m_larva;
+bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
+    if (order_->assignee) {
+        return AssignBuildingProduction(order_);
+    }
+
+    for (const auto& unit : gAPI->observer().GetUnits(
+            MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
+            sc2::Unit::Alliance::Self)()) {
+        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+            m_assignedBuildings.insert(unit->tag);
+            order_->assignee = unit->tag;
+            return true;
+        }
+    }
+    return false;
 }
 
 const Expansions& Hub::GetExpansions() const {

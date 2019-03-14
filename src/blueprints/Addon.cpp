@@ -1,33 +1,33 @@
+#include "Addon.h"
+
 #include "core/API.h"
 #include "core/Helpers.h"
 #include "Historican.h"
-#include "Addon.h"
+#include "Hub.h"
 
 bool Addon::Build(Order *order_) {
     // TODO: If there isn't any space for the add-on (on any parent building), lift and re-place the building
 
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
     Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+    auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
+    bool preSelected = order_->assignee != sc2::NullTag;
 
     if (!order_->assignee) {
+        // Get all idle parent buildings that doesn't already have an add-on
         auto parent_buildings = gAPI->observer().GetUnits(
-                IsIdleUnit(GetParentStructureFromAbilityId(order_->ability_id)));
-        // Return false if no such parent building for the add-on is found
-        if (parent_buildings().empty())
-            return false;
+                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
+                            sc2::Unit::Alliance::Self);
 
-        // Build the add-on in the first parent building that doesn't already have an add-on
         for (auto& building : parent_buildings()) {
-            if (building->add_on_tag == 0) {
-                // Check if the addon can be placed
-                if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
-                    order_->assignee = building->tag;
-                    break;
-                }
+            // Check if the addon can be placed
+            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
+                order_->assignee = building->tag;
+                break;
             }
         }
 
-        // Return false if all parent buildings already had add-ons
+        // Return false if no parent building that fulfilled the requirements was found
         if (!order_->assignee) {
             return false;
         }
@@ -41,7 +41,15 @@ bool Addon::Build(Order *order_) {
             return false;
         }
     }
+
+    if (!gHub->AssignBuildingProduction(order_, buildingType)) {
+        if (!preSelected)
+            order_->assignee = sc2::NullTag;
+        return false;
+    }
+
     gAPI->action().Build(*order_);
+
     return true;
 }
 

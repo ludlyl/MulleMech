@@ -217,6 +217,53 @@ bool IsOrdered::operator()(const Order& order_) const {
     return order_.unit_type_id == m_type;
 }
 
+bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+    return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
+}
+
+HasAddon::HasAddon(sc2::UNIT_TYPEID addon_type_): m_addon_type(addon_type_) {
+}
+
+bool HasAddon::operator()(const sc2::Unit& unit_) const {
+    // I.e. does unit_ have "no add-on" (INVALID)?
+    if (unit_.add_on_tag == sc2::NullTag && m_addon_type == sc2::UNIT_TYPEID::INVALID) {
+        return true;
+    }
+    if (unit_.add_on_tag == sc2::NullTag && m_addon_type != sc2::UNIT_TYPEID::INVALID) {
+        return false;
+    }
+
+    auto addonAsUnit = gAPI->observer().GetUnit(unit_.add_on_tag);
+    auto addonType = addonAsUnit->unit_type.ToType();
+    // The second part (after the or) is needed for the function to return true
+    // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
+    return addonType == m_addon_type || gAPI->observer().GetUnitTypeData(addonType).tech_alias.front() == m_addon_type;
+}
+
+MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
+    : m_functors(fns_), m_selector(selector)
+{
+}
+
+bool MultiFilter::operator()(const sc2::Unit& unit_) const {
+    if (m_selector == Selector::And) {
+        for (auto& fn : m_functors) {
+            if (!fn(unit_))
+                return false;
+        }
+        return true;
+    }
+    else if (m_selector == Selector::Or) {
+        for (auto& fn : m_functors) {
+            if (fn(unit_))
+                return true;
+        }
+        return false;
+    }
+
+    return false;
+}
+
 sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
     sc2::Point2D pos = unit_.pos;
     pos.x += ADDON_DISPLACEMENT_IN_X;
@@ -250,15 +297,18 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     for (int i = 0; i < numPoints; ++i) {
         sc2::Point2D p;
 
-        // At most 3 attempts per point
+        // At most 4 attempts per point
         bool found = false;
-        for (int j = 0; j < 3 && !found; ++j) {
+        for (int j = 0; j < 4 && !found; ++j) {
             // Reduce radius a bit for each attempt
-            p.x = std::cos(i * angleSplit) * (radius - j * (radius / 8.0f));
-            p.y = std::sin(i * angleSplit) * (radius - j * (radius / 8.0f));
+            float magnitude = radius - j * (radius / 5.0f);
+            p.x = std::cos(i * angleSplit) * magnitude;
+            p.y = std::sin(i * angleSplit) * magnitude;
+            auto testVec = p * (magnitude + 0.75f) / magnitude; // Test with a slightly longer vector
+            testVec += center;
             p += center;
 
-            if (std::abs(gAPI->observer().TerrainHeight(p) - forcedHeight) < 0.05f)
+            if (std::abs(gAPI->observer().TerrainHeight(testVec) - forcedHeight) < 0.05f)
                 found = true;
         }
 
@@ -267,4 +317,104 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     }
 
     return points;
+}
+
+sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
+    sc2::Point2D vector_prime;
+    float cos_angle = std::cos(rotation);
+    float sin_angle = std::sin(rotation);
+
+    vector_prime.x = vector.x * cos_angle - vector.y * sin_angle;
+    vector_prime.y = vector.x * sin_angle + vector.y * cos_angle;
+
+    return vector_prime;
+}
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_) {
+    return GetAllTechRequirements(gAPI->observer().GetUnitTypeData(id_));
+}
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData &data_) {
+    return GetAllTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
+}
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_) {
+    switch (id_.ToType()) {
+        case sc2::ABILITY_ID::RESEARCH_COMBATSHIELD:
+        case sc2::ABILITY_ID::RESEARCH_CONCUSSIVESHELLS:
+        case sc2::ABILITY_ID::RESEARCH_STIMPACK:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_PERSONALCLOAKING:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, sc2::UNIT_TYPEID::TERRAN_GHOSTACADEMY};
+
+        case sc2::ABILITY_ID::RESEARCH_INFERNALPREIGNITER:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_DRILLINGCLAWS:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::RESEARCH_HIGHCAPACITYFUELTANKS:
+        case sc2::ABILITY_ID::RESEARCH_RAVENCORVIDREACTOR:
+        case sc2::ABILITY_ID::RESEARCH_BANSHEECLOAKINGFIELD:
+        case sc2::ABILITY_ID::RESEARCH_BANSHEEHYPERFLIGHTROTORS:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB};
+
+        case sc2::ABILITY_ID::RESEARCH_ADVANCEDBALLISTICS:
+        case sc2::ABILITY_ID::RESEARCH_BATTLECRUISERWEAPONREFIT:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB, sc2::UNIT_TYPEID::TERRAN_FUSIONCORE};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_HISECAUTOTRACKING:
+        case sc2::ABILITY_ID::RESEARCH_NEOSTEELFRAME:
+            return {sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3:
+            return {sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL1:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2:
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3:
+            return {sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_MARAUDER:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_GHOST:
+            return {sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB, sc2::UNIT_TYPEID::TERRAN_GHOSTACADEMY};
+
+        case sc2::ABILITY_ID::TRAIN_HELLBAT:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORY, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_CYCLONE:
+        case sc2::ABILITY_ID::TRAIN_SIEGETANK:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_THOR:
+            return {sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB, sc2::UNIT_TYPEID::TERRAN_ARMORY};
+
+        case sc2::ABILITY_ID::TRAIN_BANSHEE:
+        case sc2::ABILITY_ID::TRAIN_RAVEN:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB};
+
+        case sc2::ABILITY_ID::TRAIN_BATTLECRUISER:
+            return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB, sc2::UNIT_TYPEID::TERRAN_FUSIONCORE};
+
+        default: {
+            if (suppliedTechRequirement_ == sc2::UNIT_TYPEID::INVALID) {
+                return {};
+            }
+            return {suppliedTechRequirement_};
+        }
+    }
 }

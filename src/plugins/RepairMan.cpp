@@ -18,6 +18,11 @@ void RepairMan::OnUnitDestroyed(const sc2::Unit* unit_, Builder* builder_) {
         return;
 
     switch (unit_->unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_REACTOR:
+            // As we don't know how to rebuild "generic" add-ons we ignore them for now
+            return;
+
         case sc2::UNIT_TYPEID::PROTOSS_PYLON:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED:
@@ -44,6 +49,13 @@ void RepairMan::OnUnitDestroyed(const sc2::Unit* unit_, Builder* builder_) {
             return;
 
         default:
+            // Schedule an addon if the building had one
+            if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {
+                // NOTE: The addon is not orphaned yet at this point, as such we can just reconstruct its type
+                builder_->ScheduleConstruction(addon->unit_type, true);
+            }
+
+            // Schedule the building for reconstruction
             builder_->ScheduleConstruction(unit_->unit_type.ToType(), true);
             return;
     }
