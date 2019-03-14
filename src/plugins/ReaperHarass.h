@@ -18,8 +18,7 @@ public:
 
     void OnUnitCreated(const sc2::Unit* unit_) final;
 
-    // Scouting records buildings we see into our memory
-    void OnUnitEnterVision(const sc2::Unit* unit) final;
+
 
 private:
 
@@ -27,8 +26,6 @@ private:
     // Use a group of reaper to scout and attack:
     void WorkerHunt();
 
-    // Attempt to scout around a main base; queues all movement commands at once
-    void ScoutBase(sc2::Units units, sc2::Point2D base);
 
     // DATA
 
