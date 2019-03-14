@@ -12,12 +12,6 @@ ReaperHarass::ReaperHarass() :
 
 void ReaperHarass::OnStep(Builder*) {
 
-    auto it = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
-        return !unit_->is_alive;
-    });
-
-    m_reaperStrikeTeam.erase(it, m_reaperStrikeTeam.end());
-
     auto it2 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
         if((unit_->health)<(40)){
 
@@ -61,68 +55,18 @@ void ReaperHarass::OnUnitIdle(const sc2::Unit* unit_, Builder*) {
 
 void ReaperHarass::OnUnitDestroyed(const sc2::Unit* unit, Builder*) {
     if (unit->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER) {
+        auto it = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
+            return !unit_->is_alive;
+        });
+
+        m_reaperStrikeTeam.erase(it, m_reaperStrikeTeam.end());
+
         if (m_reaperStrikeTeam.empty()) {
             gHistory.debug(LogChannel::reaperharass) << "Reapers died, mission cancelled" << std::endl;
             m_harassReapers = sc2::NullTag;
             m_ReaperStrikePhase = ReaperStrikePhase::not_started;
         }
     }
-}
-
-void ReaperHarass::OnUnitEnterVision(const sc2::Unit* unit) {
-    // Ignore units we've seen before
-    if (m_seenUnits.find(unit->tag) != m_seenUnits.end())
-        return;
-
-    // Save base locations of our enemy
-    if (IsTownHall()(*unit)) {
-        bool main_base = false;
-        sc2::Point2D pos = unit->pos;
-
-        // Is it a main base?
-        for (auto possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
-            if (sc2::Distance2D(unit->pos, possible_start) < 5.0f + unit->radius) {
-                main_base = true;
-                pos = possible_start;
-                break;
-            }
-        }
-
-        // Is it THE main base or an expansion at another spawn location?
-        if (main_base && gBrain->memory().EnemyHasBase(0)) {
-            if (sc2::Distance2D(pos, gBrain->memory().GetEnemyBase(0)->town_hall_location) > 5.0f)
-                main_base = false;
-        }
-
-        // Save base location
-        if (main_base) {
-            if (!gBrain->memory().EnemyHasBase(0))
-                gBrain->memory().MarkEnemyMainBase(pos);
-        } else {
-            // NOTE: Currently we must know where the main base is before we save expansions
-            if (gBrain->memory().EnemyHasBase(0)) {
-                gBrain->memory().MarkEnemyExpansion(unit->pos);
-                gHistory.info(LogChannel::reaperharass) << "Found enemy expansion!" << std::endl;
-            } else {
-                return; // Do not remember the building until we've marked its location
-            }
-        }
-    }
-
-    // Save buildings we've seen, they indicate tech
-    if (IsBuilding()(*unit)) {
-        if (gBrain->memory().EnemyBuildingCount(unit->unit_type) == 0) {
-            gHistory.info(LogChannel::reaperharass) << "New building type spotted: "
-                                                << sc2::UnitTypeToName(unit->unit_type) << std::endl;
-            // TODO: Invoke a callback at the Dispatcher to signify possibly finding new tech?
-        }
-
-        gBrain->memory().MarkEnemyBuilding(unit->unit_type, unit->pos);
-        m_seenUnits.insert(unit->tag);
-    }
-
-    // Save unit types we've seen (but not every unit?), they too indicate tech
-    // TODO: ^
 }
 
 void ReaperHarass::WorkerHunt() {
@@ -135,9 +79,7 @@ void ReaperHarass::WorkerHunt() {
 
     auto reaper = m_reaperStrikeTeam.front();
 
-    // If our SCV dies during scouting; we consider that finished for now
-    // TODO: This seems a bit fragile; maybe we should have code to try again if we never found our enemy,
-    // or to determine our enemy's base location by where we were killed and/or the fact he wasn't at the other locations
+    // If our Reapers die, mark phase as ready to begin again
     if (m_ReaperStrikePhase != ReaperStrikePhase::not_started && m_reaperStrikeTeam.empty()) {
         m_ReaperStrikePhase = ReaperStrikePhase::not_started;
         m_harassReapers = sc2::NullTag;
@@ -203,17 +145,5 @@ void ReaperHarass::WorkerHunt() {
 
         // Alternate with scouting the main base
         m_ReaperStrikePhase = ReaperStrikePhase::explore_enemy_base;
-    }
-}
-
-void ReaperHarass::ScoutBase(sc2::Units units, sc2::Point2D base) {
-    // TODO(?): This only works if main base is at a different elevation (i.e. has a ramp)
-    auto baseHeight = gAPI->observer().TerrainHeight(base);
-    auto points = PointsInCircle(18.0f, base, baseHeight);
-
-    bool queue = false;
-    for (auto& point : points) {
-        gAPI->action().MoveTo(units, point, queue);
-        queue = true;
     }
 }

@@ -27,7 +27,6 @@ cpplint.py
 *.cbp
 *.txt
 *.marks
-cmake-build-debug/src/Makefile
 *.exe
 *.bin
 *.txt
@@ -46,6 +45,3 @@ cmake-build-debug/CMakeFiles/feature_tests.c
 *.cxx
 cmake-build-debug/CMakeFiles/Makefile2
 cmake-build-debug/Makefile
-*.a
-s2client-api
-src/CMakeLists.txt
