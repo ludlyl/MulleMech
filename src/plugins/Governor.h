@@ -15,4 +15,7 @@ struct Governor : Plugin {
     void OnUnitIdle(const sc2::Unit* unit_, Builder* builder_) final;
 
     void OnBuildingConstructionComplete(const sc2::Unit* unit_) final;
+
+    private:
+        std::list<sc2::UNIT_TYPEID> m_planner_queue;
 };

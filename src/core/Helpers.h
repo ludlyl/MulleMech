@@ -65,6 +65,18 @@ struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsBarracks {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsFactory {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsStarport {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsIdleUnit {
     explicit IsIdleUnit(sc2::UNIT_TYPEID type_);
 
