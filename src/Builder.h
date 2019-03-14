@@ -35,7 +35,7 @@ struct Builder {
 
     int64_t CountScheduledTrainings(sc2::UNIT_TYPEID id_) const;
 
-    int64_t CountScheduledScv(sc2::UNIT_TYPEID id_) const;
+    int64_t CountScheduledScv() const;
 
  private:
     bool Build(Order* order_);

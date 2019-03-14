@@ -124,8 +124,11 @@ int64_t Builder::CountScheduledTrainings(sc2::UNIT_TYPEID id_) const {
         IsOrdered(id_));
 }
 
-int64_t Builder::CountScheduledScv(sc2::UNIT_TYPEID id_) const{
-    return m_training_scv_orders.size();
+int64_t Builder::CountScheduledScv() const{
+    return std::count_if(
+        m_training_scv_orders.begin(),
+        m_training_scv_orders.end(),
+        IsOrdered(sc2::UNIT_TYPEID::TERRAN_SCV));
 }
 
 bool Builder::Build(Order* order_) {
