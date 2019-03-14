@@ -11,8 +11,12 @@
 Units::Units(const sc2::Units& units_) : m_units(units_) {
 }
 
-const sc2::Units& Units::operator()() const {
+const sc2::Units& Units::operator()() const& {
     return m_units;
+}
+
+const sc2::Units Units::operator()()&& {
+    return std::move(m_units);
 }
 
 const sc2::Unit* Units::GetClosestUnit(const sc2::Point2D& point_) const {

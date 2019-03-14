@@ -9,7 +9,9 @@
 struct Units {
     explicit Units(const sc2::Units& units_);
 
-    const sc2::Units& operator()() const;
+    const sc2::Units& operator()() const&;
+
+    const sc2::Units operator()()&&;
 
     const sc2::Unit* GetClosestUnit(const sc2::Point2D& point_) const;
 
