@@ -7,8 +7,8 @@ DefaultUnit::DefaultUnit(const sc2::Unit* unit)
 }
 
 void DefaultUnit::OnCombatStep(const Units& enemies) {
-    if (Self()->health / Self()->health_max > 0.4f) {
-        if (auto target = enemies.GetClosestUnit(Self()->tag)) {
+    if (m_self->health / m_self->health_max > FleeHpPct) {
+        if (auto target = enemies.GetClosestUnit(m_self->tag)) {
             Attack(target);
         }
     } else {

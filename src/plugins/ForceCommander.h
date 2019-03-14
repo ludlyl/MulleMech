@@ -17,8 +17,11 @@ struct ForceCommander : Plugin {
     void AttackEnemiesCloseToBase();
 
 private:
-    float m_attack_limit;
+    void UpdateOffensiveUnits();
 
+    void RemoveDeadUnits();
+
+    float m_attack_limit;
     sc2::Units m_units;
 
     // TODO: Maybe we should have a Unit wrapper (like we do Units) so we could extend it with stuff like a micro plugin
@@ -27,7 +30,5 @@ private:
 
     bool m_inCombat;
 
-    void UpdateOffensiveUnits();
-
-    void RemoveDeadUnits();
+    static constexpr float SearchEnemyRadius = 20.0f;
 };

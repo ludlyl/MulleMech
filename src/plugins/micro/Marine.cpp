@@ -11,7 +11,7 @@ void Marine::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
     // Stim pack
-    if (Self()->health / Self()->health_max > 0.7f) {
+    if (m_self->health / m_self->health_max > StimHpPct) {
         if (!HasBuff(sc2::BUFF_ID::STIMPACK))
             Cast(sc2::ABILITY_ID::EFFECT_STIM);
     }

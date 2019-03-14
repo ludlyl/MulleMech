@@ -18,9 +18,6 @@ public:
     static std::shared_ptr<MicroPlugin> MakePlugin(const sc2::Unit* unit);
 
 protected:
-    // Get pointer to our unit. Guaranteed valid during events: OnCombatStep, OnCombatEnded
-    const sc2::Unit* Self();
-
     // Combat step function for MicroPlugin, only processed during combat
     // enemies: List of all enemies we are currently fighting in our localized area (i.e. not irrelevant enemies far away)
     // TODO: Should probably have a list of all allies that are part of the fight
@@ -42,8 +39,9 @@ protected:
 
     bool IsMoving() const;
 
-private:
     const sc2::Unit* m_self;
+
+private:
     sc2::Tag m_target;
     bool m_moving;
 };

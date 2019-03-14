@@ -19,11 +19,6 @@ MicroPlugin::MicroPlugin(const sc2::Unit* unit) :
 {
 }
 
-const sc2::Unit* MicroPlugin::Self() {
-    assert(m_self != nullptr);
-    return m_self;
-}
-
 void MicroPlugin::OnCombatFrame(const sc2::Unit* self, const Units& enemies) {
     m_self = self;
     OnCombatStep(enemies);
@@ -35,13 +30,12 @@ void MicroPlugin::OnCombatOver(const sc2::Unit* self) {
     OnCombatEnded();
     m_target = sc2::NullTag;
     m_moving = false;
-    m_self = nullptr;
 }
 
 bool MicroPlugin::CanCast(sc2::ABILITY_ID ability_id) {
-    if (!Self())
+    if (!m_self)
         return false;
-    for (auto& ability : gAPI->query().GetAbilitiesForUnit(*Self()).abilities) {
+    for (auto& ability : gAPI->query().GetAbilitiesForUnit(*m_self).abilities) {
         if (ability.ability_id.ToType() == ability_id)
             return true;
     }
@@ -49,30 +43,30 @@ bool MicroPlugin::CanCast(sc2::ABILITY_ID ability_id) {
 }
 
 void MicroPlugin::Attack(const sc2::Unit* target) {
-    if (Self() && !IsAttacking(target)) {
-        gAPI->action().Attack(*Self(), *target);
+    if (m_self && !IsAttacking(target)) {
+        gAPI->action().Attack(*m_self, *target);
         m_target = target->tag;
         m_moving = false;
     }
 }
 
 void MicroPlugin::MoveTo(const sc2::Point2D& pos) {
-    if (Self()) {
-        gAPI->action().MoveTo(*Self(), pos);
+    if (m_self) {
+        gAPI->action().MoveTo(*m_self, pos);
         m_target = sc2::NullTag;
         m_moving = true;
     }
 }
 
 bool MicroPlugin::HasBuff(sc2::BUFF_ID buff) {
-    if (!Self())
+    if (m_self)
         return false;
-    return std::find(Self()->buffs.begin(), Self()->buffs.end(), buff) != Self()->buffs.end();
+    return std::find(m_self->buffs.begin(), m_self->buffs.end(), buff) != m_self->buffs.end();
 }
 
 void MicroPlugin::Cast(sc2::ABILITY_ID ability) {
-    if (Self() && CanCast(ability))
-        gAPI->action().Cast(*Self(), ability);
+    if (m_self && CanCast(ability))
+        gAPI->action().Cast(*m_self, ability);
 }
 
 bool MicroPlugin::IsAttacking(const sc2::Unit* target) const {

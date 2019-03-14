@@ -67,11 +67,11 @@ void ForceCommander::UpdateOffensiveUnits() {
     if (m_offensiveUnits.empty())
         return;
 
-    auto enemies = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-        {IsWithinDist(m_offensiveUnits[0]->pos, 20.0f), IsCombatUnit()}), sc2::Unit::Alliance::Enemy)();
+    auto nearbyEnemies = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+        {IsWithinDist(m_offensiveUnits[0]->pos, SearchEnemyRadius), IsCombatUnit()}), sc2::Unit::Alliance::Enemy)();
 
     // If all enemies are dead => Continue moving
-    if (enemies.empty() && m_inCombat) {
+    if (nearbyEnemies.empty() && m_inCombat) {
         auto pos = gAPI->observer().GameInfo().enemy_start_locations.front();
         for (auto& unit : m_offensiveUnits) {
             gAPI->action().MoveTo(*unit, pos);
@@ -79,9 +79,9 @@ void ForceCommander::UpdateOffensiveUnits() {
         }
         m_inCombat = false;
     // If we still have enemies => Update micro plugins
-    } else if (!enemies.empty()) {
+    } else if (!nearbyEnemies.empty()) {
         m_inCombat = true;
-        auto enemiesWrapped = Units(enemies);
+        auto enemiesWrapped = Units(nearbyEnemies);
         for (auto& unit : m_offensiveUnits) {
             auto pluginItr = m_activePlugins.find(unit);
             assert(pluginItr != m_activePlugins.end());
