@@ -12,51 +12,63 @@
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
-    switch (gHub->GetCurrentRace()) {
-        case sc2::Race::Terran:
-            gHistory.info() << "Started game as Terran" << std::endl;
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_REFINERY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FACTORY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORT);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_FUSIONCORE);
-            builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER);
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
-            return;
+    gHistory.info() << "Started game as Terran" << std::endl;
+    builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
 
-        case sc2::Race::Zerg:
-            gHistory.info() << "Started game as Zerg" << std::endl;
-            // NOTE (alkurbatov): Here we use 'ScheduleConstruction' for creatures
-            // in order to support proper build order. The training queue is much faster
-            // and always has priority over the construction queue.
-            // Zergling flood.
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_OVERLORD);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_HATCHERY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_EXTRACTOR);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_QUEEN);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::ZERG_OVERLORD);
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::ZERGLINGMOVEMENTSPEED);
-            return;
+    enum Strategies {mech, bio, bunkerRush};
+    Strategies strategy = mech;
 
-        default:
-            gHistory.info() << "Started game as Protoss" << std::endl;
-            // 4 wgp push
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_PYLON);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_GATEWAY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_PYLON);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_CYBERNETICSCORE);
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::WARPGATERESEARCH);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_GATEWAY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_GATEWAY);
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_GATEWAY);
-            return;
+    switch (strategy) {
+        case mech:
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+            break;
     }
+    return;
 }
 
-void Governor::OnStep(Builder*) {
+void Governor::OnStep(Builder* builder_) {
+    int minerals = gAPI->observer().GetMinerals();
+
+    if (minerals < 50)
+        return;
+    //TODO add priority flag for factory production
+    //TODO create exeception handler for planner_queue
+    //TODO Army compesition for military production
+    //TODO Get current army
+    //TODO compare military strength of us and enemy
+    auto it = m_planner_queue.begin();
+    int planned_cost = 0;
+    while (it != m_planner_queue.end()) {
+        planned_cost += gAPI->observer().GetUnitTypeData(m_planner_queue.front()).mineral_cost;
+        if (minerals < planned_cost)
+            return;
+        minerals -= planned_cost;
+        builder_->ScheduleConstruction(m_planner_queue.front());
+        m_planner_queue.pop_front();
+    }
+
+    int const number_of_barracks = gAPI->observer().GetUnits(IsBarracks(), sc2::Unit::Alliance::Self)().size();
+    int const number_of_factories = gAPI->observer().GetUnits(IsFactory(), sc2::Unit::Alliance::Self)().size();
+    int const number_of_starports = gAPI->observer().GetUnits(IsStarport(), sc2::Unit::Alliance::Self)().size();
+    int const number_of_commandCenters = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self)().size();
+    int const number_of_refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self)().size();
+
 }
 
 void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
