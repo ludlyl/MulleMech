@@ -248,8 +248,7 @@ Worker* Hub::GetClosestFreeWorker(const sc2::Point2D& location_) {
     if (!closest_worker)
         return nullptr;
 
-    m_free_workers.Swap(*closest_worker, m_busy_workers);
-    return &m_busy_workers.Back();
+    return closest_worker;
 }
 
 sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
@@ -261,7 +260,9 @@ bool Hub::AssignRefineryConstruction(Order* order_, const sc2::Unit* geyser_) {
     if (!worker)
         return false;
 
-    worker->BuildRefinery(order_, geyser_);
+    m_free_workers.Swap(*worker, m_busy_workers);
+
+    m_busy_workers.Back().BuildRefinery(order_, geyser_);
     ClaimObject(*geyser_);
     return true;
 }
@@ -271,7 +272,9 @@ bool Hub::AssignBuildTask(Order* order_, const sc2::Point2D& point_) {
     if (!worker)
         return false;
 
-    worker->Build(order_, point_);
+    m_free_workers.Swap(*worker, m_busy_workers);
+
+    m_busy_workers.Back().Build(order_, point_);
     return true;
 }
 
@@ -280,7 +283,9 @@ void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
     if (!worker)
         return;
 
-    worker->GatherVespene(refinery_);
+    m_free_workers.Swap(*worker, m_busy_workers);
+
+    m_busy_workers.Back().GatherVespene(refinery_);
 }
 
 bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
