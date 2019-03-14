@@ -13,6 +13,7 @@
 
 #include <list>
 #include <memory>
+#include <unordered_set>
 
 template <typename T>
 struct Cache {
@@ -113,6 +114,14 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     return &(*closest_worker);
 }
 
+struct Construction {
+    Construction(const sc2::Unit* building_, const sc2::Unit* scv_);
+    const sc2::Unit* GetBuilding() const;
+    const sc2::Unit* GetScv() const;
+    sc2::Tag building;
+    sc2::Tag scv;
+};
+
 struct Hub {
     Hub(sc2::Race current_race_, const Expansions& expansions_);
 
@@ -123,6 +132,8 @@ struct Hub {
     void OnUnitDestroyed(const sc2::Unit& unit_);
 
     void OnUnitIdle(const sc2::Unit& unit_);
+
+    void OnBuildingConstructionComplete(const sc2::Unit& building_);
 
     bool IsOccupied(const sc2::Unit& unit_) const;
 
@@ -142,13 +153,17 @@ struct Hub {
 
     void AssignVespeneHarvester(const sc2::Unit& refinery_);
 
-    bool AssignLarva(Order* order_);
+    // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
+    bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);
 
-    const Cache<GameObject>&  GetLarvas() const;
+    // If INVALID is sent in as a addon_requirement (and no assignee is provided) the order is assigned to a unit with no add-on
+    bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_);
 
     const Expansions& GetExpansions() const;
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
+
+    std::vector<Construction>& GetConstructions() { return m_constructions; }
 
  private:
     sc2::Race m_current_race;
@@ -159,7 +174,9 @@ struct Hub {
 
     Cache<Worker> m_busy_workers;
     Cache<Worker> m_free_workers;
-    Cache<GameObject> m_larva;
+
+    std::unordered_set<sc2::Tag> m_assignedBuildings;
+    std::vector<Construction> m_constructions;
 };
 
 extern std::unique_ptr<Hub> gHub;

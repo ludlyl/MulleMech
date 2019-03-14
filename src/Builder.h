@@ -36,7 +36,12 @@ struct Builder {
  private:
     bool Build(Order* order_);
 
+    // Used to prevent deadlock in construction orders
+    void ScheduleRequiredStructures(const Order& order_, bool urgent);
+
     bool HasTechRequirements(Order* order_) const;
+
+    void ResolveMissingWorkers();
 
     int32_t m_minerals;
     int32_t m_vespene;

@@ -75,6 +75,8 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
 
+    gHub->OnBuildingConstructionComplete(*building_);
+
     for (auto& plugin : m_plugins)
         plugin->OnBuildingConstructionComplete(building_);
 }
@@ -135,7 +137,8 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
 }
 
 void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
-    gHistory.info() << sc2::UpgradeIDToName(id_) << " completed" << std::endl;
+    gHistory.info() << sc2::UpgradeIDToName(id_) << " completed (upgrade id: " <<
+        id_ << ", ability id: " << gAPI->observer().GetUpgradeData(id_).ability_id << ")" << std::endl;
 
     for (const auto& i : m_plugins)
         i->OnUpgradeCompleted(id_);

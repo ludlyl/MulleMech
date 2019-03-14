@@ -142,6 +142,12 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
 }
 
 size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
+    // As the API thinks of depots and lowered depots as different buildings, we handle this as a special case
+    // (by actually counting how many supply depots you have when the type_ is TERRAN_SUPPLYDEPOT)
+    if (type_ == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+        return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, with_not_finished)).size() +
+                m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
+    }
     return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
 }
 

@@ -113,6 +113,16 @@ private:
     float m_distSq;
 };
 
+// Send in sc2::UNIT_TYPEID::INVALID to check if the building doesn't have an add-on
+struct HasAddon {
+    explicit HasAddon(sc2::UNIT_TYPEID addon_type_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::UNIT_TYPEID m_addon_type;
+};
+
 struct MultiFilter {
     enum class Selector {
         And,
@@ -152,3 +162,13 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints = 12);
 
 sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation);
+
+// Returns "all" the (correct) tech requirements needed for a unit type.
+// This is needed as UnitTypeData only can hold one requirement and some units have more than one
+// (e.g. Thors requires both an armory and a FACTORYTECHLAB). Furthermore this is needed as UnitTypeData doesn't
+// specify the type of techlab.
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_);
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData& data_);
+
+std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);

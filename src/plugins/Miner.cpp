@@ -18,11 +18,31 @@ const int mule_energy_cost = 50;
 
 void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
-    auto town_halls = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    std::vector<sc2::Unit> workers;
+    auto command_centers = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    auto num_of_workers = gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self)().size();
+    const int max_workers = 70; // TODO: optimize this constant.
 
-    for (const auto& i : town_halls()) {
-        if (i->assigned_harvesters >= i->ideal_harvesters)
+    for (const auto& i : command_centers()) {
+        if (i->assigned_harvesters > i->ideal_harvesters) {
+            if (command_centers().size() <= 1)
+                continue;
+            int overproduction = i->assigned_harvesters - i->ideal_harvesters;
+            while (overproduction--) {
+                Worker* worker = gHub->GetClosestFreeWorker(i->pos);
+                if (!worker)
+                    break;
+                workers.emplace_back(worker->ToUnit());
+            }
+        }
+
+        if (max_workers < num_of_workers)
             continue;
+
+        // we want to produce ~40% more workers than ideal.
+        if (i->assigned_harvesters >= (i->ideal_harvesters * 1.4)) {
+            continue;
+        }
 
         if (!i->orders.empty())
             continue;
@@ -30,20 +50,38 @@ void SecureMineralsIncome(Builder* builder_) {
         if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
             continue;
 
-        // FIXME (alkurbatov): We should set an assignee for drones
-        // and pick a larva closest to the assignee.
-        if (gHub->GetCurrentRace() == sc2::Race::Zerg) {
-            orders.emplace_back(gAPI->observer().GetUnitTypeData(
-                sc2::UNIT_TYPEID::ZERG_DRONE));
-            continue;
-        }
-
         orders.emplace_back(gAPI->observer().GetUnitTypeData(
             gHub->GetCurrentWorkerType()), i);
     }
 
-    builder_->ScheduleOrders(orders);
+    builder_->ScheduleOrders(orders); 
+    if (workers.size() == 0)
+        return;
+
+    // Distribute workers between current commandcenters evenly
+    for (const auto& i : command_centers()) {
+        if (i->ideal_harvesters <= i->assigned_harvesters)
+            continue;
+        int underproduction = i->ideal_harvesters - i->assigned_harvesters;
+        while (underproduction--) {
+            if (workers.size() == 0)
+                return;
+            sc2::Unit move_worker = workers.back();
+            workers.pop_back();
+
+            auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+                sc2::Unit::Alliance::Neutral);
+            const sc2::Unit* mineral_target = units.GetClosestUnit(i->pos);
+            if (!mineral_target)
+                return;
+
+            gAPI->action().Cast(move_worker, sc2::ABILITY_ID::SMART, *mineral_target);
+            break;
+
+        }
+    } 
 }
+
 
 void SecureVespeneIncome() {
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
@@ -52,17 +90,18 @@ void SecureVespeneIncome() {
      
        if (i->assigned_harvesters == i->ideal_harvesters)
             continue;
-       else if (i->assigned_harvesters > i->ideal_harvesters) { // Makes sure that we never have more than 3 workers on gas.
+       // Makes sure that we never have more than 3 workers on gas.
+       else if (i->assigned_harvesters > i->ideal_harvesters) { 
            for (const auto& j : workers()) {
                if (i->tag == j->orders.front().target_unit_tag) {
                    auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
                        sc2::Unit::Alliance::Neutral);
-                   const sc2::Unit* mineral_target = units.GetClosestUnit(
-                       gAPI->observer().StartingLocation());
+                   const sc2::Unit* mineral_target = units.GetClosestUnit(i->pos);
                    if (!mineral_target)
                        return;
 
-                   gAPI->action().Cast(*j, sc2::ABILITY_ID::SMART, *mineral_target); // If to many workers on gas -> put one to mine minerals
+                   // If to many workers on gas -> put one to mine minerals
+                   gAPI->action().Cast(*j, sc2::ABILITY_ID::SMART, *mineral_target); 
                    break;
                }
            }
