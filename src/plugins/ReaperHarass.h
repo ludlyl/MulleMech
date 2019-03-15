@@ -40,5 +40,4 @@ private:
     sc2::Units m_reaperStrikeTeam;
     sc2::Tag m_harassReapers;
     std::vector<sc2::Point2D> m_unscoutedBases; // TODO: Should be last scouted timing => reuse for mid game expansion scouting
-    std::unordered_set<sc2::Tag> m_seenUnits;   // Units we've seen before
 };
