@@ -46,7 +46,7 @@ void Governor::OnStep(Builder* builder_) {
     int minerals = gAPI->observer().GetMinerals();
 
     if (minerals < 50)
-        return;
+       return;
     //TODO add priority flag for factory production
     //TODO create exeception handler for planner_queue
     //TODO Army compesition for military production
@@ -60,14 +60,16 @@ void Governor::OnStep(Builder* builder_) {
             return;
         minerals -= planned_cost;
         builder_->ScheduleConstruction(m_planner_queue.front());
-        m_planner_queue.pop_front();
+        it = m_planner_queue.erase(it);
     }
-
+    float mineral_income = gAPI->observer().GetMineralIncome();
+    float vespene_income = gAPI->observer().GetVespeneIncome();
+    
     int const number_of_barracks = gAPI->observer().GetUnits(IsBarracks(), sc2::Unit::Alliance::Self)().size();
     int const number_of_factories = gAPI->observer().GetUnits(IsFactory(), sc2::Unit::Alliance::Self)().size();
     int const number_of_starports = gAPI->observer().GetUnits(IsStarport(), sc2::Unit::Alliance::Self)().size();
     int const number_of_commandCenters = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self)().size();
-    int const number_of_refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self)().size();
+    int const number_of_refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self)().size(); 
 
 }
 
@@ -96,5 +98,13 @@ void Governor::OnBuildingConstructionComplete(const sc2::Unit* unit_) {
     if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
         gHistory.debug() << "Lowering new Supply Depot" << std::endl;
         gAPI->action().LowerDepot(*unit_);
+    }
+}
+
+void Governor::CurrentConsumption() {
+    auto command_centers = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    float total_production = 0;
+    for (const auto& i : command_centers()) {
+        
     }
 }
