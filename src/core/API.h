@@ -25,6 +25,8 @@ struct Action {
 
     void Attack(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_ = false);
     void Attack(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_ = false);
+    void Attack(const sc2::Unit& unit_, const sc2::Unit& target_, bool queue_ = false);
+    void Attack(const sc2::Units& units_, const sc2::Unit& target_, bool queue_ = false);
 
     void MoveTo(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_ = false);
     void MoveTo(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_ = false);
@@ -32,6 +34,7 @@ struct Action {
     void Stop(const sc2::Unit& unit_, bool queue_ = false);
     void Stop(const sc2::Units& units_, bool queue_ = false);
 
+    void Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_, bool queue_ = false);
     void Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
         const sc2::Unit& target_, bool queue_ = false);
 
@@ -138,6 +141,8 @@ struct Query {
     float PathingDistance(const sc2::Point2D& start_, const sc2::Point2D& end_) const;
     float PathingDistance(const sc2::Unit& start_, const sc2::Point2D& end_) const;
     std::vector<float> PathingDistances(const std::vector<sc2::QueryInterface::PathingQuery>& queries_) const;
+
+    sc2::AvailableAbilities GetAbilitiesForUnit(const sc2::Unit& unit_, bool ignore_resource_requirements_ = false) const;
 
  private:
     sc2::QueryInterface* m_query;
