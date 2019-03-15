@@ -62,12 +62,6 @@ void Governor::OnStep(Builder* builder_) {
         builder_->ScheduleConstruction(m_planner_queue.front());
         it = m_planner_queue.erase(it);
     }
-    
-    int const number_of_barracks = gAPI->observer().GetUnits(IsBarracks(), sc2::Unit::Alliance::Self)().size();
-    int const number_of_factories = gAPI->observer().GetUnits(IsFactory(), sc2::Unit::Alliance::Self)().size();
-    int const number_of_starports = gAPI->observer().GetUnits(IsStarport(), sc2::Unit::Alliance::Self)().size();
-    int const number_of_commandCenters = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self)().size();
-    int const number_of_refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self)().size();
 
     float mineral_income = gAPI->observer().GetMineralIncome();
     float vespene_income = gAPI->observer().GetVespeneIncome();
@@ -78,29 +72,61 @@ void Governor::OnStep(Builder* builder_) {
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
 
+    if (mineral_overproduction < 0)
+        return;
+
+    if (vespene_overproduction < 0) {
+        // In this case we have minerals but not vespene -> produce hellions
+
+        if (mineral_overproduction < (2.0 * 100.0 / (21.0 / 60.0))) //cost of factory with reactor producing  
+            return;
+
+    }
+
+
     //TODO start planning on what we want to spend our overproduction on based on current army compersition
     //TODO or expand our base based on enum from higher-order plugin.
-
 }
 
 void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
-    if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BARRACKS) {
-        if (unit_->add_on_tag != 0) {
-            auto addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-            auto type = addOnAsUnit->unit_type.ToType();
-            if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
-                gHistory.info() << "Schedule Marauder training" << std::endl;
+    const sc2::Unit* addOnAsUnit;
+    sc2::UNIT_TYPEID type;
+
+    switch (unit_->unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
+            if (unit_->add_on_tag != 0) {
+                addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+                type = addOnAsUnit->unit_type.ToType();
+                if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
+                    gHistory.info() << "Schedule Marauder training" << std::endl;
+                    return;
+                }
+            }
+            break;
+        case sc2::UNIT_TYPEID::TERRAN_FACTORY:
+            //TODO sometimes we might want to produce cyclons
+            if (unit_->add_on_tag == 0)
+                return;
+            addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+            type = addOnAsUnit->unit_type.ToType();
+            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
+                gHistory.info() << "Schedule siegetank training" << std::endl;
                 return;
             }
-        }
-    }
-
-    if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_GATEWAY ||
-            unit_->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_WARPGATE) {
-        builder_->ScheduleTraining(sc2::UNIT_TYPEID::PROTOSS_ZEALOT, false, unit_);
-        gHistory.info() << "Schedule Zealot training" << std::endl;
-        return;
+            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) {
+                //TODO fix so that this will awlays build 2 hellions at all times.
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                gHistory.info() << "Schedule Hellion training" << std::endl;
+                return;
+            }
+            break;
+         case sc2::UNIT_TYPEID::TERRAN_STARPORT:
+            //TODO decide how we want to manage to production here
+            break;
+        default:
+            break;
     }
 }
 
@@ -111,6 +137,8 @@ void Governor::OnBuildingConstructionComplete(const sc2::Unit* unit_) {
     }
 }
 
+
+//TODO this function should take a State as input. The state can be the current state or a future state
 std::pair<float, float> Governor::CurrentConsumption() {
     //TODO add buildings that are being built and that are in building queue to calculations
     auto barracks = gAPI->observer().GetUnits(IsBarracks(), sc2::Unit::Alliance::Self);
