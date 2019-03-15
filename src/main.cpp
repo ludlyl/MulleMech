@@ -5,6 +5,7 @@
 #include "Dispatcher.h"
 #include "Historican.h"
 #include "core/Converter.h"
+#include "BuildingPlacer.h"
 
 #include <sc2api/sc2_coordinator.h>
 #include <sc2api/sc2_gametypes.h>
@@ -41,7 +42,7 @@ int main(int argc, char* argv[]) {
     while (coordinator.Update()) {
         // NOTE (alkurbatov): Slow down game speed for better look & feel
         // while making experiments. Uncomment this if needed.
-        // sc2::SleepFor(15);
+        sc2::SleepFor(10);
     }
 
     return 0;

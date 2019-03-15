@@ -40,4 +40,5 @@ struct Dispatcher: sc2::Agent {
     std::shared_ptr<Builder> m_builder;
 
     std::vector<std::shared_ptr<Plugin>> m_plugins;
+
 };

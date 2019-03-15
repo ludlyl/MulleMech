@@ -68,6 +68,14 @@ Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
     return GetClosestUnit(unit->pos);
 }
 
+const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
+    const sc2::Unit* unit = gAPI->observer().GetUnit(tag_);
+    if (!unit)
+        return {};
+
+    return GetTwoClosestUnits(unit->pos);
+}
+
 Unit* Units::GetRandomUnit() const {
     if (empty())
         return nullptr;
@@ -82,10 +90,11 @@ sc2::Units Units::ToAPI() const {
         apiUnits.push_back(unit);
     return apiUnits;
 }
+
 /*const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
     const sc2::Unit* unit = gAPI->observer().GetUnit(tag_);
     if (!unit)
-        return nullptr;
+        return {};
 
     return GetTwoClosestUnits(unit->pos);
-}*/
+}
