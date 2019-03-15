@@ -179,6 +179,14 @@ float Observer::GetAvailableFood() const {
     return static_cast<float>(GetFoodCap() - GetFoodUsed());
 }
 
+float Observer::GetMineralIncome() const {
+    return m_observer->GetScore().score_details.collection_rate_minerals;
+}
+
+float Observer::GetVespeneIncome() const {
+    return m_observer->GetScore().score_details.collection_rate_vespene;
+}
+
 sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
     sc2::UnitTypeData data = m_observer->GetUnitTypeData()[convert::ToUnitTypeID(id_)];
 
