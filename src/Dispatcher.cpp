@@ -3,6 +3,7 @@
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
 #include "Dispatcher.h"
+#include "BuildingPlacer.h"
 #include "Historican.h"
 #include "Hub.h"
 #include "core/API.h"
@@ -51,8 +52,17 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
 
-    if (current_race == sc2::Race::Protoss)
-        m_plugins.emplace_back(new WarpSmith());
+    //if (current_race == sc2::Race::Protoss)
+    //    m_plugins.emplace_back(new WarpSmith());
+
+    /*std::cout << "x: " << gAPI->observer().StartingLocation().x;
+    std::cout << "y: " << gAPI->observer().StartingLocation().y;
+
+    //find point to building line
+    BuildingPlacer::buildingPoint = BuildingPlacer::GetPointFrontOfCC(gAPI->observer().StartingLocation());
+
+    //find direction for building line
+    BuildingPlacer::baseKValue = BuildingPlacer::GetBaseKValue();*/
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());

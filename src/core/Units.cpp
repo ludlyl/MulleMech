@@ -7,6 +7,7 @@
 #include "core/API.h"
 
 #include <limits>
+#include <c++/8.2.1/iostream>
 
 Units::Units(const sc2::Units& units_) : m_units(units_) {
 }
@@ -53,6 +54,12 @@ const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D
         }
     }
 
+    std::cout << "targetLowestX: " << targetLowest -> pos.x << "\n";
+    std::cout << "targetLowestY: " << targetLowest -> pos.y << "\n\n";
+
+    std::cout << "targetSecX: " << targetSecondLowest -> pos.x << "\n";
+    std::cout << "targetSecY: " << targetSecondLowest -> pos.y << "\n\n";
+
     std::vector<const sc2::Unit*> targetTwoClosestUnits;
 
     targetTwoClosestUnits.emplace_back(targetLowest);
@@ -69,13 +76,13 @@ const sc2::Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
     return GetClosestUnit(unit->pos);
 }
 
-/*const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
+const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
     const sc2::Unit* unit = gAPI->observer().GetUnit(tag_);
     if (!unit)
-        return nullptr;
+        return {};
 
     return GetTwoClosestUnits(unit->pos);
-}*/
+}
 
 const sc2::Unit* Units::GetRandomUnit() const {
     int index = sc2::GetRandomInteger(0, static_cast<int>(m_units.size()) - 1);
