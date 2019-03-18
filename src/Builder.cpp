@@ -22,7 +22,19 @@ void Builder::OnStep() {
 
     m_available_food = gAPI->observer().GetAvailableFood();
 
-    auto it = m_construction_orders.begin();
+    auto it = m_training_scv_orders.begin();
+    while (it != m_training_scv_orders.end()) {
+        if (!Build(&(*it)))
+            break; 
+        it = m_training_scv_orders.erase(it);
+    }
+    sc2::UnitTypeData scv = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SCV);
+    int num_of_workers = gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Self)().size();
+    int const max_workers = 70;
+    //reserve minerals for scv's
+    if (num_of_workers < max_workers)
+        m_minerals -= scv.mineral_cost; 
+    it = m_construction_orders.begin();
     // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
         if (!Build(&(*it)))
@@ -76,8 +88,13 @@ void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, const sc2::Uni
 void Builder::ScheduleOrders(const std::vector<Order>& orders_) {
     // FIXME (alkurbatov): this call must be more intellectual
     // and able to select a proper queue.
-    for (const auto& i : orders_)
+    for (const auto& i : orders_) {
+        if (i.unit_type_id == sc2::UNIT_TYPEID::TERRAN_SCV) {
+            m_training_scv_orders.emplace_back(i);
+            continue;
+        }
         m_training_orders.emplace_back(i);
+    }
 }
 
 const std::list<Order>& Builder::GetConstructionOrders() const {
@@ -86,6 +103,10 @@ const std::list<Order>& Builder::GetConstructionOrders() const {
 
 const std::list<Order>& Builder::GetTrainingOrders() const {
     return m_training_orders;
+}
+
+const std::list<Order>& Builder::GetScvOrders() const {
+    return m_training_scv_orders;
 }
 
 int64_t Builder::CountScheduledStructures(sc2::UNIT_TYPEID id_) const {
@@ -100,6 +121,13 @@ int64_t Builder::CountScheduledTrainings(sc2::UNIT_TYPEID id_) const {
         m_training_orders.begin(),
         m_training_orders.end(),
         IsOrdered(id_));
+}
+
+int64_t Builder::CountScheduledScv() const{
+    return std::count_if(
+        m_training_scv_orders.begin(),
+        m_training_scv_orders.end(),
+        IsOrdered(sc2::UNIT_TYPEID::TERRAN_SCV));
 }
 
 bool Builder::Build(Order* order_) {

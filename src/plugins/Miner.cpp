@@ -45,6 +45,7 @@ void SecureMineralsIncome(Builder* builder_) {
         }
 
         if (!i->orders.empty())
+
             continue;
 
         if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
