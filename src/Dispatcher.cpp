@@ -86,6 +86,7 @@ void Dispatcher::OnStep() {
     clock.Start();
 
     gHub->OnStep();
+    gReasoner->CalculatePlayStyle();
 
     for (const auto& i : m_plugins)
         i->OnStep(m_builder.get());
