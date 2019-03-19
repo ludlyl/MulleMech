@@ -8,9 +8,6 @@
 #include <sc2api/sc2_unit.h>
 
 struct Order {
-    //Order(Order&&) = default;
-    //Order(Order&) = default;
-
     explicit Order(const sc2::UnitTypeData& data_, const sc2::Unit* assignee_ = nullptr);
 
     explicit Order(const sc2::UpgradeData& data_);

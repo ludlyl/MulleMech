@@ -4,6 +4,7 @@
 #include "core/Helpers.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "Reasoner.h"
 
 Scouting::Scouting() :
         m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(sc2::NullTag), m_defensiveScv(sc2::NullTag) {
@@ -170,7 +171,7 @@ void Scouting::ScvOffensiveScout() {
     }
     // CHECKING FOR NATURAL
     else if (m_scoutPhase == ScvScoutPhase::check_for_natural && scv->orders.empty()) {
-        auto likelyExpansions = gBrain->reasoning().GetLikelyEnemyExpansions();
+        auto likelyExpansions = gReasoner->GetLikelyEnemyExpansions();
         assert(!likelyExpansions.empty());
         gAPI->action().MoveTo(*scv, likelyExpansions[0]->town_hall_location);
         gHistory.debug(LogChannel::scouting) << "Checking if the natural expansion has been started" << std::endl;

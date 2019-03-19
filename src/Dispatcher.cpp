@@ -19,6 +19,7 @@
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
 #include "plugins/WarpSmith.h"
+#include "Reasoner.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -26,6 +27,7 @@
 
 Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()) {
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
+    gReasoner = std::make_unique<Reasoner>();
     gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
@@ -84,6 +86,7 @@ void Dispatcher::OnStep() {
     clock.Start();
 
     gHub->OnStep();
+    gReasoner->CalculatePlayStyle();
 
     for (const auto& i : m_plugins)
         i->OnStep(m_builder.get());

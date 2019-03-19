@@ -25,7 +25,7 @@ void Builder::OnStep() {
     auto it = m_training_scv_orders.begin();
     while (it != m_training_scv_orders.end()) {
         if (!Build(&(*it)))
-            break; 
+            break;
         it = m_training_scv_orders.erase(it);
     }
     sc2::UnitTypeData scv = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SCV);
@@ -33,7 +33,7 @@ void Builder::OnStep() {
     int const max_workers = 70;
     //reserve minerals for scv's
     if (num_of_workers < max_workers)
-        m_minerals -= scv.mineral_cost; 
+        m_minerals -= scv.mineral_cost;
     it = m_construction_orders.begin();
     // TODO: Fix for mutations and add-ons (currently all orders will be fulfilled on one building)
     while (it != m_construction_orders.end()) {
@@ -135,11 +135,6 @@ bool Builder::Build(Order* order_) {
         return false;
 
     std::shared_ptr<Blueprint> blueprint = Blueprint::Plot(order_->ability_id);
-
-    // As this is needed for buildings to work a temporary solution of just checking if food_required == 0
-    // to disable the check for all units (it's the Units that seem to be problematic for terran)
-    // this has the effect that units that are assigned to a specific structure will fail "silently"
-    // (this function, Build, will return true) if they can't be built.
 
     if (!HasTechRequirements(order_))
         return false;
