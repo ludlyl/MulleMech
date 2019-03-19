@@ -7,7 +7,7 @@
 #include "core/API.h"
 #include "core/Helpers.h"
 
-bool Refinery::Build(Order* order_) {
+bool bp::Refinery::Build(Order* order_) {
     auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
         sc2::Unit::Alliance::Neutral);
 
@@ -15,5 +15,5 @@ bool Refinery::Build(Order* order_) {
     if (!geyser)
         return false;
 
-    return gHub->AssignRefineryConstruction(order_, geyser);
+    return gHub->AssignRefineryConstruction(order_, geyser.value());
 }

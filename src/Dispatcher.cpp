@@ -75,7 +75,7 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
 
-    gHub->OnBuildingConstructionComplete(*building_);
+    gHub->OnBuildingConstructionComplete(building_);
 
     for (auto& plugin : m_plugins)
         plugin->OnBuildingConstructionComplete(building_);
@@ -111,14 +111,14 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was created" << std::endl;
 
-    gHub->OnUnitCreated(*unit_);
+    gHub->OnUnitCreated(unit_);
 
     for (const auto& i : m_plugins)
         i->OnUnitCreated(unit_);
 }
 
 void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
-    gHub->OnUnitIdle(*unit_);
+    gHub->OnUnitIdle(unit_);
 
     for (const auto& i : m_plugins)
         i->OnUnitIdle(unit_, m_builder.get());
@@ -131,7 +131,7 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was destroyed" << std::endl;
 
-    gHub->OnUnitDestroyed(*unit_);
+    gHub->OnUnitDestroyed(unit_);
 
     for (const auto& i : m_plugins)
         i->OnUnitDestroyed(unit_, m_builder.get());

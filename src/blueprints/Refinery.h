@@ -6,6 +6,10 @@
 
 #include "Blueprint.h"
 
-struct Refinery: Blueprint {
+namespace bp {
+
+struct Refinery : Blueprint {
     bool Build(Order* order_) final;
 };
+
+}

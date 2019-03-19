@@ -8,15 +8,15 @@
 GameObject::GameObject(sc2::Tag tag_): m_tag(tag_) {
 }
 
-GameObject::GameObject(const sc2::Unit& unit_): m_tag(unit_.tag) {
+GameObject::GameObject(const Unit& unit_) : m_tag(unit_->tag) {
 }
 
 bool GameObject::operator==(const GameObject& obj_) const {
     return this->m_tag == obj_.m_tag;
 }
 
-bool GameObject::operator==(const sc2::Unit& unit_) const {
-    return this->m_tag == unit_.tag;
+bool GameObject::operator==(Unit unit_) const {
+    return this->m_tag == unit_->tag;
 }
 
 sc2::Tag GameObject::Tag() const {
@@ -24,16 +24,13 @@ sc2::Tag GameObject::Tag() const {
 }
 
 sc2::Point3D GameObject::GetPos() const {
-    return gAPI->observer().GetUnit(m_tag)->pos;
+    return gAPI->observer().GetUnit(m_tag).value()->pos;
 }
 
-sc2::Unit GameObject::ToUnit() const {
-    return ToUnit(m_tag);
+Unit GameObject::ToUnit() const {
+    return gAPI->observer().GetUnit(m_tag).value();
 }
 
-sc2::Unit GameObject::ToUnit(sc2::Tag tag_) {
-    sc2::Unit unit;
-    unit.tag = tag_;
-
-    return unit;
+Unit GameObject::ToUnit(sc2::Tag tag_) {
+    return gAPI->observer().GetUnit(tag_).value();
 }

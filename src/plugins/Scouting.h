@@ -11,12 +11,12 @@ public:
 
     void OnStep(Builder* builder) final;
 
-    void OnUnitIdle(const sc2::Unit* unit, Builder*) final;
+    void OnUnitIdle(const Unit& unit, Builder*) final;
 
-    void OnUnitDestroyed(const sc2::Unit* unit, Builder*) final;
+    void OnUnitDestroyed(const Unit& unit, Builder*) final;
 
     // Scouting records buildings we see into our memory
-    void OnUnitEnterVision(const sc2::Unit* unit) final;
+    void OnUnitEnterVision(const Unit& unit) final;
 
 private:
 
@@ -43,7 +43,7 @@ private:
     void ExpansionScout();
 
     // Attempt to scout around a main base; queues all movement commands at once
-    void ScoutBase(const sc2::Unit* unit, sc2::Point2D base);
+    void ScoutBase(const Unit& unit, sc2::Point2D base);
 
     // DATA
 

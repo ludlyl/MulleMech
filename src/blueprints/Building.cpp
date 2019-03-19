@@ -6,7 +6,7 @@
 #include "Building.h"
 #include "core/API.h"
 
-bool Building::Build(Order* order_) {
+bool bp::Building::Build(Order* order_) {
     // Find place to build the structure
     sc2::Point3D base = gAPI->observer().StartingLocation();
     sc2::Point2D point;

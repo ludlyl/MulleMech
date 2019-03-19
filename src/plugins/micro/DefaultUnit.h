@@ -4,7 +4,7 @@
 
 class DefaultUnit : public MicroPlugin {
 public:
-    DefaultUnit(const sc2::Unit* unit);
+    DefaultUnit(const Unit& unit);
 
     void OnCombatStep(const Units& enemies) override;
 

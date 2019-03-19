@@ -4,25 +4,27 @@
 
 #pragma once
 
+#include "core/Unit.h"
+
 #include <sc2api/sc2_gametypes.h>
 #include <sc2api/sc2_unit.h>
 
 struct GameObject {
     explicit GameObject(sc2::Tag tag_);
 
-    explicit GameObject(const sc2::Unit& unit_);
+    explicit GameObject(const Unit& unit_);
 
     bool operator==(const GameObject& obj_) const;
 
-    bool operator==(const sc2::Unit& unit_) const;
+    bool operator==(Unit unit_) const;
 
     sc2::Tag Tag() const;
 
     sc2::Point3D GetPos() const;
 
-    sc2::Unit ToUnit() const;
+    Unit ToUnit() const;
 
-    static sc2::Unit ToUnit(sc2::Tag tag_);
+    static Unit ToUnit(sc2::Tag tag_);
 
  private:
     sc2::Tag m_tag;

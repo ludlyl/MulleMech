@@ -30,17 +30,17 @@ bool SortByDistance::operator()(const std::shared_ptr<Expansion>& lhs_, const st
 
 }  // namespace
 
-Construction::Construction(const sc2::Unit* building_, const sc2::Unit* scv_)
+Construction::Construction(const Unit& building_, const Unit& scv_)
     : building(building_->tag), scv(scv_->tag) { }
 
-const sc2::Unit* Construction::GetBuilding() const {
+std::optional<Unit> Construction::GetBuilding() const {
     return gAPI->observer().GetUnit(building);
 }
 
-const sc2::Unit* Construction::GetScv() const {
+std::optional<Unit> Construction::GetScv() const {
     auto scvUnit = gAPI->observer().GetUnit(scv);
-    if (scvUnit && !scvUnit->is_alive)
-        return nullptr;
+    if (scvUnit && !scvUnit.value()->is_alive)
+        return std::nullopt;
     return scvUnit;
 }
 
@@ -72,31 +72,31 @@ void Hub::OnStep() {
     m_assignedBuildings.clear();
 }
 
-void Hub::OnUnitCreated(const sc2::Unit& unit_) {
+void Hub::OnUnitCreated(Unit unit_) {
     // Record newly started constructions, noting which SCV is constructing it
-    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
-        auto buildingData = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
+        auto buildingData = gAPI->observer().GetUnitTypeData(unit_->unit_type);
 
         // Find the SCV that's constructing this building
         auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
             [&unit_, &buildingData](const sc2::Unit& scv) {
                 for (auto& order : scv.orders) {
-                    if (order.ability_id == buildingData.ability_id && order.target_pos.x == unit_.pos.x &&
-                        order.target_pos.y == unit_.pos.y) {
+                    if (order.ability_id == buildingData.ability_id && order.target_pos.x == unit_->pos.x &&
+                        order.target_pos.y == unit_->pos.y) {
                         return true;
                     }
                 }
                 return false;
             }
-        }), sc2::Unit::Alliance::Self)();
+        }), sc2::Unit::Alliance::Self);
 
         // Make (and record) a new Construction data
         if (!scvs.empty()) {
-            m_constructions.emplace_back(&unit_, scvs[0]);
+            m_constructions.emplace_back(unit_, scvs[0]);
         }
     }
 
-    switch (unit_.unit_type.ToType()) {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE:
@@ -113,7 +113,7 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
 
             m_captured_geysers.Add(obj);
             gHistory.info() << "Capture object " <<
-                sc2::UnitTypeToName(unit_.unit_type) << std::endl;
+                sc2::UnitTypeToName(unit_->unit_type) << std::endl;
             return;
         }
 
@@ -121,8 +121,8 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
             for (const auto& i : m_expansions) {
-                if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
-                        std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
+                if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
+                        std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
                     continue;
 
                 if (i->alliance == sc2::Unit::Alliance::Self)
@@ -130,7 +130,7 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
 
                 i->alliance = sc2::Unit::Alliance::Self;
                 gHistory.info() << "Captured region: (" <<
-                    unit_.pos.x << ", " << unit_.pos.y <<
+                    unit_->pos.x << ", " << unit_->pos.y <<
                     ")" << std::endl;
                 return;
             }
@@ -141,18 +141,18 @@ void Hub::OnUnitCreated(const sc2::Unit& unit_) {
     }
 }
 
-void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
+void Hub::OnUnitDestroyed(Unit unit_) {
     // Erase on-going construction if building was destroyed
-    if (IsBuilding()(unit_) && unit_.alliance == sc2::Unit::Alliance::Self) {
+    if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
         for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
-            if (itr->building == unit_.tag) {
+            if (itr->building == unit_->tag) {
                 m_constructions.erase(itr);
                 break;
             }
         }
     }
 
-    switch (unit_.unit_type.ToType()) {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
@@ -170,7 +170,7 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
             if (m_captured_geysers.Remove(Geyser(unit_))) {
                 gHistory.info() << "Release object " <<
-                    sc2::UnitTypeToName(unit_.unit_type) << std::endl;
+                    sc2::UnitTypeToName(unit_->unit_type) << std::endl;
             }
 
             return;
@@ -180,13 +180,13 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
             for (const auto& i : m_expansions) {
-                if (std::floor(i->town_hall_location.x) != std::floor(unit_.pos.x) ||
-                        std::floor(i->town_hall_location.y) != std::floor(unit_.pos.y))
+                if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
+                        std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
                     continue;
 
                 i->alliance = sc2::Unit::Alliance::Neutral;
                 gHistory.info() << "Lost region: (" <<
-                    unit_.pos.x << ", " << unit_.pos.y <<
+                    unit_->pos.x << ", " << unit_->pos.y <<
                     ")" << std::endl;
                 return;
             }
@@ -197,8 +197,8 @@ void Hub::OnUnitDestroyed(const sc2::Unit& unit_) {
     }
 }
 
-void Hub::OnUnitIdle(const sc2::Unit& unit_) {
-    switch (unit_.unit_type.ToType()) {
+void Hub::OnUnitIdle(Unit unit_) {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
@@ -213,17 +213,17 @@ void Hub::OnUnitIdle(const sc2::Unit& unit_) {
     }
 }
 
-void Hub::OnBuildingConstructionComplete(const sc2::Unit& building_) {
+void Hub::OnBuildingConstructionComplete(Unit building_) {
     // Remove finished building from our on-going constructions list
     for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
-        if (itr->building == building_.tag) {
+        if (itr->building == building_->tag) {
             m_constructions.erase(itr);
             break;
         }
     }
 }
 
-bool Hub::IsOccupied(const sc2::Unit& unit_) const {
+bool Hub::IsOccupied(const Unit& unit_) const {
     return m_captured_geysers.IsCached(Geyser(unit_));
 }
 
@@ -231,11 +231,11 @@ bool Hub::IsTargetOccupied(const sc2::UnitOrder& order_) const {
     return m_captured_geysers.IsCached(Geyser(order_));
 }
 
-void Hub::ClaimObject(const sc2::Unit& unit_) {
+void Hub::ClaimObject(const Unit& unit_) {
     if (IsVisibleGeyser()(unit_)) {
         m_captured_geysers.Add(Geyser(unit_));
         gHistory.info() << "Claim object " <<
-            sc2::UnitTypeToName(unit_.unit_type) << std::endl;
+            sc2::UnitTypeToName(unit_->unit_type) << std::endl;
     }
 }
 
@@ -255,7 +255,7 @@ sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
     return m_current_worker_type;
 }
 
-bool Hub::AssignRefineryConstruction(Order* order_, const sc2::Unit* geyser_) {
+bool Hub::AssignRefineryConstruction(Order* order_, const Unit& geyser_) {
     Worker* worker = GetClosestFreeWorker(geyser_->pos);
     if (!worker)
         return false;
@@ -263,7 +263,7 @@ bool Hub::AssignRefineryConstruction(Order* order_, const sc2::Unit* geyser_) {
     m_free_workers.Swap(*worker, m_busy_workers);
 
     m_busy_workers.Back().BuildRefinery(order_, geyser_);
-    ClaimObject(*geyser_);
+    ClaimObject(geyser_);
     return true;
 }
 
@@ -278,8 +278,8 @@ bool Hub::AssignBuildTask(Order* order_, const sc2::Point2D& point_) {
     return true;
 }
 
-void Hub::AssignVespeneHarvester(const sc2::Unit& refinery_) {
-    Worker* worker = GetClosestFreeWorker(refinery_.pos);
+void Hub::AssignVespeneHarvester(Unit refinery_) {
+    Worker* worker = GetClosestFreeWorker(refinery_->pos);
     if (!worker)
         return;
 
@@ -295,7 +295,7 @@ bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
             return true;
         }
     } else {
-        for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)()) {
+        for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)) {
             if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
                 m_assignedBuildings.insert(unit->tag);
                 order_->assignee = unit->tag;
@@ -313,7 +313,7 @@ bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc
 
     for (const auto& unit : gAPI->observer().GetUnits(
             MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
-            sc2::Unit::Alliance::Self)()) {
+            sc2::Unit::Alliance::Self)) {
         if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
             m_assignedBuildings.insert(unit->tag);
             order_->assignee = unit->tag;
