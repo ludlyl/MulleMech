@@ -5,21 +5,21 @@
 #include "Historican.h"
 #include "Hub.h"
 
-const sc2::Unit* Planner::ReserveUnit(sc2::UNIT_TYPEID id) {
+std::optional<Unit> Planner::ReserveUnit(sc2::UNIT_TYPEID id) {
     auto units = gAPI->observer().GetUnits(IsUnit(id), sc2::Unit::Self);
 
-    for (auto& unit : units()) {
+    for (auto& unit : units) {
         if (m_reservedUnits.find(unit->tag) != m_reservedUnits.end())
             continue;
 
         m_reservedUnits.insert(unit->tag);
-        return unit;
+        return std::make_optional(unit);
     }
 
-    return nullptr;
+    return std::nullopt;
 }
 
-void Planner::ReleaseUnit(const sc2::Unit* unit) {
+void Planner::ReleaseUnit(const Unit& unit) {
     ReleaseUnit(unit->tag);
 }
 
@@ -27,7 +27,7 @@ void Planner::ReleaseUnit(sc2::Tag tag) {
     m_reservedUnits.erase(tag);
 }
 
-bool Planner::IsUnitReserved(const sc2::Unit* unit) const {
+bool Planner::IsUnitReserved(const Unit& unit) const {
     return IsUnitReserved(unit->tag);
 }
 

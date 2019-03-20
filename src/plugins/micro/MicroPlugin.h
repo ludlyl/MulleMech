@@ -8,14 +8,14 @@
 
 class MicroPlugin {
 public:
-    MicroPlugin(const sc2::Unit* unit);
-    virtual ~MicroPlugin() { }
+    explicit MicroPlugin(const Unit& unit);
+    virtual ~MicroPlugin() = default;
 
-    void OnCombatFrame(const sc2::Unit* self, const Units& enemies);
+    void OnCombatFrame(Unit self, const Units& enemies);
 
-    void OnCombatOver(const sc2::Unit* self);
+    void OnCombatOver(Unit self);
 
-    static std::shared_ptr<MicroPlugin> MakePlugin(const sc2::Unit* unit);
+    static std::unique_ptr<MicroPlugin> MakePlugin(const Unit& unit);
 
 protected:
     // Combat step function for MicroPlugin, only processed during combat
@@ -27,7 +27,7 @@ protected:
 
     bool CanCast(sc2::ABILITY_ID ability_id);
 
-    void Attack(const sc2::Unit* target);
+    void Attack(const Unit& target);
 
     void MoveTo(const sc2::Point2D& pos);
 
@@ -35,11 +35,11 @@ protected:
 
     void Cast(sc2::ABILITY_ID ability);
 
-    bool IsAttacking(const sc2::Unit* target) const;
+    bool IsAttacking(const Unit& target) const;
 
     bool IsMoving() const;
 
-    const sc2::Unit* m_self;
+    Unit m_self;
 
 private:
     sc2::Tag m_target;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Plugin.h"
+#include "core/Units.h"
 #include "plugins/micro/MicroPlugin.h"
 
 struct ForceCommander : Plugin {
@@ -12,7 +13,7 @@ struct ForceCommander : Plugin {
 
     void OnStep(Builder*) final;
 
-    void OnUnitCreated(const sc2::Unit* unit_) final;
+    void OnUnitCreated(const Unit& unit_) final;
 
     void AttackEnemiesCloseToBase();
 
@@ -22,11 +23,8 @@ private:
     void RemoveDeadUnits();
 
     float m_attack_limit;
-    sc2::Units m_units;
-
-    // TODO: Maybe we should have a Unit wrapper (like we do Units) so we could extend it with stuff like a micro plugin
-    sc2::Units m_offensiveUnits;
-    std::unordered_map<const sc2::Unit*, std::shared_ptr<MicroPlugin>> m_activePlugins;
+    Units m_units;
+    Units m_offensiveUnits;
 
     bool m_inCombat;
 
