@@ -153,7 +153,7 @@ struct Hub {
 
     bool AssignBuildTask(Order* order_, const sc2::Point2D& point_);
 
-    void AssignVespeneHarvester(Unit refinery_);
+    void AssignVespeneHarvester(const Unit& refinery_);
 
     // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
     bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);

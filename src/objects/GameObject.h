@@ -16,7 +16,7 @@ struct GameObject {
 
     bool operator==(const GameObject& obj_) const;
 
-    bool operator==(Unit unit_) const;
+    bool operator==(const Unit& unit_) const;
 
     sc2::Tag Tag() const;
 

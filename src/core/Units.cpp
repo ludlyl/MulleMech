@@ -20,7 +20,7 @@ std::optional<Unit> Units::GetClosestUnit(const sc2::Point2D& point_) const {
     float distance = std::numeric_limits<float>::max();
 
     const sc2::Unit* target = nullptr;
-    for (const auto& i : *this) {
+    for (const auto& i : m_wrappedUnits) {
         float d = sc2::DistanceSquared2D(i->pos, point_);
         if (d < distance) {
             distance = d;

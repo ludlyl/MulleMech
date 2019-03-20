@@ -15,7 +15,7 @@ bool GameObject::operator==(const GameObject& obj_) const {
     return this->m_tag == obj_.m_tag;
 }
 
-bool GameObject::operator==(Unit unit_) const {
+bool GameObject::operator==(const Unit& unit_) const {
     return this->m_tag == unit_->tag;
 }
 

@@ -278,7 +278,7 @@ bool Hub::AssignBuildTask(Order* order_, const sc2::Point2D& point_) {
     return true;
 }
 
-void Hub::AssignVespeneHarvester(Unit refinery_) {
+void Hub::AssignVespeneHarvester(const Unit& refinery_) {
     Worker* worker = GetClosestFreeWorker(refinery_->pos);
     if (!worker)
         return;

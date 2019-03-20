@@ -8,8 +8,8 @@
 
 class MicroPlugin {
 public:
-    MicroPlugin(const Unit& unit);
-    virtual ~MicroPlugin() { }
+    explicit MicroPlugin(const Unit& unit);
+    virtual ~MicroPlugin() = default;
 
     void OnCombatFrame(Unit self, const Units& enemies);
 

@@ -10,23 +10,17 @@ class Unit {
 public:
     explicit Unit(std::shared_ptr<UnitData> data);
 
-    // Copy/Move construction and assignment
-    Unit(const Unit& other);
-    Unit(Unit&& other);
-    Unit& operator=(const Unit& other);
-    Unit& operator=(Unit&& other);
-
     // Implicit bi-directional conversion: Unit <-> const sc2::Unit*, and
     // implicit uni-directional conversion Unit -> const sc2::Unit&
     Unit(const sc2::Unit* unit);
     operator const sc2::Unit&() const;
     operator const sc2::Unit*() const;
 
+    // Dereference to get sc2::Unit access
     const sc2::Unit* operator->() const;
-
     const sc2::Unit& operator*() const;
 
-    // Setup a micro plugin for this unit
+    // Micro plugin for this unit
     void InstallMicro();
     MicroPlugin* Micro() const;
 
