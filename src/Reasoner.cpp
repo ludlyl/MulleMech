@@ -2,11 +2,11 @@
 #include "Hub.h"
 #include "Reasoner.h"
 
-Reasoner::PlayStyle Reasoner::CalculatePlayStyle() {
+PlayStyle Reasoner::CalculatePlayStyle() {
     return PlayStyle::normal;
 }
 
-Reasoner::PlayStyle Reasoner::GetPlayStyle() {
+PlayStyle Reasoner::GetPlayStyle() {
     return m_latest_play_style;
 }
 
