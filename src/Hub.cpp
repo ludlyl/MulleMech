@@ -251,6 +251,14 @@ Worker* Hub::GetClosestFreeWorker(const sc2::Point2D& location_) {
     return closest_worker;
 }
 
+bool Hub::FreeWorkerExists() {
+    return !m_free_workers.Empty();
+}
+
+int Hub::GetNumberOfFreeWorkers() {
+    return static_cast<int>(m_free_workers.Count());
+}
+
 sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
     return m_current_worker_type;
 }
