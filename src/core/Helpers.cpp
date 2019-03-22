@@ -91,15 +91,19 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsBuilding::operator()(const sc2::UNIT_TYPEID unitTypeid_) const {
     // NOTE: All units except overlord, larva & eggs require food,
     // thus we can use that to assume what is a building and what's not
-    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    auto data = gAPI->observer().GetUnitTypeData(unitTypeid_);
     return data.food_required == 0 &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_LARVA &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_EGG;
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_EGG;
 }
 
 bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {

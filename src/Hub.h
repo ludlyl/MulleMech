@@ -147,6 +147,10 @@ struct Hub {
 
     Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
 
+    bool FreeWorkerExists();
+
+    int GetNumberOfFreeWorkers();
+
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
     bool AssignRefineryConstruction(Order* order_, const Unit& geyser_);

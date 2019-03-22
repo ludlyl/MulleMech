@@ -134,13 +134,21 @@ bool Builder::Build(Order* order_) {
     if (m_minerals < order_->mineral_cost || m_vespene < order_->vespene_cost)
         return false;
 
-    std::shared_ptr<bp::Blueprint> blueprint = bp::Blueprint::Plot(order_->ability_id);
-
     if (!HasTechRequirements(order_))
         return false;
 
     if (m_available_food < order_->food_required)
         return false;
+
+    // If the order is to construct a building, we want to make sure a free worker exists before we continue
+    // This is needed to avoid continuously performing expensive operations such as calculating building placement (if no free worker exists)
+    if (IsBuilding()(order_->unit_type_id)) {
+        if (!gHub->FreeWorkerExists()) {
+            return false;
+        }
+    }
+
+    std::shared_ptr<bp::Blueprint> blueprint = bp::Blueprint::Plot(order_->ability_id);
 
     if (!blueprint->Build(order_))
         return false;
