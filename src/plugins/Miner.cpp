@@ -55,8 +55,10 @@ void SecureMineralsIncome(Builder* builder_) {
             gHub->GetCurrentWorkerType()), &i);
     }
 
-    builder_->ScheduleOrders(orders); 
-    if (workers.size() == 0)
+    // TODO: Might not always want scv production to be "urgent/prioritized".
+    //  Either make the logic behind this more advanced or add two levels of "urgency" to Builder::ScheduleOrder(s)
+    builder_->ScheduleOrders(orders, true);
+    if (workers.empty())
         return;
 
     // Distribute workers between current commandcenters evenly
@@ -65,7 +67,7 @@ void SecureMineralsIncome(Builder* builder_) {
             continue;
         int underproduction = i->ideal_harvesters - i->assigned_harvesters;
         while (underproduction--) {
-            if (workers.size() == 0)
+            if (workers.empty())
                 return;
             Worker* move_worker = workers.back();
             workers.pop_back();
