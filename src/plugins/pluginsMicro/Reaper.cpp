@@ -16,34 +16,50 @@ void Reaper::OnStep(Builder*){
 
 
 
+    for(const sc2::Unit* unit_ : m_reapers) {
+        sc2::Units enemyUnits = gAPI->observer().GetUnits(sc2::Unit::Alliance::Enemy).operator()();
 
-    auto it2 = std::remove_if(m_reapers.begin(), m_reapers.end(),[](const sc2::Unit* unit_) {
+        //TODO This crashes the program, fix check so reapers avoid attacking buildings
+        /*auto it = std::remove_if(enemyUnits.begin(), enemyUnits.end(),[](const sc2::Unit* unit_) {
+            return !IsCombatUnit()(*unit_);
+        });
 
+        enemyUnits.erase(it, enemyUnits.end());
+        */
+
+
+        Units* units = new Units(enemyUnits);
+        const sc2::Unit *target = units->GetClosestUnit(unit_->pos);
 
         //Retreat
-        if((unit_->health)<(40)){
-
-            gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x, gAPI->observer().StartingLocation().y));
-
-        }
-        else{
-            //Bombs
-            const sc2::Unit* target = gAPI->observer().GetUnits(sc2::Unit::Alliance::Enemy).GetClosestUnit(unit_->pos);
-            if(DistanceSquared2D(target->pos, unit_->pos) < 10){
+        if ((unit_->health) < (35) && !((gAPI->observer().StartingLocation().x == unit_->pos.x) &&
+                                        (gAPI->observer().StartingLocation().y == unit_->pos.y))) {
+            if (DistanceSquared2D(target->pos, unit_->pos) < 5) {
                 gAPI->action().Cast(*unit_, sc2::ABILITY_ID::EFFECT_KD8CHARGE, *target);
             }
+            gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x,
+                                                       gAPI->observer().StartingLocation().y));
+
+        } else {
+            if (unit_->weapon_cooldown == 0) {
+
+                if (DistanceSquared2D(target->pos, unit_->pos) < 15) {
+                    //Bombs
+                    gAPI->action().Cast(*unit_, sc2::ABILITY_ID::EFFECT_KD8CHARGE, *target);
+                    gAPI->action().Cast(*unit_, sc2::ABILITY_ID::SMART, *target);
+                }
+            } else {
+                if (DistanceSquared2D(target->pos, unit_->pos) < 5) {
+                    gAPI->action().Cast(*unit_, sc2::ABILITY_ID::EFFECT_KD8CHARGE, *target);
+                }
+                gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x,
+                                                           gAPI->observer().StartingLocation().y));
+            }
+
         }
 
 
-
-
-
-
-
-
-    return (unit_->health)<(40);
-});
-
+    }
 
 }
 
