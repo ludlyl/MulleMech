@@ -13,13 +13,6 @@ ReaperHarass::ReaperHarass() :
 void ReaperHarass::OnStep(Builder*) {
 
     auto it2 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
-        if((unit_->health)<(40)){
-
-
-            gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x, gAPI->observer().StartingLocation().y));
-
-
-        }
         return (unit_->health)<(40);
     });
 
@@ -28,7 +21,7 @@ void ReaperHarass::OnStep(Builder*) {
         m_ReaperStrikePhase = ReaperStrikePhase::not_started;
     }
 
-    if (m_ReaperStrikePhase != ReaperStrikePhase::finished && m_reaperStrikeTeam.size() > 4) {
+    if (m_ReaperStrikePhase != ReaperStrikePhase::finished && m_reaperStrikeTeam.size() > 2) {
         WorkerHunt();
         gHistory.debug(LogChannel::general) << "RAIDERS ROLL" << std::endl;
     }

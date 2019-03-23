@@ -2,6 +2,7 @@
 // Created by kevin on 2019-03-14.
 //
 
+#include <blueprints/Unit.h>
 #include "Reaper.h"
 #include "core/API.h"
 #include "core/Brain.h"
@@ -9,14 +10,34 @@
 #include "Historican.h"
 #include "Hub.h"
 
+Reaper::Reaper(){
+}
 void Reaper::OnStep(Builder*){
+
+
 
 
     auto it2 = std::remove_if(m_reapers.begin(), m_reapers.end(),[](const sc2::Unit* unit_) {
 
 
+        //Retreat
+        if((unit_->health)<(40)){
 
-        gAPI->action().Cast(unit_, )
+            gAPI->action().MoveTo(*unit_, sc2::Point2D(gAPI->observer().StartingLocation().x, gAPI->observer().StartingLocation().y));
+
+        }
+        else{
+            //Bombs
+            const sc2::Unit* target = gAPI->observer().GetUnits(sc2::Unit::Alliance::Enemy).GetClosestUnit(unit_->pos);
+            if(DistanceSquared2D(target->pos, unit_->pos) < 10){
+                gAPI->action().Cast(*unit_, sc2::ABILITY_ID::EFFECT_KD8CHARGE, *target);
+            }
+        }
+
+
+
+
+
 
 
 
