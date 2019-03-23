@@ -6,6 +6,10 @@
 
 #include "Blueprint.h"
 
-struct TownHall: Blueprint {
+namespace bp {
+
+struct TownHall : Blueprint {
     bool Build(Order* order_) final;
 };
+
+}

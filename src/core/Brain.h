@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Unit.h"
 #include "Map.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
 
 #include <memory>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -15,13 +17,13 @@
 class Planner {
 public:
     // Reserve a unit for use; this unit should not be used by other systems
-    const sc2::Unit* ReserveUnit(sc2::UNIT_TYPEID id);
+    std::optional<Unit> ReserveUnit(sc2::UNIT_TYPEID id);
 
-    void ReleaseUnit(const sc2::Unit* unit);
+    void ReleaseUnit(const Unit& unit);
 
     void ReleaseUnit(sc2::Tag tag);
 
-    bool IsUnitReserved(const sc2::Unit* unit) const;
+    bool IsUnitReserved(const Unit& unit) const;
 
     bool IsUnitReserved(sc2::Tag tag) const;
 
@@ -59,25 +61,15 @@ private:
     std::unordered_map<sc2::UNIT_TYPEID, std::vector<sc2::Point3D>> m_enemyBuildings;
 };
 
-// Makes assumptions based on reasoning (inferred from memory, etc)
-class Reasoning {
-public:
-    // Return: Vector of Expansions sorted by likelihood
-    std::vector<std::shared_ptr<Expansion>> GetLikelyEnemyExpansions();
-};
-
 class Brain {
 public:
     Planner& planner() { return m_planner; }
 
     Memory& memory() { return m_memory; }
 
-    Reasoning& reasoning() { return m_reasoning; }
-
 private:
     Planner m_planner;
     Memory m_memory;
-    Reasoning m_reasoning;
 };
 
 extern std::unique_ptr<Brain> gBrain;

@@ -91,15 +91,19 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsBuilding::operator()(const sc2::UNIT_TYPEID unitTypeid_) const {
     // NOTE: All units except overlord, larva & eggs require food,
     // thus we can use that to assume what is a building and what's not
-    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    auto data = gAPI->observer().GetUnitTypeData(unitTypeid_);
     return data.food_required == 0 &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_LARVA &&
-        unit_.unit_type != sc2::UNIT_TYPEID::ZERG_EGG;
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
+           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_EGG;
 }
 
 bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
@@ -141,7 +145,7 @@ bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
-    return IsVisibleGeyser()(unit_) && !gHub->IsOccupied(unit_);
+    return IsVisibleGeyser()(unit_) && !gHub->IsOccupied(gAPI->WrapUnit(&unit_));
 }
 
 bool IsRefinery::operator()(const sc2::Unit& unit_) const {
@@ -234,7 +238,7 @@ bool HasAddon::operator()(const sc2::Unit& unit_) const {
     }
 
     auto addonAsUnit = gAPI->observer().GetUnit(unit_.add_on_tag);
-    auto addonType = addonAsUnit->unit_type.ToType();
+    auto addonType = addonAsUnit.value()->unit_type.ToType();
     // The second part (after the or) is needed for the function to return true
     // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
     return addonType == m_addon_type || gAPI->observer().GetUnitTypeData(addonType).tech_alias.front() == m_addon_type;
@@ -264,8 +268,8 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
     return false;
 }
 
-sc2::Point2D GetTerranAddonPosition(const sc2::Unit &unit_) {
-    sc2::Point2D pos = unit_.pos;
+sc2::Point2D GetTerranAddonPosition(const Unit& unit_) {
+    sc2::Point2D pos = unit_->pos;
     pos.x += ADDON_DISPLACEMENT_IN_X;
     pos.y += ADDON_DISPLACEMENT_IN_Y;
     return pos;

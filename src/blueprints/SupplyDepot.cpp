@@ -6,7 +6,7 @@
 #include "core/API.h"
 #include "core/Timer.h"
 
-bool SupplyDepot::Build(Order* order_) {
+bool bp::SupplyDepot::Build(Order* order_) {
     Timer timer;
     timer.Start();
     auto pos = BuildingPlacer::CalculateFreePlaceBehindMinerals(*order_, gAPI->observer().StartingLocation());

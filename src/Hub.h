@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "core/Unit.h"
 #include "core/Map.h"
 #include "objects/Geyser.h"
 #include "objects/Worker.h"
@@ -14,6 +15,7 @@
 #include <list>
 #include <memory>
 #include <unordered_set>
+#include <optional>
 
 template <typename T>
 struct Cache {
@@ -115,9 +117,9 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
 }
 
 struct Construction {
-    Construction(const sc2::Unit* building_, const sc2::Unit* scv_);
-    const sc2::Unit* GetBuilding() const;
-    const sc2::Unit* GetScv() const;
+    Construction(const Unit& building_, const Unit& scv_);
+    std::optional<Unit> GetBuilding() const;
+    std::optional<Unit> GetScv() const;
     sc2::Tag building;
     sc2::Tag scv;
 };
@@ -127,31 +129,35 @@ struct Hub {
 
     void OnStep();
 
-    void OnUnitCreated(const sc2::Unit& unit_);
+    void OnUnitCreated(Unit unit_);
 
-    void OnUnitDestroyed(const sc2::Unit& unit_);
+    void OnUnitDestroyed(Unit unit_);
 
-    void OnUnitIdle(const sc2::Unit& unit_);
+    void OnUnitIdle(Unit unit_);
 
-    void OnBuildingConstructionComplete(const sc2::Unit& building_);
+    void OnBuildingConstructionComplete(Unit building_);
 
-    bool IsOccupied(const sc2::Unit& unit_) const;
+    bool IsOccupied(const Unit& unit_) const;
 
     bool IsTargetOccupied(const sc2::UnitOrder& order_) const;
 
-    void ClaimObject(const sc2::Unit& unit_);
+    void ClaimObject(const Unit& unit_);
 
     sc2::Race GetCurrentRace() const;
 
     Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
 
+    bool FreeWorkerExists();
+
+    int GetNumberOfFreeWorkers();
+
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
-    bool AssignRefineryConstruction(Order* order_, const sc2::Unit* geyser_);
+    bool AssignRefineryConstruction(Order* order_, const Unit& geyser_);
 
     bool AssignBuildTask(Order* order_, const sc2::Point2D& point_);
 
-    void AssignVespeneHarvester(const sc2::Unit& refinery_);
+    void AssignVespeneHarvester(const Unit& refinery_);
 
     // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
     bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);

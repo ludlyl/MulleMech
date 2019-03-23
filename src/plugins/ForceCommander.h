@@ -5,17 +5,28 @@
 #pragma once
 
 #include "Plugin.h"
+#include "core/Units.h"
+#include "plugins/micro/MicroPlugin.h"
 
 struct ForceCommander : Plugin {
     ForceCommander();
 
     void OnStep(Builder*) final;
 
-    void OnUnitCreated(const sc2::Unit* unit_) final;
+    void OnUnitCreated(const Unit& unit_) final;
 
     void AttackEnemiesCloseToBase();
 
- private:
+private:
+    void UpdateOffensiveUnits();
+
+    void RemoveDeadUnits();
+
     float m_attack_limit;
-    sc2::Units m_units;
+    Units m_units;
+    Units m_offensiveUnits;
+
+    bool m_inCombat;
+
+    static constexpr float SearchEnemyRadius = 20.0f;
 };
