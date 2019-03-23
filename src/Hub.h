@@ -117,11 +117,11 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
 }
 
 struct Construction {
-    Construction(const Unit& building_, const Unit& scv_);
-    std::optional<Unit> GetBuilding() const;
-    std::optional<Unit> GetScv() const;
-    sc2::Tag building;
-    sc2::Tag scv;
+    Construction(Unit* building_, Unit* scv_);
+    Unit* GetBuilding() const;
+    Unit* GetScv() const;
+    Unit* building;
+    Unit* scv;
 };
 
 struct Hub {
@@ -129,19 +129,19 @@ struct Hub {
 
     void OnStep();
 
-    void OnUnitCreated(Unit unit_);
+    void OnUnitCreated(Unit* unit_);
 
-    void OnUnitDestroyed(Unit unit_);
+    void OnUnitDestroyed(Unit* unit_);
 
-    void OnUnitIdle(Unit unit_);
+    void OnUnitIdle(Unit* unit_);
 
-    void OnBuildingConstructionComplete(Unit building_);
+    void OnBuildingConstructionComplete(Unit* building_);
 
-    bool IsOccupied(const Unit& unit_) const;
+    bool IsOccupied(const Unit* unit_) const;
 
     bool IsTargetOccupied(const sc2::UnitOrder& order_) const;
 
-    void ClaimObject(const Unit& unit_);
+    void ClaimObject(const Unit* unit_);
 
     sc2::Race GetCurrentRace() const;
 
@@ -153,11 +153,11 @@ struct Hub {
 
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
-    bool AssignRefineryConstruction(Order* order_, const Unit& geyser_);
+    bool AssignRefineryConstruction(Order* order_, const Unit* geyser_);
 
     bool AssignBuildTask(Order* order_, const sc2::Point2D& point_);
 
-    void AssignVespeneHarvester(const Unit& refinery_);
+    void AssignVespeneHarvester(const Unit* refinery_);
 
     // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
     bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);

@@ -4,7 +4,7 @@
 
 class Marine : public DefaultUnit {
 public:
-    Marine(const Unit& unit);
+    Marine(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 

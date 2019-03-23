@@ -23,7 +23,7 @@ void SecureMineralsIncome(Builder* builder_) {
     auto num_of_workers = gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size();
     const int max_workers = 70; // TODO: optimize this constant.
 
-    for (const auto& i : command_centers) {
+    for (auto& i : command_centers) {
         if (i->assigned_harvesters > i->ideal_harvesters) {
             if (command_centers.size() <= 1)
                 continue;
@@ -52,7 +52,7 @@ void SecureMineralsIncome(Builder* builder_) {
             continue;
 
         orders.emplace_back(gAPI->observer().GetUnitTypeData(
-            gHub->GetCurrentWorkerType()), &i);
+            gHub->GetCurrentWorkerType()), i);
     }
 
     // TODO: Might not always want scv production to be "urgent/prioritized".
@@ -78,7 +78,7 @@ void SecureMineralsIncome(Builder* builder_) {
             if (!mineral_target)
                 return;
 
-            gAPI->action().Cast(move_worker->ToUnit(), sc2::ABILITY_ID::SMART, mineral_target.value());
+            gAPI->action().Cast(move_worker->ToUnit(), sc2::ABILITY_ID::SMART, mineral_target);
             break;
 
         }
@@ -104,7 +104,7 @@ void SecureVespeneIncome() {
                        return;
 
                    // If to many workers on gas -> put one to mine minerals
-                   gAPI->action().Cast(j, sc2::ABILITY_ID::SMART, mineral_target.value()); 
+                   gAPI->action().Cast(j, sc2::ABILITY_ID::SMART, mineral_target); 
                    break;
                }
            }
@@ -133,7 +133,7 @@ void CallDownMULE() {
         if (!mineral_target)
             continue;
 
-        gAPI->action().Cast(i, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target.value());
+        gAPI->action().Cast(i, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
     }
 }
 
@@ -147,7 +147,7 @@ void Miner::OnStep(Builder* builder_) {
         CallDownMULE();
 }
 
-void Miner::OnUnitCreated(const Unit& unit_) {
+void Miner::OnUnitCreated(Unit* unit_) {
     if (!IsTownHall()(*unit_))
         return;
 
@@ -158,10 +158,10 @@ void Miner::OnUnitCreated(const Unit& unit_) {
     if (!mineral_target)
         return;
 
-    gAPI->action().Cast(unit_, sc2::ABILITY_ID::RALLY_WORKERS, mineral_target.value());
+    gAPI->action().Cast(unit_, sc2::ABILITY_ID::RALLY_WORKERS, mineral_target);
 }
 
-void Miner::OnUnitIdle(const Unit& unit_, Builder*) {
+void Miner::OnUnitIdle(Unit* unit_, Builder*) {
     auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
         sc2::Unit::Alliance::Neutral);
 
@@ -178,7 +178,7 @@ void Miner::OnUnitIdle(const Unit& unit_, Builder*) {
             if (!mineral_target)
                 return;
 
-            gAPI->action().Cast(unit_, sc2::ABILITY_ID::SMART, mineral_target.value());
+            gAPI->action().Cast(unit_, sc2::ABILITY_ID::SMART, mineral_target);
             break;
         }
 

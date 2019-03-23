@@ -12,19 +12,19 @@
 struct GameObject {
     explicit GameObject(sc2::Tag tag_);
 
-    explicit GameObject(const Unit& unit_);
+    explicit GameObject(const Unit* unit_);
 
     bool operator==(const GameObject& obj_) const;
 
-    bool operator==(const Unit& unit_) const;
+    bool operator==(const Unit* unit_) const;
 
     sc2::Tag Tag() const;
 
     sc2::Point3D GetPos() const;
 
-    Unit ToUnit() const;
+    Unit* ToUnit() const;
 
-    static Unit ToUnit(sc2::Tag tag_);
+    static Unit* ToUnit(sc2::Tag tag_);
 
  private:
     sc2::Tag m_tag;

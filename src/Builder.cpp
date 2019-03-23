@@ -50,7 +50,7 @@ void Builder::OnStep() {
     ResolveMissingWorkers();
 }
 
-void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, const Unit* unit_) {
+void Builder::ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent, Unit* unit_) {
     Order order(gAPI->observer().GetUnitTypeData(id_), unit_);
 
     if (urgent) {
@@ -68,7 +68,7 @@ void Builder::ScheduleUpgrade(sc2::UPGRADE_ID id_) {
     m_construction_orders.emplace_back(gAPI->observer().GetUpgradeData(id_));
 }
 
-void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, const Unit* unit_) {
+void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, Unit* unit_) {
     auto data = gAPI->observer().GetUnitTypeData(id_);
 
     if (urgent) {
@@ -167,12 +167,12 @@ void Builder::ResolveMissingWorkers() {
     for (auto& construction : constructions) {
         auto building = construction.GetBuilding();
         if (!construction.GetScv() && building) {
-            auto worker = gHub->GetClosestFreeWorker(building.value()->pos);
+            auto worker = gHub->GetClosestFreeWorker(building->pos);
             if (worker) {
-                gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building.value()->unit_type) <<
+                gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
                     "; other one died" << std::endl;
-                gAPI->action().Cast(worker->ToUnit(), sc2::ABILITY_ID::SMART, building.value());
-                construction.scv = worker->Tag();
+                gAPI->action().Cast(worker->ToUnit(), sc2::ABILITY_ID::SMART, building);
+                construction.scv = worker->ToUnit();
             }
         }
     }

@@ -11,7 +11,7 @@ bool bp::Addon::Build(Order *order_) {
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
     Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
     auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
-    bool preSelected = order_->assignee != sc2::NullTag;
+    bool preSelected = order_->assignee != nullptr;
 
     if (!order_->assignee) {
         // Get all idle parent buildings that doesn't already have an add-on
@@ -22,7 +22,7 @@ bool bp::Addon::Build(Order *order_) {
         for (auto& building : parent_buildings) {
             // Check if the addon can be placed
             if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
-                order_->assignee = building->tag;
+                order_->assignee = building;
                 break;
             }
         }
@@ -37,14 +37,14 @@ bool bp::Addon::Build(Order *order_) {
         // Or is it preferred to let the function return true even if the action will fail?
 
         // Check if the addon can be placed
-        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(order_->assignee))))) {
+        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*order_->assignee))) {
             return false;
         }
     }
 
     if (!gHub->AssignBuildingProduction(order_, buildingType)) {
         if (!preSelected)
-            order_->assignee = sc2::NullTag;
+            order_->assignee = nullptr;
         return false;
     }
 

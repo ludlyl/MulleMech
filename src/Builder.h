@@ -17,11 +17,11 @@ struct Builder {
     void OnStep();
 
     // Unit is passed for e.g. add-ons
-    void ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent = false, const Unit* unit_ = nullptr);
+    void ScheduleConstruction(sc2::UNIT_TYPEID id_, bool urgent = false, Unit* unit_ = nullptr);
 
     void ScheduleUpgrade(sc2::UPGRADE_ID id_);
 
-    void ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent = false, const Unit* unit_ = nullptr);
+    void ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent = false, Unit* unit_ = nullptr);
 
     void ScheduleOrders(const std::vector<Order>& orders_, bool urgent = false);
 

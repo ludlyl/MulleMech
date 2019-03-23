@@ -6,48 +6,45 @@
 
 #include "core/Unit.h"
 #include <sc2api/sc2_unit.h>
+#include <functional>
 #include <memory>
 #include <optional>
 
 class Units {
 public:
-    using T = std::vector<Unit>;
+    using T = std::vector<Unit*>;
 
     Units() { }
-    explicit Units(sc2::Units&& units_);
-    Units(Units&& units);
+    explicit Units(const sc2::Units& units_);
 
-    std::optional<Unit> GetClosestUnit(const sc2::Point2D& point_) const;
+    Unit* GetClosestUnit(const sc2::Point2D& point_) const;
 
-    std::optional<Unit> GetClosestUnit(sc2::Tag tag_) const;
+    Unit* GetClosestUnit(sc2::Tag tag_) const;
 
-    std::optional<Unit> GetRandomUnit() const;
+    Unit* GetRandomUnit() const;
 
-    const sc2::Units& ToAPI() const { return m_units; }
+    sc2::Units ToAPI() const;
 
     // Common functions found in std::vector implementations
-    // T::iterator begin() { return m_wrappedUnits.begin(); }  -- dont allow direct manipulation of Unit element
-    // T::iterator end() { return m_wrappedUnits.end(); } -- dito
+    T::iterator begin() { return m_wrappedUnits.begin(); }
+    T::iterator end() { return m_wrappedUnits.end(); }
     T::const_iterator begin() const { return m_wrappedUnits.begin(); }
     T::const_iterator end() const { return m_wrappedUnits.end(); }
     std::size_t size() const { return m_wrappedUnits.size(); }
     bool empty() const { return m_wrappedUnits.empty(); }
-    // Unit& at(std::size_t i) { return m_wrappedUnits.at(i); } -- dito
-    const Unit& at(std::size_t i) const { return m_wrappedUnits.at(i); }
-    // Unit& operator[](std::size_t i) { return m_wrappedUnits[i]; } -- dito
-    const Unit& operator[](std::size_t i) const { return m_wrappedUnits[i]; }
-    // Unit& front() { return m_wrappedUnits.front(); } -- dito
-    const Unit& front() const { return m_wrappedUnits.front(); }
-    // Unit& back() { return m_wrappedUnits.back(); } -- dito
-    const Unit& back() const { return m_wrappedUnits.back(); }
-
-    void push_back(const Unit& unit);
-    void emplace_back(Unit&& unit);
-    Units& operator=(Units&& units);
-    void clear();
-    T::const_iterator erase(T::const_iterator it);
+    Unit* at(std::size_t i) { return m_wrappedUnits.at(i); }
+    const Unit* at(std::size_t i) const { return m_wrappedUnits.at(i); }
+    Unit* operator[](std::size_t i) { return m_wrappedUnits[i]; }
+    const Unit* operator[](std::size_t i) const { return m_wrappedUnits[i]; }
+    Unit* front() { return m_wrappedUnits.front(); }
+    const Unit* front() const { return m_wrappedUnits.front(); }
+    Unit* back() { return m_wrappedUnits.back(); }
+    const Unit* back() const { return m_wrappedUnits.back(); }
+    void push_back(Unit* unit) { m_wrappedUnits.push_back(unit); }
+    void clear() { m_wrappedUnits.clear(); }
+    T::iterator erase(T::iterator it) { return m_wrappedUnits.erase(it); }
+    T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }
 
 private:
-    sc2::Units m_units;
     T m_wrappedUnits;
 };

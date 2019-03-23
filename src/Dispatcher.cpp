@@ -78,10 +78,11 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
 
-    gHub->OnBuildingConstructionComplete(building_);
+    auto building = gAPI->WrapUnit(building_);
+    gHub->OnBuildingConstructionComplete(building);
 
     for (auto& plugin : m_plugins)
-        plugin->OnBuildingConstructionComplete(building_);
+        plugin->OnBuildingConstructionComplete(building);
 }
 
 void Dispatcher::OnStep() {
@@ -114,17 +115,19 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was created" << std::endl;
 
-    gHub->OnUnitCreated(unit_);
+    auto unit = gAPI->WrapUnit(unit_);
+    gHub->OnUnitCreated(unit);
 
     for (const auto& i : m_plugins)
-        i->OnUnitCreated(unit_);
+        i->OnUnitCreated(unit);
 }
 
 void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
-    gHub->OnUnitIdle(unit_);
+    auto unit = gAPI->WrapUnit(unit_);
+    gHub->OnUnitIdle(unit);
 
     for (const auto& i : m_plugins)
-        i->OnUnitIdle(unit_, m_builder.get());
+        i->OnUnitIdle(unit, m_builder.get());
 }
 
 void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
@@ -134,10 +137,11 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was destroyed" << std::endl;
 
-    gHub->OnUnitDestroyed(unit_);
+    auto unit = gAPI->WrapUnit(unit_);
+    gHub->OnUnitDestroyed(unit);
 
     for (const auto& i : m_plugins)
-        i->OnUnitDestroyed(unit_, m_builder.get());
+        i->OnUnitDestroyed(unit, m_builder.get());
 }
 
 void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
@@ -148,7 +152,8 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
         i->OnUpgradeCompleted(id_);
 }
 
-void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit) {
+void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit_) {
+    auto unit = gAPI->WrapUnit(unit_);
     for (const auto& i : m_plugins)
         i->OnUnitEnterVision(unit);
 }

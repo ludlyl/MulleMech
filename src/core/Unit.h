@@ -4,26 +4,22 @@
 #include <memory>
 
 class MicroPlugin;
-struct UnitData;
 
-class Unit {
+namespace API { struct Interface; }
+
+class Unit : public sc2::Unit {
 public:
-    explicit Unit(std::shared_ptr<UnitData> data);
+    static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
+    Unit(const sc2::Unit& unit);
+    void UpdateAPIData(const sc2::Unit& unit);
 
-    // Implicit bi-directional conversion: Unit <-> const sc2::Unit*, and
-    // implicit uni-directional conversion Unit -> const sc2::Unit&
-    Unit(const sc2::Unit* unit);
-    operator const sc2::Unit&() const;
+    // Implicit conversion: Unit -> const sc2::Unit*
     operator const sc2::Unit*() const;
-
-    // Dereference to get sc2::Unit access
-    const sc2::Unit* operator->() const;
-    const sc2::Unit& operator*() const;
 
     // Micro plugin for this unit
     void InstallMicro();
     MicroPlugin* Micro() const;
 
 private:
-    std::shared_ptr<UnitData> m_data;
+    std::unique_ptr<MicroPlugin> m_micro;
 };

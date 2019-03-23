@@ -9,7 +9,7 @@
 #include <sc2api/sc2_unit.h>
 
 struct Geyser : GameObject {
-    explicit Geyser(const Unit& unit_);
+    explicit Geyser(const Unit* unit_);
 
     explicit Geyser(const sc2::UnitOrder& order_);
 

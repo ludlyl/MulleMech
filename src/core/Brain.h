@@ -17,13 +17,13 @@
 class Planner {
 public:
     // Reserve a unit for use; this unit should not be used by other systems
-    std::optional<Unit> ReserveUnit(sc2::UNIT_TYPEID id);
+    Unit* ReserveUnit(sc2::UNIT_TYPEID id);
 
-    void ReleaseUnit(const Unit& unit);
+    void ReleaseUnit(const Unit* unit);
 
     void ReleaseUnit(sc2::Tag tag);
 
-    bool IsUnitReserved(const Unit& unit) const;
+    bool IsUnitReserved(const Unit* unit) const;
 
     bool IsUnitReserved(sc2::Tag tag) const;
 

@@ -7,7 +7,7 @@
 #include "Reasoner.h"
 
 Scouting::Scouting() :
-        m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(sc2::NullTag), m_defensiveScv(sc2::NullTag) {
+        m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(nullptr), m_defensiveScv(nullptr) {
 }
 
 void Scouting::OnStep(Builder*) {
@@ -23,28 +23,28 @@ void Scouting::OnStep(Builder*) {
     // ExpansionScout();
 }
 
-void Scouting::OnUnitIdle(const Unit& unit, Builder*) {
+void Scouting::OnUnitIdle(Unit* unit, Builder*) {
     // Return to mining if defensive scout finished
-    if (unit->tag == m_defensiveScv) {
-        m_defensiveScv = sc2::NullTag;
+    if (unit == m_defensiveScv) {
+        m_defensiveScv = nullptr;
         gBrain->planner().ReleaseUnit(unit);
         // TODO: A hack to trigger OnUnitIdle again, as we can't access the Dispatcher
         gAPI->action().MoveTo(unit, sc2::Point2D(unit->pos.x + 0.5f, unit->pos.y + 0.5f));
     }
 }
 
-void Scouting::OnUnitDestroyed(const Unit& unit, Builder*) {
-    if (unit->tag == m_offensiveScv) {
+void Scouting::OnUnitDestroyed(Unit* unit, Builder*) {
+    if (unit == m_offensiveScv) {
         gHistory.debug(LogChannel::scouting) << "SCV died, abandoning offensive scouting" << std::endl;
-        m_offensiveScv = sc2::NullTag;
+        m_offensiveScv = nullptr;
     }
-    if (unit->tag == m_defensiveScv) {
+    if (unit == m_defensiveScv) {
         gHistory.debug(LogChannel::scouting) << "Defensive SCV died" << std::endl;
-        m_defensiveScv = sc2::NullTag;
+        m_defensiveScv = nullptr;
     }
 }
 
-void Scouting::OnUnitEnterVision(const Unit& unit) {
+void Scouting::OnUnitEnterVision(Unit* unit) {
     // Ignore units we've seen before
     if (m_seenUnits.find(unit->tag) != m_seenUnits.end())
         return;
@@ -101,14 +101,12 @@ void Scouting::OnUnitEnterVision(const Unit& unit) {
 }
 
 void Scouting::ScvOffensiveScout() {
-    auto scvOpt = gAPI->observer().GetUnit(m_offensiveScv);
-
     // If our SCV dies during scouting; we consider that finished for now
     // TODO: This seems a bit fragile; maybe we should have code to try again if we never found our enemy,
     // or to determine our enemy's base location by where we were killed and/or the fact he wasn't at the other locations
-    if (m_scoutPhase != ScvScoutPhase::not_started && (!scvOpt || !scvOpt.value()->is_alive)) {
+    if (m_scoutPhase != ScvScoutPhase::not_started && (!m_offensiveScv || !m_offensiveScv->is_alive)) {
         m_scoutPhase = ScvScoutPhase::finished;
-        m_offensiveScv = sc2::NullTag;
+        m_offensiveScv = nullptr;
         return;
     }
 
@@ -116,13 +114,11 @@ void Scouting::ScvOffensiveScout() {
 
     // NOT STARTED
     if (m_scoutPhase == ScvScoutPhase::not_started && gAPI->observer().GetFoodUsed() >= 15) {
-        scvOpt = gBrain->planner().ReserveUnit(sc2::UNIT_TYPEID::TERRAN_SCV);
-        if (!scvOpt)
+        m_offensiveScv = gBrain->planner().ReserveUnit(sc2::UNIT_TYPEID::TERRAN_SCV);
+        if (!m_offensiveScv)
             return;
-        Unit scv = scvOpt.value();
-        m_offensiveScv = scv->tag;
 
-        gAPI->action().Stop(scv);
+        gAPI->action().Stop(m_offensiveScv);
 
         // Add all potential enemy base locations to our scout plan
         m_scoutPhase = ScvScoutPhase::approaching;
@@ -136,10 +132,9 @@ void Scouting::ScvOffensiveScout() {
 
     if (m_scoutPhase == ScvScoutPhase::not_started)
         return;
-    Unit scv = scvOpt.value();
 
     // APPROACHING ENEMY BASE
-    if (m_scoutPhase == ScvScoutPhase::approaching && scv->orders.empty()) {
+    if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->orders.empty()) {
         // If we found main base of enemy; go into exploring mode
         if (gBrain->memory().EnemyHasBase(0)) {
             m_scoutPhase = ScvScoutPhase::explore_enemy_base;
@@ -148,8 +143,8 @@ void Scouting::ScvOffensiveScout() {
         // Scout next base
         else {
             // Pick closest location (TODO: Maybe instead of air distance, use path distance?)
-            std::sort(m_unscoutedBases.begin(), m_unscoutedBases.end(), ClosestToPoint2D(scv->pos));
-            gAPI->action().MoveTo(scv, m_unscoutedBases.front());
+            std::sort(m_unscoutedBases.begin(), m_unscoutedBases.end(), ClosestToPoint2D(m_offensiveScv->pos));
+            gAPI->action().MoveTo(m_offensiveScv, m_unscoutedBases.front());
 
             // Note down base location if we only have one left
             if (m_unscoutedBases.size() == 1) {
@@ -163,12 +158,12 @@ void Scouting::ScvOffensiveScout() {
         }
     }
     // EXPLORING ENEMY BASE
-    else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && scv->orders.empty()) {
+    else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->orders.empty()) {
         auto mainBase = gBrain->memory().GetEnemyBase(0);
 
         // Scout the main base of the enemy
         gHistory.debug(LogChannel::scouting) << "Exploring main base" << std::endl;
-        ScoutBase(scv, mainBase->town_hall_location);
+        ScoutBase(m_offensiveScv, mainBase->town_hall_location);
 
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
@@ -176,10 +171,10 @@ void Scouting::ScvOffensiveScout() {
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL
-    else if (m_scoutPhase == ScvScoutPhase::check_for_natural && scv->orders.empty()) {
+    else if (m_scoutPhase == ScvScoutPhase::check_for_natural && m_offensiveScv->orders.empty()) {
         auto likelyExpansions = gReasoner->GetLikelyEnemyExpansions();
         assert(!likelyExpansions.empty());
-        gAPI->action().MoveTo(scv, likelyExpansions[0]->town_hall_location);
+        gAPI->action().MoveTo(m_offensiveScv, likelyExpansions[0]->town_hall_location);
         gHistory.debug(LogChannel::scouting) << "Checking if the natural expansion has been started" << std::endl;
 
         // Alternate with scouting the main base
@@ -187,7 +182,7 @@ void Scouting::ScvOffensiveScout() {
     }
 }
 
-void Scouting::ScoutBase(const Unit& unit, sc2::Point2D base) {
+void Scouting::ScoutBase(const Unit* unit, sc2::Point2D base) {
     // TODO(?): This only works if main base is at a different elevation (i.e. has a ramp)
     auto baseHeight = gAPI->observer().TerrainHeight(base);
     auto points = PointsInCircle(18.0f, base, baseHeight);
@@ -207,8 +202,8 @@ void Scouting::ConsiderDefensiveScouting() {
     auto scv = gBrain->planner().ReserveUnit(sc2::UNIT_TYPEID::TERRAN_SCV);
     if (scv) {
         gHistory.debug(LogChannel::scouting) << "Scouting our base for proxy enemy buildings" << std::endl;
-        m_defensiveScv = scv.value()->tag;
-        ScoutBase(scv.value(), gAPI->observer().StartingLocation());
+        m_defensiveScv = scv;
+        ScoutBase(scv, gAPI->observer().StartingLocation());
     }
 }
 

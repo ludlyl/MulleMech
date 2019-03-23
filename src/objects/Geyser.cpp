@@ -4,7 +4,7 @@
 
 #include "Geyser.h"
 
-Geyser::Geyser(const Unit& unit_): GameObject(unit_), m_pos(unit_->pos) {
+Geyser::Geyser(const Unit* unit_): GameObject(unit_), m_pos(unit_->pos) {
 }
 
 Geyser::Geyser(const sc2::UnitOrder& order_): GameObject(order_.target_unit_tag),
