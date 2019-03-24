@@ -23,19 +23,15 @@ struct Builder {
 
     void ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent = false, const Unit* unit_ = nullptr);
 
-    void ScheduleOrders(const std::vector<Order>& orders_);
+    void ScheduleOrders(const std::vector<Order>& orders_, bool urgent = false);
 
     const std::list<Order>& GetConstructionOrders() const;
 
     const std::list<Order>& GetTrainingOrders() const;
 
-    const std::list<Order>& GetScvOrders() const;
-
     int64_t CountScheduledStructures(sc2::UNIT_TYPEID id_) const;
 
     int64_t CountScheduledTrainings(sc2::UNIT_TYPEID id_) const;
-
-    int64_t CountScheduledScv() const;
 
  private:
     bool Build(Order* order_);
@@ -54,5 +50,4 @@ struct Builder {
 
     std::list<Order> m_construction_orders;
     std::list<Order> m_training_orders;
-    std::list<Order> m_training_scv_orders;
 };
