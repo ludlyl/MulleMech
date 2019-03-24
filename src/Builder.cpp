@@ -119,7 +119,7 @@ bool Builder::Build(Order* order_) {
     if (!HasTechRequirements(order_))
         return false;
 
-    if (m_available_food < order_->food_required)
+    if (order_->food_required > 0 && m_available_food < order_->food_required)
         return false;
 
     // If the order is to construct a building, we want to make sure a free worker exists before we continue
