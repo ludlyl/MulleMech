@@ -171,8 +171,8 @@ void Builder::ResolveMissingWorkers() {
             if (worker) {
                 gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
                     "; other one died" << std::endl;
-                gAPI->action().Cast(worker->ToUnit(), sc2::ABILITY_ID::SMART, building);
-                construction.scv = worker->ToUnit();
+                gAPI->action().Cast(worker, sc2::ABILITY_ID::SMART, building);
+                construction.scv = worker;
             }
         }
     }

@@ -5,7 +5,6 @@
 #include "API.h"
 #include "Converter.h"
 #include "Helpers.h"
-#include "objects/GameObject.h"
 #include "plugins/micro/MicroPlugin.h"
 
 #include <sc2api/sc2_map_info.h>

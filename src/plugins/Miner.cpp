@@ -78,7 +78,7 @@ void SecureMineralsIncome(Builder* builder_) {
             if (!mineral_target)
                 return;
 
-            gAPI->action().Cast(move_worker->ToUnit(), sc2::ABILITY_ID::SMART, mineral_target);
+            gAPI->action().Cast(move_worker, sc2::ABILITY_ID::SMART, mineral_target);
             break;
 
         }

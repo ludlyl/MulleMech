@@ -1,10 +1,15 @@
 
 #pragma once
 
-#include "core/Units.h"
+#include <sc2api/sc2_common.h>
+#include <sc2api/sc2_typeenums.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
+
+class Unit;
+class Units;
 
 class MicroPlugin {
 public:

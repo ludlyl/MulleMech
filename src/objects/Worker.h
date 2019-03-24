@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "GameObject.h"
+#include "core/Unit.h"
 #include "core/Order.h"
 
 enum Job {
@@ -14,8 +14,9 @@ enum Job {
     BUILDING_REFINERY = 3,
 };
 
-struct Worker : GameObject {
-    explicit Worker(const Unit* unit_);
+class Worker : public Unit {
+public:
+    explicit Worker(const sc2::Unit& unit_);
 
     void BuildRefinery(Order* order_, const Unit* geyser_);
 
@@ -23,6 +24,6 @@ struct Worker : GameObject {
 
     void GatherVespene(const Unit* target_);
 
- private:
+private:
     Job m_job;
 };

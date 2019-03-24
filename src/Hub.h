@@ -6,12 +6,12 @@
 
 #include "core/Unit.h"
 #include "core/Map.h"
-#include "objects/Geyser.h"
 #include "objects/Worker.h"
 
 #include <sc2api/sc2_gametypes.h>
 #include <sc2api/sc2_unit.h>
 
+#include <functional>
 #include <list>
 #include <memory>
 #include <unordered_set>
@@ -23,22 +23,26 @@ struct Cache {
 
     uint64_t Count() const;
 
-    void Add(const T& obj_);
+    void Add(T* obj_);
 
-    T& Back();
+    T* Back();
 
     void PopBack();
 
-    bool IsCached(const T& obj_) const;
+    bool IsCached(const T* obj_) const;
 
-    bool Swap(const T& obj_, Cache<T>& dst_);
+    bool IsCached(std::function<bool(const T*)> compareFn_) const;
 
-    bool Remove(const T& obj_);
+    bool Swap(const T* obj_, Cache<T>& dst_);
+
+    bool Remove(const T* obj_);
+
+    bool Remove(std::function<bool(const T*)> compareFn_);
 
     T* GetClosestTo(const sc2::Point2D& location_);
 
  private:
-    std::list<T> m_objects;
+    std::list<T*> m_objects;
 };
 
 template <typename T>
@@ -52,12 +56,12 @@ uint64_t Cache<T>::Count() const {
 }
 
 template <typename T>
-void Cache<T>::Add(const T& obj_) {
+void Cache<T>::Add(T* obj_) {
     m_objects.push_back(obj_);
 }
 
 template <typename T>
-T& Cache<T>::Back() {
+T* Cache<T>::Back() {
     return m_objects.back();
 }
 
@@ -67,14 +71,20 @@ void Cache<T>::PopBack() {
 }
 
 template <typename T>
-bool Cache<T>::IsCached(const T& obj_) const {
+bool Cache<T>::IsCached(const T* obj_) const {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     return m_objects.end() != it;
 }
 
 template <typename T>
-bool Cache<T>::Swap(const T& obj_, Cache<T>& dst_) {
+bool Cache<T>::IsCached(std::function<bool(const T*)> compareFn_) const {
+    auto itr = std::find_if(m_objects.begin(), m_objects.end(), compareFn_);
+    return itr != m_objects.end();
+}
+
+template <typename T>
+bool Cache<T>::Swap(const T* obj_, Cache<T>& dst_) {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     if (m_objects.end() == it)
@@ -86,7 +96,7 @@ bool Cache<T>::Swap(const T& obj_, Cache<T>& dst_) {
 }
 
 template <typename T>
-bool Cache<T>::Remove(const T& obj_) {
+bool Cache<T>::Remove(const T* obj_) {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
     if (m_objects.end() == it)
         return false;
@@ -96,12 +106,22 @@ bool Cache<T>::Remove(const T& obj_) {
 }
 
 template <typename T>
+bool Cache<T>::Remove(std::function<bool(const T*)> compareFn_) {
+    auto itr = std::find_if(m_objects.begin(), m_objects.end(), compareFn_);
+    if (itr == m_objects.end())
+        return false;
+
+    m_objects.erase(itr);
+    return true;
+}
+
+template <typename T>
 T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     auto closest_worker = m_objects.end();
     float distance = std::numeric_limits<float>::max();
 
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it) {
-        float d = sc2::DistanceSquared2D(it->GetPos(), location_);
+        float d = sc2::DistanceSquared2D((*it)->pos, location_);
 
         if (d >= distance)
             continue;
@@ -113,7 +133,7 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     if (closest_worker == m_objects.end())
         return nullptr;
 
-    return &(*closest_worker);
+    return *closest_worker;
 }
 
 struct Construction {
@@ -141,7 +161,7 @@ struct Hub {
 
     bool IsTargetOccupied(const sc2::UnitOrder& order_) const;
 
-    void ClaimObject(const Unit* unit_);
+    void ClaimObject(Unit* unit_);
 
     sc2::Race GetCurrentRace() const;
 
@@ -153,7 +173,7 @@ struct Hub {
 
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
-    bool AssignRefineryConstruction(Order* order_, const Unit* geyser_);
+    bool AssignRefineryConstruction(Order* order_, Unit* geyser_);
 
     bool AssignBuildTask(Order* order_, const sc2::Point2D& point_);
 
@@ -176,7 +196,7 @@ struct Hub {
     Expansions m_expansions;
     sc2::UNIT_TYPEID m_current_worker_type;
 
-    Cache<Geyser> m_captured_geysers;
+    Cache<Unit> m_captured_geysers;
 
     Cache<Worker> m_busy_workers;
     Cache<Worker> m_free_workers;
