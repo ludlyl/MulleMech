@@ -19,11 +19,12 @@
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
 #include "plugins/WarpSmith.h"
+#include "plugins/micro/Reaper.h"
 #include "Reasoner.h"
-
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
 #include <memory>
+#include <plugins/ReaperHarass.h>
 
 Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()) {
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
@@ -52,6 +53,8 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ForceCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
+    m_plugins.emplace_back(new ReaperHarass());
+    m_plugins.emplace_back(new Reaper());
 
     if (current_race == sc2::Race::Protoss)
         m_plugins.emplace_back(new WarpSmith());
