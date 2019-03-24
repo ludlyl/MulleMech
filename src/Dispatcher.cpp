@@ -19,10 +19,8 @@
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
 #include "plugins/WarpSmith.h"
-#include "plugins/pluginsMicro/Reaper.h"
+#include "plugins/micro/Reaper.h"
 #include "Reasoner.h"
-
-
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
 #include <memory>

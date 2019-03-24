@@ -12,11 +12,11 @@ public:
 
     void OnStep(Builder* builder) final;
 
-    void OnUnitIdle(const sc2::Unit* unit, Builder*) final;
+    void OnUnitIdle(const Unit& unit_, Builder*) final;
 
-    void OnUnitDestroyed(const sc2::Unit* unit, Builder*) final;
+    void OnUnitDestroyed(const Unit& unit_, Builder*) final;
 
-    void OnUnitCreated(const sc2::Unit* unit_) final;
+    void OnUnitCreated(const Unit& unit_) final;
 
 
 

@@ -1,9 +1,10 @@
 //
 // Created by kevin on 2019-03-07.
 //
-#include "../Plugin.h"
+#include "plugins/Plugin.h"
 #include <unordered_set>
 #include <vector>
+#include "DefaultUnit.h"
 
 class Reaper : public Plugin {
 public:
@@ -12,9 +13,9 @@ public:
 
     void OnStep(Builder *builder) final;
 
-    void OnUnitCreated(const sc2::Unit *unit_) final;
+    void OnUnitCreated(const Unit& unit_) final;
 
-    void OnUnitDestroyed(const sc2::Unit *unit, Builder *) final;
+    void OnUnitDestroyed(const Unit& unit_, Builder *) final;
 
 
 private:
