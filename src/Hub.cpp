@@ -298,13 +298,14 @@ void Hub::AssignVespeneHarvester(const Unit& refinery_) {
 
 bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
-        if (m_assignedBuildings.find(order_->assignee) == m_assignedBuildings.end()) {
+        if (m_assignedBuildings.find(order_->assignee) == m_assignedBuildings.end()
+            && GameObject::ToUnit(order_->assignee)->orders.empty()) {
             m_assignedBuildings.insert(order_->assignee);
             return true;
         }
     } else {
         for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)) {
-            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end() && unit->orders.empty()) {
                 m_assignedBuildings.insert(unit->tag);
                 order_->assignee = unit->tag;
                 return true;
@@ -322,7 +323,7 @@ bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc
     for (const auto& unit : gAPI->observer().GetUnits(
             MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
             sc2::Unit::Alliance::Self)) {
-        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
+        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end() && unit->orders.empty()) {
             m_assignedBuildings.insert(unit->tag);
             order_->assignee = unit->tag;
             return true;
