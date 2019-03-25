@@ -20,6 +20,7 @@
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
 #include "plugins/WarpSmith.h"
+#include "plugins/BuildInfo.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -51,13 +52,14 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ForceCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
+    m_plugins.emplace_back(new BuildInfo());
 
     //if (current_race == sc2::Race::Protoss)
     //    m_plugins.emplace_back(new WarpSmith());
 
-    /*std::cout << "x: " << gAPI->observer().StartingLocation().x;
+    std::cout << "xhejehejejehejheheh: " << gAPI->observer().StartingLocation().x;
     std::cout << "y: " << gAPI->observer().StartingLocation().y;
-
+/*
     //find point to building line
     BuildingPlacer::buildingPoint = BuildingPlacer::GetPointFrontOfCC(gAPI->observer().StartingLocation());
 
