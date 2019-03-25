@@ -38,6 +38,7 @@ std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit) {
 }
 
 void Unit::UpdateAPIData(const sc2::Unit& unit) {
+    assert(tag == unit.tag);
     sc2::Unit::operator=(unit);
 }
 

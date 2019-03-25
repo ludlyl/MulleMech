@@ -89,6 +89,7 @@ void Dispatcher::OnStep() {
     Timer clock;
     clock.Start();
 
+    gAPI->OnStep();
     gHub->OnStep();
     gReasoner->CalculatePlayStyle();
 

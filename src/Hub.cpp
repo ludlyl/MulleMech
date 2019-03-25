@@ -106,11 +106,7 @@ void Hub::OnUnitCreated(Unit* unit_) {
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
             // Remove claimed geyser
-            bool removed = m_captured_geysers.Remove([unit_](const Unit* geyser) {
-                return unit_ == geyser ||
-                    (unit_->pos.x == geyser->pos.x && unit_->pos.y == geyser->pos.y);
-            });
-            if (removed)
+            if (m_captured_geysers.RemoveOccupied(unit_))
                 gHistory.info() << "Release claimed geyser " << std::endl;
 
             m_captured_geysers.Add(unit_);
@@ -225,10 +221,7 @@ void Hub::OnBuildingConstructionComplete(Unit* building_) {
 }
 
 bool Hub::IsOccupied(const Unit* unit_) const {
-    return m_captured_geysers.IsCached([unit_](const Unit* geyser) {
-        return unit_ == geyser ||
-            (unit_->pos.x == geyser->pos.x && unit_->pos.y == geyser->pos.y);
-    });
+    return m_captured_geysers.IsOccupied(unit_);
 }
 
 bool Hub::IsTargetOccupied(const sc2::UnitOrder& order_) const {

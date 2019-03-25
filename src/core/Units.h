@@ -23,6 +23,7 @@ public:
 
     Unit* GetRandomUnit() const;
 
+    // Returns a copy of Units as an API-recognizable vector with sc2::Unit objects
     sc2::Units ToAPI() const;
 
     // Common functions found in std::vector implementations

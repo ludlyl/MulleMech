@@ -388,14 +388,24 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
     assert(unit_ != nullptr);
 
     auto itr = m_unitObjects.find(unit_->tag);
-
     if (itr == m_unitObjects.end()) {
         m_unitObjects[unit_->tag] = Unit::Make(*unit_);
         return m_unitObjects[unit_->tag].get();
     }
 
-    itr->second->UpdateAPIData(*unit_);
     return itr->second.get();
+}
+
+void Interface::OnStep() {
+    sc2::Units units = observer().m_observer->GetUnits();
+    for (const sc2::Unit* unit : units) {
+        auto itr = m_unitObjects.find(unit->tag);
+        if (itr == m_unitObjects.end()) {
+            m_unitObjects[unit->tag] = Unit::Make(*unit);
+        } else {
+            itr->second->UpdateAPIData(*unit);
+        }
+    }
 }
 
 }  // namespace API

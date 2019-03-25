@@ -31,13 +31,13 @@ struct Cache {
 
     bool IsCached(const T* obj_) const;
 
-    bool IsCached(std::function<bool(const T*)> compareFn_) const;
-
     bool Swap(const T* obj_, Cache<T>& dst_);
 
     bool Remove(const T* obj_);
 
-    bool Remove(std::function<bool(const T*)> compareFn_);
+    // When locations are reserved (i.e., Geysers)
+    bool IsOccupied(const T* obj_) const;
+    bool RemoveOccupied(const T* obj_);
 
     T* GetClosestTo(const sc2::Point2D& location_);
 
@@ -78,12 +78,6 @@ bool Cache<T>::IsCached(const T* obj_) const {
 }
 
 template <typename T>
-bool Cache<T>::IsCached(std::function<bool(const T*)> compareFn_) const {
-    auto itr = std::find_if(m_objects.begin(), m_objects.end(), compareFn_);
-    return itr != m_objects.end();
-}
-
-template <typename T>
 bool Cache<T>::Swap(const T* obj_, Cache<T>& dst_) {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
@@ -106,13 +100,27 @@ bool Cache<T>::Remove(const T* obj_) {
 }
 
 template <typename T>
-bool Cache<T>::Remove(std::function<bool(const T*)> compareFn_) {
-    auto itr = std::find_if(m_objects.begin(), m_objects.end(), compareFn_);
-    if (itr == m_objects.end())
-        return false;
+bool Cache<T>::IsOccupied(const T* obj_) const {
+    for (auto& obj : m_objects) {
+        if (obj == obj_ ||
+            (obj_->pos.x == obj->pos.x && obj_->pos.y == obj->pos.y))
+            return true;
 
-    m_objects.erase(itr);
-    return true;
+    }
+    return false;
+}
+
+template <typename T>
+bool Cache<T>::RemoveOccupied(const T* obj_) {
+    for (auto itr = m_objects.begin(); itr != m_objects.end(); ++itr) {
+        if (*itr == obj_ ||
+            (obj_->pos.x == (*itr)->pos.x && obj_->pos.y == (*itr)->pos.y)) {
+            m_objects.erase(itr);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 template <typename T>

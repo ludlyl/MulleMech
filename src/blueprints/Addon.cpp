@@ -21,7 +21,7 @@ bool bp::Addon::Build(Order *order_) {
 
         for (auto& building : parent_buildings) {
             // Check if the addon can be placed
-            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
+            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(gAPI->observer().GetUnit(building->tag)))) {
                 order_->assignee = building;
                 break;
             }
@@ -37,7 +37,7 @@ bool bp::Addon::Build(Order *order_) {
         // Or is it preferred to let the function return true even if the action will fail?
 
         // Check if the addon can be placed
-        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*order_->assignee))) {
+        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(order_->assignee))) {
             return false;
         }
     }

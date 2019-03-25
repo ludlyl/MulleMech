@@ -3,6 +3,7 @@
 //
 #include "plugins/Plugin.h"
 #include "plugins/micro/MicroPlugin.h"
+#include "core/Units.h"
 #include <unordered_set>
 #include <vector>
 #include "DefaultUnit.h"

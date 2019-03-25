@@ -13,6 +13,9 @@
 #include <sc2api/sc2_map_info.h>
 
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace API {
 
@@ -128,6 +131,7 @@ struct Observer {
     float TerrainHeight(const sc2::Point2D& pos_) const;
 
  private:
+     friend struct Interface;
     const sc2::ObservationInterface* m_observer;
 };
 
@@ -168,6 +172,8 @@ struct Interface {
 
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
     Unit* WrapUnit(const sc2::Unit* unit_);
+
+    void OnStep();
 
  private:
     sc2::ActionInterface* m_action;
