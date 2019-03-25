@@ -103,17 +103,16 @@ void Governor::OnStep(Builder* builder_) {
     //TODO or expand our base based on enum from higher-order plugin.
 }
 
-void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
-    const sc2::Unit* addOnAsUnit;
+void Governor::OnUnitIdle(const Unit& unit_, Builder *builder_) {
     sc2::UNIT_TYPEID type;
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
             if (unit_->add_on_tag != 0) {
-                addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-                type = addOnAsUnit->unit_type.ToType();
+                //addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+                type = unit_->unit_type.ToType();
                 if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
-                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, &unit_);
                     gHistory.info() << "Schedule Marauder training" << std::endl;
                     return;
                 }
@@ -123,16 +122,15 @@ void Governor::OnUnitIdle(const sc2::Unit *unit_, Builder *builder_) {
             //TODO sometimes we might want to produce cyclons
             if (unit_->add_on_tag == 0)
                 return;
-            addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-            type = addOnAsUnit->unit_type.ToType();
+            type = unit_->unit_type.ToType();
             if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, &unit_);
                 gHistory.info() << "Schedule siegetank training" << std::endl;
                 return;
             }
             if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) {
                 //TODO fix so that this will awlays build 2 hellions at all times.
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, &unit_);
                 gHistory.info() << "Schedule Hellion training" << std::endl;
                 return;
             }
@@ -162,13 +160,12 @@ std::pair<float, float> Governor::CurrentConsumption() {
     float mineral_consumption = 0; // Minerals/min
     float vespene_consumption = 0; // Vespene/min
 
-    for (const auto& i : barracks()) {
+    for (const auto& i : barracks) {
         //assumed zero production incase of mechbuild
         if (i->add_on_tag == 0) {
             continue;
         }
-        auto addOnAsUnit = gAPI->observer().GetUnit(i->add_on_tag);
-        auto type = addOnAsUnit->unit_type.ToType();
+        auto type = i->unit_type.ToType();
 
         switch (type) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
@@ -180,14 +177,13 @@ std::pair<float, float> Governor::CurrentConsumption() {
         }
     }
 
-    for (const auto& i : factories()) {
+    for (const auto& i : factories) {
         //TODO if factory doesnt have addon -> check what addon it's building assuming it's building one
         if (i->add_on_tag == 0) {
             continue;
         }
 
-        auto addOnAsUnit = gAPI->observer().GetUnit(i->add_on_tag);
-        auto type = addOnAsUnit->unit_type.ToType();
+        auto type = i->unit_type.ToType();
 
         switch (type) {
         case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
@@ -208,14 +204,13 @@ std::pair<float, float> Governor::CurrentConsumption() {
     }
 
     // TODO Starport wont produce units continiusly, add a flag to know when it is and when it isn't.
-    for (const auto& i : starports()) {
+    for (const auto& i : starports) {
         //TODO if starport doesnt have addon -> check what addon it's building assuming it's building one
         if (i->add_on_tag == 0) {
             continue;
         }
 
-        auto addOnAsUnit = gAPI->observer().GetUnit(i->add_on_tag);
-        auto type = addOnAsUnit->unit_type.ToType();
+        auto type = i->unit_type.ToType();
 
         switch (type) {
         case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
