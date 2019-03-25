@@ -2,6 +2,7 @@
 
 #include "core/Order.h"
 #include "plugins/Plugin.h"
+#include "plugins/BuildInfo.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -37,6 +38,8 @@ private:
     const sc2::ObservationInterface* m_observer;
 };
 
-static sc2::Point3D buildingPoint;
+/*static sc2::Point3D buildingPoint;
 
 static float baseKValue;
+
+const std::vector<const sc2::Unit*> geysersPos;*/

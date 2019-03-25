@@ -5,6 +5,7 @@
 
 #include <sc2api/sc2_common.h>
 #include <c++/8.2.1/iostream>
+#include <plugins/BuildInfo.h>
 
 /*void Dispatcher::OnGameStart() {
     //find point to building line
@@ -16,7 +17,9 @@
 
 //BuildingPlacer::BuildingPlacer() = default;
 
-void BuildingPlacer::OnGameStart(Builder*) {
+//void BuildingPlacer::OnGameStart(Builder*) {
+    //geysersPos = getGeysersPos();
+    /*
     //find point to building line
     buildingPoint = BuildingPlacer::GetPointFrontOfCC(m_observer->GetStartLocation());
 
@@ -24,7 +27,8 @@ void BuildingPlacer::OnGameStart(Builder*) {
     baseKValue = BuildingPlacer::GetBaseKValue();
     std::cout << "firstEvalKVal: " << baseKValue << "\n";
     std::cout << "---------------------------" << "\n\n";
-}
+     */
+//}
 
 sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLocation) {
     // TODO: Reuse Map's Clusters?
@@ -173,9 +177,6 @@ std::optional<sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& or
         std::cout << "k-valueREF: " << baseKValue << "\n";
         std::cout << "k-valueNEWLINE: " << getKValue(newPoint, buildingPoint) << "\n\n";
 
-        std::cout << "base X: " << baseLocation.x << "\n";
-        std::cout << "base Y: " << baseLocation.y << "\n\n";
-
         std::cout << "NewPoint X from base: " << buildingPoint.x - baseLocation.x << "\n";
         std::cout << "NewPoint Y from base: " << buildingPoint.y - baseLocation.y << "\n\n";
         std::cout << "---------------------------" << "\n\n";
@@ -205,6 +206,8 @@ float BuildingPlacer::GetBaseKValue() {
 
     sc2::Point2D point1(geyser1 -> pos.x, geyser1 -> pos.y);
     sc2::Point2D point2(geyser2 -> pos.x, geyser2 -> pos.y);
+
+    std::cout << "baseKValue, is it ok?" << getKValue(point1, point2) << "\n";
 
     return getKValue(point1, point2);
 }
