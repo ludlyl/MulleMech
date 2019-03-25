@@ -10,6 +10,21 @@
 
 #include <sc2api/sc2_agent.h>
 
+#define TANK_MINERAL 150.0
+#define TANK_VESPENE 125.0
+#define TANK_PRODUCTION_TIME 32.0
+
+#define HELLION_MINERAL 100.0
+#define HELLION_PRODUCTION_TIME 21.0
+
+#define VIKING_MINERAL 150.0
+#define VIKING_VESPENE 75.0
+#define VIKING_PRODUCTION_TIME 30.0
+
+#define BANSHEE_MINERAL 150.0
+#define BANSHEE_VESPENE 100.0
+#define BANSHEE_PRODUCTION_TIME 30.0
+
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
     gHistory.info() << "Started game as Terran" << std::endl;
@@ -78,7 +93,7 @@ void Governor::OnStep(Builder* builder_) {
     if (vespene_overproduction < 0) {
         // In this case we have minerals but not vespene -> produce hellions
 
-        if (mineral_overproduction < (2.0 * 100.0 / (21.0 / 60.0))) //cost of factory with reactor producing  
+        if (mineral_overproduction < (2.0 * HELLION_MINERAL / (HELLION_PRODUCTION_TIME / 60.0))) //cost of factory with reactor producing  
             return;
 
     }
@@ -177,12 +192,14 @@ std::pair<float, float> Governor::CurrentConsumption() {
         switch (type) {
         case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
             //assuming hellion prodcution
-            mineral_consumption += 2.0 * ( 100.0 / (21.0 / 60.0));
+
+            mineral_consumption += 2.0 * ( HELLION_MINERAL / (HELLION_PRODUCTION_TIME / 60.0));
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
             // assuming tank production
-            mineral_consumption += (150.0 / (32.0 / 60.0));
-            vespene_consumption += 125.0 / (32.0 / 60.0);
+
+            mineral_consumption += (TANK_MINERAL / (TANK_PRODUCTION_TIME / 60.0));
+            vespene_consumption += TANK_VESPENE / (TANK_PRODUCTION_TIME / 60.0);
             break;
         default:
             break;
@@ -203,13 +220,15 @@ std::pair<float, float> Governor::CurrentConsumption() {
         switch (type) {
         case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
             //assuming viking production
-            mineral_consumption += 2.0 * 150.0 / (30.0 / 60.0);
-            vespene_consumption += 2.0 * 75.0 / (30.0 / 60.0);
+
+            mineral_consumption += 2.0 * VIKING_MINERAL / (VIKING_PRODUCTION_TIME / 60.0);
+            vespene_consumption += 2.0 * VIKING_VESPENE / (VIKING_PRODUCTION_TIME / 60.0);
             break;
         case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
             //assuming banshee production
-            mineral_consumption += 150.0 / (30.0 / 60.0);
-            vespene_consumption += 100.0 / (30.0 / 60.0);
+
+            mineral_consumption += BANSHEE_MINERAL/ (BANSHEE_PRODUCTION_TIME / 60.0);
+            vespene_consumption += BANSHEE_VESPENE / (BANSHEE_PRODUCTION_TIME / 60.0);
             break;
         default:
             break;
