@@ -105,12 +105,13 @@ void Governor::OnStep(Builder* builder_) {
 
 void Governor::OnUnitIdle(const Unit& unit_, Builder *builder_) {
     sc2::UNIT_TYPEID type;
+    std::optional<Unit> addOnAsUnit;
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
             if (unit_->add_on_tag != 0) {
-                //addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-                type = unit_->unit_type.ToType();
+                addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+                type = addOnAsUnit.value()->unit_type.ToType();
                 if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, &unit_);
                     gHistory.info() << "Schedule Marauder training" << std::endl;
@@ -122,7 +123,8 @@ void Governor::OnUnitIdle(const Unit& unit_, Builder *builder_) {
             //TODO sometimes we might want to produce cyclons
             if (unit_->add_on_tag == 0)
                 return;
-            type = unit_->unit_type.ToType();
+            addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
+            type = addOnAsUnit.value()->unit_type.ToType();
             if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, &unit_);
                 gHistory.info() << "Schedule siegetank training" << std::endl;
