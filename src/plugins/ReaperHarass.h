@@ -2,6 +2,7 @@
 // Created by kevin on 2019-03-07.
 //
 #include "Plugin.h"
+#include "core/Units.h"
 #include <unordered_set>
 #include <vector>
 
@@ -12,16 +13,16 @@ public:
 
     void OnStep(Builder* builder) final;
 
-    void OnUnitIdle(const Unit& unit_, Builder*) final;
+    void OnUnitIdle(Unit* unit_, Builder*) final;
 
-    void OnUnitDestroyed(const Unit& unit_, Builder*) final;
+    void OnUnitDestroyed(Unit* unit_, Builder*) final;
 
-    void OnUnitCreated(const Unit& unit_) final;
+    void OnUnitCreated(Unit* unit_) final;
 
 
 
 private:
 
-    sc2::Units m_reaperStrikeTeam;
+    Units m_reaperStrikeTeam;
     bool strikeInProgress;
 };

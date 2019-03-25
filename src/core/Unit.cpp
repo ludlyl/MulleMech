@@ -1,37 +1,53 @@
 #include "Unit.h"
 
-#include "UnitData.h"
 #include "API.h"
+#include "Helpers.h"
+#include "objects/Worker.h"
 
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(std::shared_ptr<UnitData> data) : m_data(std::move(data)) { }
-
-Unit::Unit(const sc2::Unit* unit) {
-    this->m_data = gAPI->WrapUnit(unit).m_data;
-}
-
-Unit::operator const sc2::Unit&() const {
-    return *m_data->unit;
-}
+Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) { }
 
 Unit::operator const sc2::Unit*() const {
-    return m_data->unit;
+    return static_cast<const sc2::Unit*>(this);
 }
 
-const sc2::Unit* Unit::operator->() const {
-    return m_data->unit;
-}
-
-const sc2::Unit& Unit::operator*() const {
-    return *m_data->unit;
+bool Unit::operator==(const Unit& other) const {
+    return tag == other.tag;
 }
 
 void Unit::InstallMicro() {
-    if (!m_data->micro)
-        m_data->micro = MicroPlugin::MakePlugin(*this);
+    if (!m_micro)
+        m_micro = MicroPlugin::MakePlugin(this);
 }
 
 MicroPlugin* Unit::Micro() const {
-    return m_data->micro.get();
+    return m_micro.get();
+}
+
+std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit) {
+    switch (unit.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
+        case sc2::UNIT_TYPEID::TERRAN_SCV:
+        case sc2::UNIT_TYPEID::ZERG_DRONE:
+            return std::make_unique<Worker>(unit);
+
+        default:
+            return std::make_unique<Unit>(unit);
+    }
+}
+
+void Unit::UpdateAPIData(const sc2::Unit& unit) {
+    assert(tag == unit.tag);
+    sc2::Unit::operator=(unit);
+}
+
+Worker* Unit::AsWorker() {
+    if (auto worker = dynamic_cast<Worker*>(this)) {
+        return worker;
+    } else {
+        if (IsWorker()(*this))
+            throw std::runtime_error("Unit with worker typeid must be of type Worker");
+    }
+    return nullptr;
 }

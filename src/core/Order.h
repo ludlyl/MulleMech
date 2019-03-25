@@ -9,7 +9,7 @@
 class Unit;
 
 struct Order {
-    explicit Order(const sc2::UnitTypeData& data_, const Unit* assignee_ = nullptr);
+    explicit Order(const sc2::UnitTypeData& data_, Unit* assignee_ = nullptr);
 
     explicit Order(const sc2::UpgradeData& data_);
 
@@ -25,5 +25,5 @@ struct Order {
     sc2::AbilityID ability_id;
     std::vector<sc2::UnitTypeID> tech_alias;
 
-    sc2::Tag assignee = sc2::NullTag;
+    Unit* assignee = nullptr;
 };

@@ -5,7 +5,7 @@
 
 #include "core/API.h"
 
-std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(const Unit& unit) {
+std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
     case sc2::UNIT_TYPEID::TERRAN_MARINE:
         return std::make_unique<Marine>(unit);
@@ -14,20 +14,20 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(const Unit& unit) {
     }
 }
 
-MicroPlugin::MicroPlugin(const Unit& unit) :
-    m_self(unit), m_moving(false)
+MicroPlugin::MicroPlugin(Unit* unit) :
+    m_self(unit), m_target(nullptr), m_moving(false)
 {
 }
 
-void MicroPlugin::OnCombatFrame(Unit self, const Units& enemies) {
+void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies) {
     m_self = std::move(self);
     OnCombatStep(enemies);
 }
 
-void MicroPlugin::OnCombatOver(Unit self) {
-    m_self = std::move(self);
+void MicroPlugin::OnCombatOver(Unit* self) {
+    m_self = self;
     OnCombatEnded();
-    m_target = sc2::NullTag;
+    m_target = nullptr;
     m_moving = false;
 }
 
@@ -41,10 +41,10 @@ bool MicroPlugin::CanCast(sc2::ABILITY_ID ability_id) {
     return false;
 }
 
-void MicroPlugin::Attack(const Unit& target) {
+void MicroPlugin::Attack(Unit* target) {
     if (m_self && !IsAttacking(target)) {
         gAPI->action().Attack(m_self, target);
-        m_target = target->tag;
+        m_target = target;
         m_moving = false;
     }
 }
@@ -52,7 +52,7 @@ void MicroPlugin::Attack(const Unit& target) {
 void MicroPlugin::MoveTo(const sc2::Point2D& pos) {
     if (m_self) {
         gAPI->action().MoveTo(m_self, pos);
-        m_target = sc2::NullTag;
+        m_target = nullptr;
         m_moving = true;
     }
 }
@@ -68,13 +68,13 @@ void MicroPlugin::Cast(sc2::ABILITY_ID ability) {
         gAPI->action().Cast(m_self, ability);
 }
 
-void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit& target) {
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit* target) {
     if (m_self && CanCast(ability))
         gAPI->action().Cast(m_self, ability, target);
 }
 
-bool MicroPlugin::IsAttacking(const Unit& target) const {
-    return m_target == target->tag;
+bool MicroPlugin::IsAttacking(const Unit* target) const {
+    return m_target == target;
 }
 
 bool MicroPlugin::IsMoving() const {

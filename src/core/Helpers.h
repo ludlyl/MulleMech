@@ -144,7 +144,7 @@ private:
 static constexpr float ADDON_DISPLACEMENT_IN_X = 2.5f;
 static constexpr float ADDON_DISPLACEMENT_IN_Y = -0.5f;
 
-sc2::Point2D GetTerranAddonPosition(const Unit& unit_);
+sc2::Point2D GetTerranAddonPosition(const Unit* unit_);
 
 struct ClosestToPoint2D {
     explicit ClosestToPoint2D(sc2::Point2D point) : m_point(point) {

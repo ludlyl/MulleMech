@@ -2,6 +2,8 @@
 // Created by kevin on 2019-03-07.
 //
 #include "plugins/Plugin.h"
+#include "plugins/micro/MicroPlugin.h"
+#include "core/Units.h"
 #include <unordered_set>
 #include <vector>
 #include "DefaultUnit.h"
@@ -13,11 +15,11 @@ public:
 
     void OnStep(Builder *builder) final;
 
-    void OnUnitCreated(const Unit& unit_) final;
+    void OnUnitCreated(Unit* unit_) final;
 
-    void OnUnitDestroyed(const Unit& unit_, Builder *) final;
+    void OnUnitDestroyed(Unit* unit_, Builder *) final;
 
 
 private:
-    sc2::Units m_reapers;
+    Units m_reapers;
 };

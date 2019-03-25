@@ -10,5 +10,5 @@
 struct RepairMan : Plugin {
     void OnStep(Builder* builder_) final;
 
-    void OnUnitDestroyed(const Unit& unit_, Builder* builder_) final;
+    void OnUnitDestroyed(Unit* unit_, Builder* builder_) final;
 };

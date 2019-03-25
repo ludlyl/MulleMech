@@ -13,7 +13,7 @@ struct ForceCommander : Plugin {
 
     void OnStep(Builder*) final;
 
-    void OnUnitCreated(const Unit& unit_) final;
+    void OnUnitCreated(Unit* unit_) final;
 
     void AttackEnemiesCloseToBase();
 

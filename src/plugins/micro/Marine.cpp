@@ -2,7 +2,7 @@
 
 #include "core/API.h"
 
-Marine::Marine(const Unit& unit)
+Marine::Marine(Unit* unit)
     : DefaultUnit(unit)
 {
 }

@@ -10,7 +10,7 @@
 struct Miner : Plugin {
     void OnStep(Builder* builder_) final;
 
-    void OnUnitCreated(const Unit& unit_) final;
+    void OnUnitCreated(Unit* unit_) final;
 
-    void OnUnitIdle(const Unit& unit_, Builder*) final;
+    void OnUnitIdle(Unit* unit_, Builder*) final;
 };

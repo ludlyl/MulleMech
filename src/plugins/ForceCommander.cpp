@@ -22,7 +22,7 @@ void ForceCommander::AttackEnemiesCloseToBase() {
     auto closestEnemyUnit = enemyUnits.GetClosestUnit(baseLocation2D);
     if (!closestEnemyUnit)
         return;
-    sc2::Point3D enemyPos3D = closestEnemyUnit.value()->pos;
+    sc2::Point3D enemyPos3D = closestEnemyUnit->pos;
     sc2::Point2D enemyPos2D = sc2::Point2D(enemyPos3D.x, enemyPos3D.y);
     double lengthToEnemy = sqrt(std::pow(baseLocation3D.x-enemyPos3D.x, 2) + std::pow(baseLocation3D.y-enemyPos3D.y, 2));
     int limit = 50;
@@ -52,7 +52,7 @@ void ForceCommander::OnStep(Builder*) {
     m_attack_limit = std::min<float>(m_attack_limit * 1.5f, 170.0f);
 }
 
-void ForceCommander::OnUnitCreated(const Unit& unit_) {
+void ForceCommander::OnUnitCreated(Unit* unit_) {
     if (!IsCombatUnit()(*unit_))
         return;
 
@@ -74,14 +74,14 @@ void ForceCommander::UpdateOffensiveUnits() {
         auto pos = gAPI->observer().GameInfo().enemy_start_locations.front();
         for (auto& unit : m_offensiveUnits) {
             gAPI->action().MoveTo(unit, pos);
-            unit.Micro()->OnCombatOver(unit);
+            unit->Micro()->OnCombatOver(unit);
         }
         m_inCombat = false;
     // If we still have enemies => Update micro plugins
     } else if (!nearbyEnemies.empty()) {
         m_inCombat = true;
         for (auto& unit : m_offensiveUnits) {
-            unit.Micro()->OnCombatFrame(unit, nearbyEnemies);
+            unit->Micro()->OnCombatFrame(unit, nearbyEnemies);
         }
     }
 }
