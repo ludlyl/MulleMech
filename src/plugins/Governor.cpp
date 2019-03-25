@@ -54,6 +54,7 @@ void Governor::OnStep(Builder* builder_) {
     int minerals = gAPI->observer().GetMinerals();
 
     int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
+    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
 
     if (minerals < 50)
        return;
@@ -88,27 +89,25 @@ void Governor::OnStep(Builder* builder_) {
     if (vespene_overproduction < 0) {
         // In this case we have minerals but not vespene -> produce hellions
 
-        if (mineral_overproduction < (2.0 * hellion_mineral / (HELLION_PRODUCTION_TIME / 60.0))) //cost of factory with reactor producing  
+        if (mineral_overproduction < (2.0 * hellion_mineral / (hellion_build_time / 60.0))) //cost of factory with reactor producing  
             return;
 
     }
-
-
     //TODO start planning on what we want to spend our overproduction on based on current army compersition
     //TODO or expand our base based on enum from higher-order plugin.
 }
 
-void Governor::OnUnitIdle(const Unit& unit_, Builder *builder_) {
+void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
     sc2::UNIT_TYPEID type;
-    std::optional<Unit> addOnAsUnit;
+    Unit* addOnAsUnit;
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
             if (unit_->add_on_tag != 0) {
                 addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-                type = addOnAsUnit.value()->unit_type.ToType();
+                type = addOnAsUnit->unit_type;
                 if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
-                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, &unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
                     gHistory.info() << "Schedule Marauder training" << std::endl;
                     return;
                 }
@@ -119,15 +118,15 @@ void Governor::OnUnitIdle(const Unit& unit_, Builder *builder_) {
             if (unit_->add_on_tag == 0)
                 return;
             addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-            type = addOnAsUnit.value()->unit_type.ToType();
+            type = addOnAsUnit->unit_type;
             if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, &unit_);
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                 gHistory.info() << "Schedule siegetank training" << std::endl;
                 return;
             }
             if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) {
                 //TODO fix so that this will awlays build 2 hellions at all times.
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, &unit_);
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 gHistory.info() << "Schedule Hellion training" << std::endl;
                 return;
             }
@@ -157,12 +156,16 @@ std::pair<float, float> Governor::CurrentConsumption() {
     float mineral_consumption = 0; // Minerals/min
     float vespene_consumption = 0; // Vespene/min
     int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).mineral_cost;
+    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
     int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
     int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
+    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
     int viking_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).mineral_cost;
     int viking_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).vespene_cost;
+    float viking_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).build_time;
     int banshee_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).mineral_cost;
     int banshee_vepsene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).vespene_cost;
+    float banshee_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).build_time;
 
     for (const auto& i : barracks) {
         //assumed zero production incase of mechbuild
@@ -193,13 +196,13 @@ std::pair<float, float> Governor::CurrentConsumption() {
         case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
             //assuming hellion prodcution
 
-            mineral_consumption += 2.0 * ( hellion_mineral / (HELLION_PRODUCTION_TIME / 60.0));
+            mineral_consumption += 2.0 * ( hellion_mineral / (hellion_build_time / 60.0));
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
             // assuming tank production
 
-            mineral_consumption += tank_mineral / (TANK_PRODUCTION_TIME / 60.0);
-            vespene_consumption += tank_vespene / (TANK_PRODUCTION_TIME / 60.0);
+            mineral_consumption += tank_mineral / (tank_build_time / 60.0);
+            vespene_consumption += tank_vespene / (tank_build_time / 60.0);
             break;
         default:
             break;
@@ -220,14 +223,14 @@ std::pair<float, float> Governor::CurrentConsumption() {
         case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
             //assuming viking production
 
-            mineral_consumption += 2.0 * viking_mineral / (VIKING_PRODUCTION_TIME / 60.0);
-            vespene_consumption += 2.0 * viking_vespene / (VIKING_PRODUCTION_TIME / 60.0);
+            mineral_consumption += 2.0 * viking_mineral / (viking_build_time / 60.0);
+            vespene_consumption += 2.0 * viking_vespene / (viking_build_time / 60.0);
             break;
         case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
             //assuming banshee production
 
-            mineral_consumption += banshee_mineral / (BANSHEE_PRODUCTION_TIME / 60.0);
-            vespene_consumption += banshee_vepsene / (BANSHEE_PRODUCTION_TIME / 60.0);
+            mineral_consumption += banshee_mineral / (banshee_build_time / 60.0);
+            vespene_consumption += banshee_vepsene / (banshee_build_time / 60.0);
             break;
         default:
             break;
