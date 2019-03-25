@@ -1,7 +1,7 @@
 #include "DefaultUnit.h"
 #include "core/API.h"
 
-DefaultUnit::DefaultUnit(const sc2::Unit* unit)
+DefaultUnit::DefaultUnit(const Unit& unit)
     : MicroPlugin(unit)
 {
 }
@@ -9,7 +9,7 @@ DefaultUnit::DefaultUnit(const sc2::Unit* unit)
 void DefaultUnit::OnCombatStep(const Units& enemies) {
     if (m_self->health / m_self->health_max > FleeHpPct) {
         if (auto target = enemies.GetClosestUnit(m_self->tag)) {
-            Attack(target);
+            Attack(target.value());
         }
     } else {
         // TODO: Add a function to Units to calcualte retreat vector, that is a direction away from the enemies

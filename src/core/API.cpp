@@ -15,71 +15,71 @@ Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
 
 void Action::Build(const Order& order_, bool queue_) {
-    sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, queue_);
+    auto unit = GameObject::ToUnit(order_.assignee);
+    m_action->UnitCommand(unit, order_.ability_id, queue_);
 }
 
-void Action::Build(const Order& order_, const sc2::Unit* unit_, bool queue_) {
-    sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, unit_, queue_);
+void Action::Build(const Order& order_, const Unit& unit_, bool queue_) {
+    auto unit = GameObject::ToUnit(order_.assignee);
+    m_action->UnitCommand(unit, order_.ability_id, unit_, queue_);
 }
 
 void Action::Build(const Order& order_, const sc2::Point2D& point_, bool queue_) {
-    sc2::Unit unit = GameObject::ToUnit(order_.assignee);
-    m_action->UnitCommand(&unit, order_.ability_id, point_, queue_);
+    auto unit = GameObject::ToUnit(order_.assignee);
+    m_action->UnitCommand(unit, order_.ability_id, point_, queue_);
 }
 
-void Action::Attack(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
-    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+void Action::Attack(const Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(unit_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
 }
 
-void Action::Attack(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+void Action::Attack(const Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
 }
 
-void Action::Attack(const sc2::Unit& unit_, const sc2::Unit& target_, bool queue_) {
-    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::ATTACK_ATTACK, &target_, queue_);
+void Action::Attack(const Unit& unit_, const Unit& target_, bool queue_) {
+    m_action->UnitCommand(unit_, sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
 }
 
-void Action::Attack(const sc2::Units& units_, const sc2::Unit& target_, bool queue_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::ATTACK_ATTACK, &target_, queue_);
+void Action::Attack(const Units& units_, const Unit& target_, bool queue_) {
+    m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
 }
 
-void Action::MoveTo(const sc2::Unit& unit_, const sc2::Point2D& point_, bool queue_) {
-    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
+void Action::MoveTo(const Unit& unit_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
 }
 
-void Action::MoveTo(const sc2::Units& units_, const sc2::Point2D& point_, bool queue_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::MOVE, point_, queue_);
+void Action::MoveTo(const Units& units_, const sc2::Point2D& point_, bool queue_) {
+    m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::MOVE, point_, queue_);
 }
 
-void Action::Stop(const sc2::Unit& unit_, bool queue_) {
-    m_action->UnitCommand(&unit_, sc2::ABILITY_ID::STOP, queue_);
+void Action::Stop(const Unit& unit_, bool queue_) {
+    m_action->UnitCommand(unit_, sc2::ABILITY_ID::STOP, queue_);
 }
 
-void Action::Stop(const sc2::Units& units_, bool queue_) {
-    m_action->UnitCommand(units_, sc2::ABILITY_ID::STOP, queue_);
+void Action::Stop(const Units& units_, bool queue_) {
+    m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::STOP, queue_);
 }
 
-void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_, bool queue_) {
-    m_action->UnitCommand(&assignee_, ability_, queue_);
+void Action::Cast(const Unit& assignee_, sc2::ABILITY_ID ability_, bool queue_) {
+    m_action->UnitCommand(assignee_, ability_, queue_);
 }
 
-void Action::Cast(const sc2::Unit& assignee_, sc2::ABILITY_ID ability_,
-    const sc2::Unit& target_, bool queue_) {
-    m_action->UnitCommand(&assignee_, convert::ToAbilityID(ability_), &target_, queue_);
+void Action::Cast(const Unit& assignee_, sc2::ABILITY_ID ability_,
+    const Unit& target_, bool queue_) {
+    m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), target_, queue_);
 }
 
-void Action::LowerDepot(const sc2::Unit& assignee_) {
-    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+void Action::LowerDepot(const Unit& assignee_) {
+    m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
 }
 
-void Action::RaiseDepot(const sc2::Unit& assignee_) {
-    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+void Action::RaiseDepot(const Unit& assignee_) {
+    m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
 }
 
-void Action::OpenGate(const sc2::Unit& assignee_) {
-    m_action->UnitCommand(&assignee_, sc2::ABILITY_ID::MORPH_WARPGATE);
+void Action::OpenGate(const Unit& assignee_) {
+    m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_WARPGATE);
 }
 
 void Action::SendMessage(const std::string& text_) {
@@ -129,8 +129,11 @@ Observer::Observer(const sc2::ObservationInterface* observer_):
     m_observer(observer_) {
 }
 
-const sc2::Unit* Observer::GetUnit(sc2::Tag tag_) const {
-    return m_observer->GetUnit(tag_);
+std::optional<Unit> Observer::GetUnit(sc2::Tag tag_) const {
+    auto unit = m_observer->GetUnit(tag_);
+    if (!unit)
+        return std::nullopt;
+    return std::make_optional(gAPI->WrapUnit(unit));
 }
 
 Units Observer::GetUnits() const {
@@ -145,7 +148,8 @@ Units Observer::GetUnits(const sc2::Filter& filter_) const {
     // NOTE: The documentation for this function is wrong, in sc2_client.cc it
     //       does ForEachExistingUnit, and only applies the filter, it doesn't
     //       force alliance Self
-    return Units(m_observer->GetUnits(filter_));
+    auto units = m_observer->GetUnits(filter_);
+    return Units(std::move(units));
 }
 
 Units Observer::GetUnits(const sc2::Filter& filter_,
@@ -352,16 +356,16 @@ float Query::PathingDistance(const sc2::Point2D& start_, const sc2::Point2D& end
     return m_query->PathingDistance(start_, end_);
 }
 
-float Query::PathingDistance(const sc2::Unit& start_, const sc2::Point2D& end_) const {
-    return m_query->PathingDistance(&start_, end_);
+float Query::PathingDistance(const Unit& start_, const sc2::Point2D& end_) const {
+    return m_query->PathingDistance(start_, end_);
 }
 
 std::vector<float> Query::PathingDistances(const std::vector<sc2::QueryInterface::PathingQuery>& queries_) const {
     return m_query->PathingDistance(queries_);
 }
 
-sc2::AvailableAbilities Query::GetAbilitiesForUnit(const sc2::Unit& unit_, bool ignore_resource_requirements_) const {
-    return m_query->GetAbilitiesForUnit(&unit_, ignore_resource_requirements_);
+sc2::AvailableAbilities Query::GetAbilitiesForUnit(const Unit& unit_, bool ignore_resource_requirements_) const {
+    return m_query->GetAbilitiesForUnit(unit_, ignore_resource_requirements_);
 }
 
 Interface::Interface(sc2::ActionInterface* action_,
@@ -389,6 +393,21 @@ Observer Interface::observer() const {
 
 Query Interface::query() const {
     return Query(m_query);
+}
+
+Unit Interface::WrapUnit(const sc2::Unit* unit_) {
+    assert(unit_ != nullptr);
+
+    auto itr = m_unitDatas.find(unit_->tag);
+
+    if (itr == m_unitDatas.end()) {
+        auto data = std::make_shared<UnitData>(unit_);
+        m_unitDatas[unit_->tag] = data;
+        return Unit(data);
+    }
+
+    itr->second->unit = unit_;
+    return Unit(itr->second);
 }
 
 }  // namespace API

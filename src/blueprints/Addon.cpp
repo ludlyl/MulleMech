@@ -5,7 +5,7 @@
 #include "Historican.h"
 #include "Hub.h"
 
-bool Addon::Build(Order *order_) {
+bool bp::Addon::Build(Order *order_) {
     // TODO: If there isn't any space for the add-on (on any parent building), lift and re-place the building
 
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
@@ -19,7 +19,7 @@ bool Addon::Build(Order *order_) {
                 MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
                             sc2::Unit::Alliance::Self);
 
-        for (auto& building : parent_buildings()) {
+        for (auto& building : parent_buildings) {
             // Check if the addon can be placed
             if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(*(gAPI->observer().GetUnit(building->tag))))) {
                 order_->assignee = building->tag;
@@ -53,7 +53,7 @@ bool Addon::Build(Order *order_) {
     return true;
 }
 
-sc2::UNIT_TYPEID Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abilityId) {
+sc2::UNIT_TYPEID bp::Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abilityId) {
     switch(abilityId) {
         case sc2::ABILITY_ID::BUILD_TECHLAB_BARRACKS:
         case sc2::ABILITY_ID ::BUILD_REACTOR_BARRACKS:

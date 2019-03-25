@@ -5,8 +5,7 @@
 #pragma once
 
 #include "../Builder.h"
-
-#include <sc2api/sc2_unit.h>
+#include "core/Unit.h"
 
 struct Plugin {
     virtual ~Plugin() {
@@ -17,22 +16,22 @@ struct Plugin {
 
     virtual void OnStep(Builder*) = 0;
 
-    virtual void OnUnitCreated(const sc2::Unit*) {
+    virtual void OnUnitCreated(const Unit&) {
     }
 
-    virtual void OnUnitDestroyed(const sc2::Unit*, Builder*) {
+    virtual void OnUnitDestroyed(const Unit&, Builder*) {
     }
 
-    virtual void OnBuildingConstructionComplete(const sc2::Unit*) {
+    virtual void OnBuildingConstructionComplete(const Unit&) {
     }
 
-    virtual void OnUnitIdle(const sc2::Unit*, Builder*) {
+    virtual void OnUnitIdle(const Unit&, Builder*) {
     }
 
     virtual void OnUpgradeCompleted(sc2::UpgradeID) {
     }
 
-    virtual void OnUnitEnterVision(const sc2::Unit*) {
+    virtual void OnUnitEnterVision(const Unit&) {
 
     }
 

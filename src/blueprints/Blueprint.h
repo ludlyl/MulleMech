@@ -10,6 +10,8 @@
 
 #include <memory>
 
+namespace bp {
+
 struct Blueprint {
     virtual ~Blueprint();
 
@@ -17,3 +19,5 @@ struct Blueprint {
 
     static std::shared_ptr<Blueprint> Plot(sc2::ABILITY_ID ability_);
 };
+
+}

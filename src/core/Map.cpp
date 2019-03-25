@@ -149,12 +149,12 @@ Expansions CalculateExpansionLocations() {
         IsFoggyResource(),
         sc2::Unit::Alliance::Neutral);
 
-    if (resources().empty()) {
+    if (resources.empty()) {
         gHistory.warning() << "No expansions locations could be found!" << std::endl;
         return Expansions();
     }
 
-    for (const auto& i : resources()) {
+    for (const auto& i : resources) {
         bool cluster_found = false;
 
         for (auto& j : clusters) {
@@ -184,8 +184,8 @@ Expansions CalculateExpansionLocations() {
 
     // Manually add our starting location which can never be considered buildable due to having a CC
     auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
-    if (!ccs().empty()) {
-        auto exp = std::make_shared<Expansion>(ccs().front()->pos);
+    if (!ccs.empty()) {
+        auto exp = std::make_shared<Expansion>(ccs.front()->pos);
         exp->alliance = sc2::Unit::Alliance::Self;
         expansions.emplace_back(std::move(exp));
     }
