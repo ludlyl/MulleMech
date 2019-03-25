@@ -157,25 +157,6 @@ bool IsRefinery::operator()(const sc2::Unit& unit_) const {
         unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
 }
 
-bool IsBarracks::operator()(const sc2::Unit& unit_) const {
-    if (unit_.build_progress != 1.0f) // We dont count unfinished barracks. Good or bad?
-        return false;
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_BARRACKS;
-    // TODO we are currently not counting flying barracks
-}
-
-bool IsFactory::operator()(const sc2::Unit& unit_) const {
-    if (unit_.build_progress != 1.0f) 
-        return false;
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_FACTORY;
-}
-
-bool IsStarport::operator()(const sc2::Unit& unit_) const {
-    if (unit_.build_progress != 1.0f) 
-        return false;
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_STARPORT;
-}
-
 IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_): m_type(type_) {
 }
 

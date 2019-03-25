@@ -16,6 +16,7 @@ struct Governor : Plugin {
 
     void OnBuildingConstructionComplete(const Unit& unit_) final;
 
+    //Return values are Minerals and Vespene in that order.
     std::pair<float, float> Governor::CurrentConsumption();
 
     private:

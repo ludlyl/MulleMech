@@ -195,11 +195,11 @@ float Observer::GetAvailableFood() const {
     return static_cast<float>(GetFoodCap() - GetFoodUsed());
 }
 
-float Observer::GetMineralIncome() const {
+float Observer::GetMineralIncomeRate() const {
     return m_observer->GetScore().score_details.collection_rate_minerals;
 }
 
-float Observer::GetVespeneIncome() const {
+float Observer::GetVespeneIncomeRate() const {
     return m_observer->GetScore().score_details.collection_rate_vespene;
 }
 

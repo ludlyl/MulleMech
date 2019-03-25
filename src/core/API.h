@@ -115,9 +115,11 @@ struct Observer {
 
     float GetAvailableFood() const;
 
-    float GetMineralIncome() const;
+    //returns Minerals/min
+    float GetMineralIncomeRate() const;
 
-    float GetVespeneIncome() const;
+    //returns Vespene/min
+    float GetVespeneIncomeRate() const;
 
     sc2::UnitTypeData GetUnitTypeData(sc2::UNIT_TYPEID id_) const;
 
