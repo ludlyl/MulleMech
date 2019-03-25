@@ -15,5 +15,5 @@ bool bp::Refinery::Build(Order* order_) {
     if (!geyser)
         return false;
 
-    return gHub->AssignRefineryConstruction(order_, geyser.value());
+    return gHub->AssignRefineryConstruction(order_, geyser);
 }

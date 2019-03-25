@@ -16,22 +16,22 @@ struct Plugin {
 
     virtual void OnStep(Builder*) = 0;
 
-    virtual void OnUnitCreated(const Unit&) {
+    virtual void OnUnitCreated(Unit*) {
     }
 
-    virtual void OnUnitDestroyed(const Unit&, Builder*) {
+    virtual void OnUnitDestroyed(Unit*, Builder*) {
     }
 
-    virtual void OnBuildingConstructionComplete(const Unit&) {
+    virtual void OnBuildingConstructionComplete(Unit*) {
     }
 
-    virtual void OnUnitIdle(const Unit&, Builder*) {
+    virtual void OnUnitIdle(Unit*, Builder*) {
     }
 
     virtual void OnUpgradeCompleted(sc2::UpgradeID) {
     }
 
-    virtual void OnUnitEnterVision(const Unit&) {
+    virtual void OnUnitEnterVision(Unit*) {
 
     }
 

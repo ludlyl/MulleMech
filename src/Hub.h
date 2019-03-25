@@ -6,12 +6,12 @@
 
 #include "core/Unit.h"
 #include "core/Map.h"
-#include "objects/Geyser.h"
 #include "objects/Worker.h"
 
 #include <sc2api/sc2_gametypes.h>
 #include <sc2api/sc2_unit.h>
 
+#include <functional>
 #include <list>
 #include <memory>
 #include <unordered_set>
@@ -23,22 +23,26 @@ struct Cache {
 
     uint64_t Count() const;
 
-    void Add(const T& obj_);
+    void Add(T* obj_);
 
-    T& Back();
+    T* Back();
 
     void PopBack();
 
-    bool IsCached(const T& obj_) const;
+    bool IsCached(const T* obj_) const;
 
-    bool Swap(const T& obj_, Cache<T>& dst_);
+    bool Swap(const T* obj_, Cache<T>& dst_);
 
-    bool Remove(const T& obj_);
+    bool Remove(const T* obj_);
+
+    // When locations are reserved (i.e., Geysers)
+    bool IsOccupied(const T* obj_) const;
+    bool RemoveOccupied(const T* obj_);
 
     T* GetClosestTo(const sc2::Point2D& location_);
 
  private:
-    std::list<T> m_objects;
+    std::list<T*> m_objects;
 };
 
 template <typename T>
@@ -52,12 +56,12 @@ uint64_t Cache<T>::Count() const {
 }
 
 template <typename T>
-void Cache<T>::Add(const T& obj_) {
+void Cache<T>::Add(T* obj_) {
     m_objects.push_back(obj_);
 }
 
 template <typename T>
-T& Cache<T>::Back() {
+T* Cache<T>::Back() {
     return m_objects.back();
 }
 
@@ -67,14 +71,14 @@ void Cache<T>::PopBack() {
 }
 
 template <typename T>
-bool Cache<T>::IsCached(const T& obj_) const {
+bool Cache<T>::IsCached(const T* obj_) const {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     return m_objects.end() != it;
 }
 
 template <typename T>
-bool Cache<T>::Swap(const T& obj_, Cache<T>& dst_) {
+bool Cache<T>::Swap(const T* obj_, Cache<T>& dst_) {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     if (m_objects.end() == it)
@@ -86,7 +90,7 @@ bool Cache<T>::Swap(const T& obj_, Cache<T>& dst_) {
 }
 
 template <typename T>
-bool Cache<T>::Remove(const T& obj_) {
+bool Cache<T>::Remove(const T* obj_) {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
     if (m_objects.end() == it)
         return false;
@@ -96,12 +100,36 @@ bool Cache<T>::Remove(const T& obj_) {
 }
 
 template <typename T>
+bool Cache<T>::IsOccupied(const T* obj_) const {
+    for (auto& obj : m_objects) {
+        if (obj == obj_ ||
+            (obj_->pos.x == obj->pos.x && obj_->pos.y == obj->pos.y))
+            return true;
+
+    }
+    return false;
+}
+
+template <typename T>
+bool Cache<T>::RemoveOccupied(const T* obj_) {
+    for (auto itr = m_objects.begin(); itr != m_objects.end(); ++itr) {
+        if (*itr == obj_ ||
+            (obj_->pos.x == (*itr)->pos.x && obj_->pos.y == (*itr)->pos.y)) {
+            m_objects.erase(itr);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+template <typename T>
 T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     auto closest_worker = m_objects.end();
     float distance = std::numeric_limits<float>::max();
 
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it) {
-        float d = sc2::DistanceSquared2D(it->GetPos(), location_);
+        float d = sc2::DistanceSquared2D((*it)->pos, location_);
 
         if (d >= distance)
             continue;
@@ -113,15 +141,15 @@ T* Cache<T>::GetClosestTo(const sc2::Point2D& location_) {
     if (closest_worker == m_objects.end())
         return nullptr;
 
-    return &(*closest_worker);
+    return *closest_worker;
 }
 
 struct Construction {
-    Construction(const Unit& building_, const Unit& scv_);
-    std::optional<Unit> GetBuilding() const;
-    std::optional<Unit> GetScv() const;
-    sc2::Tag building;
-    sc2::Tag scv;
+    Construction(Unit* building_, Unit* scv_);
+    Unit* GetBuilding() const;
+    Unit* GetScv() const;
+    Unit* building;
+    Unit* scv;
 };
 
 struct Hub {
@@ -129,19 +157,19 @@ struct Hub {
 
     void OnStep();
 
-    void OnUnitCreated(Unit unit_);
+    void OnUnitCreated(Unit* unit_);
 
-    void OnUnitDestroyed(Unit unit_);
+    void OnUnitDestroyed(Unit* unit_);
 
-    void OnUnitIdle(Unit unit_);
+    void OnUnitIdle(Unit* unit_);
 
-    void OnBuildingConstructionComplete(Unit building_);
+    void OnBuildingConstructionComplete(Unit* building_);
 
-    bool IsOccupied(const Unit& unit_) const;
+    bool IsOccupied(const Unit* unit_) const;
 
     bool IsTargetOccupied(const sc2::UnitOrder& order_) const;
 
-    void ClaimObject(const Unit& unit_);
+    void ClaimObject(Unit* unit_);
 
     sc2::Race GetCurrentRace() const;
 
@@ -153,11 +181,11 @@ struct Hub {
 
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
-    bool AssignRefineryConstruction(Order* order_, const Unit& geyser_);
+    bool AssignRefineryConstruction(Order* order_, Unit* geyser_);
 
     bool AssignBuildTask(Order* order_, const sc2::Point2D& point_);
 
-    void AssignVespeneHarvester(const Unit& refinery_);
+    void AssignVespeneHarvester(const Unit* refinery_);
 
     // Find first free building to produce Units/Upgrades/Addons/Mutations from/on
     bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);
@@ -176,7 +204,7 @@ struct Hub {
     Expansions m_expansions;
     sc2::UNIT_TYPEID m_current_worker_type;
 
-    Cache<Geyser> m_captured_geysers;
+    Cache<Unit> m_captured_geysers;
 
     Cache<Worker> m_busy_workers;
     Cache<Worker> m_free_workers;

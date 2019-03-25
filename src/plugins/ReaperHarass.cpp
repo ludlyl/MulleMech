@@ -25,7 +25,7 @@ void ReaperHarass::OnStep(Builder*) {
     if(strikeInProgress){
 
 
-        auto it3 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
+        auto it3 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const Unit* unit_) {
 
             if(unit_->weapon_cooldown == 0){
                 gAPI->action().MoveTo(unit_, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetLatestEnemyBase()->town_hall_location));
@@ -43,7 +43,7 @@ void ReaperHarass::OnStep(Builder*) {
 
 }
 
-void ReaperHarass::OnUnitCreated(const Unit& unit_) {
+void ReaperHarass::OnUnitCreated(Unit* unit_) {
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER && !strikeInProgress){
         gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
                         " added to reaper strike team" << std::endl;
@@ -52,7 +52,7 @@ void ReaperHarass::OnUnitCreated(const Unit& unit_) {
     }
 }
 
-void ReaperHarass::OnUnitIdle(const Unit& unit_, Builder*) {
+void ReaperHarass::OnUnitIdle(Unit* unit_, Builder*) {
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER && !strikeInProgress){
         gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
                         " added to reaper strike team" << std::endl;
@@ -62,7 +62,7 @@ void ReaperHarass::OnUnitIdle(const Unit& unit_, Builder*) {
     }
 }
 
-void ReaperHarass::OnUnitDestroyed(const Unit& unit_, Builder*) {
+void ReaperHarass::OnUnitDestroyed(Unit* unit_, Builder*) {
     if (unit_->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER) {
         auto it = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const sc2::Unit* unit_) {
             return !unit_->is_alive;

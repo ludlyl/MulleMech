@@ -11,12 +11,12 @@ public:
 
     void OnStep(Builder* builder) final;
 
-    void OnUnitIdle(const Unit& unit, Builder*) final;
+    void OnUnitIdle(Unit* unit, Builder*) final;
 
-    void OnUnitDestroyed(const Unit& unit, Builder*) final;
+    void OnUnitDestroyed(Unit* unit, Builder*) final;
 
     // Scouting records buildings we see into our memory
-    void OnUnitEnterVision(const Unit& unit) final;
+    void OnUnitEnterVision(Unit* unit) final;
 
 private:
 
@@ -43,7 +43,7 @@ private:
     void ExpansionScout();
 
     // Attempt to scout around a main base; queues all movement commands at once
-    void ScoutBase(const Unit& unit, sc2::Point2D base);
+    void ScoutBase(const Unit* unit, sc2::Point2D base);
 
     // DATA
 
@@ -55,8 +55,8 @@ private:
         finished
     };
     ScvScoutPhase m_scoutPhase;
-    sc2::Tag m_offensiveScv;
-    sc2::Tag m_defensiveScv;
+    Unit* m_offensiveScv;
+    Unit* m_defensiveScv;
     std::vector<sc2::Point2D> m_unscoutedBases; // TODO: Should be last scouted timing => reuse for mid game expansion scouting
     std::unordered_set<sc2::Tag> m_seenUnits;   // Units we've seen before
 };

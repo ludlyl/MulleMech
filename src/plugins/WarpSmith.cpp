@@ -15,7 +15,7 @@ const sc2::ABILITY_ID chronoboost_id = static_cast<sc2::ABILITY_ID>(3755);
 const sc2::BUFF_ID chronobuff_id = static_cast<sc2::BUFF_ID>(281);
 const int chronoboost_cost = 50;
 
-typedef std::queue<Unit> targets_t;
+typedef std::queue<Unit*> targets_t;
 
 targets_t PickTargets() {
     targets_t targets;
@@ -51,7 +51,7 @@ targets_t PickTargets() {
 WarpSmith::WarpSmith(): m_warp_gates_researched(false) {
 }
 
-void WarpSmith::OnUnitIdle(const Unit& unit_, Builder*) {
+void WarpSmith::OnUnitIdle(Unit* unit_, Builder*) {
     if (!m_warp_gates_researched ||
         unit_->unit_type.ToType() != sc2::UNIT_TYPEID::PROTOSS_GATEWAY)
         return;

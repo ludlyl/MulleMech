@@ -12,12 +12,12 @@
 namespace {
 
 struct CalcSupplies {
-    float operator()(float sum, const Unit& unit_) const;
+    float operator()(float sum, const Unit* unit_) const;
 
     float operator()(float sum, const Order& order_) const;
 };
 
-float CalcSupplies::operator()(float sum, const Unit& unit_) const {
+float CalcSupplies::operator()(float sum, const Unit* unit_) const {
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
@@ -135,7 +135,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
     }
 }
 
-void QuarterMaster::OnUnitCreated(const Unit& unit_) {
+void QuarterMaster::OnUnitCreated(Unit* unit_) {
     if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT ||
         unit_->unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD ||
         unit_->unit_type == sc2::UNIT_TYPEID::PROTOSS_PYLON) {

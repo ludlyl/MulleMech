@@ -12,7 +12,7 @@ struct QuarterMaster : Plugin {
 
     void OnStep(Builder* builder_) final;
 
-    void OnUnitCreated(const Unit& unit_) final;
+    void OnUnitCreated(Unit* unit_) final;
 
  private:
     bool m_skip_turn;

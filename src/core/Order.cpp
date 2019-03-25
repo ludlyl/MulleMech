@@ -2,7 +2,7 @@
 #include "Helpers.h"
 #include "core/Unit.h"
 
-Order::Order(const sc2::UnitTypeData &data_, const Unit* assignee_) :
+Order::Order(const sc2::UnitTypeData &data_, Unit* assignee_) :
         name(data_.name),
         mineral_cost(data_.mineral_cost),
         vespene_cost(data_.vespene_cost),
@@ -10,10 +10,8 @@ Order::Order(const sc2::UnitTypeData &data_, const Unit* assignee_) :
         tech_requirements(GetAllTechRequirements(data_)),
         unit_type_id(data_.unit_type_id),
         ability_id(data_.ability_id),
-        tech_alias(data_.tech_alias) {
-    if (assignee_)
-        assignee = (*assignee_)->tag;
-}
+        tech_alias(data_.tech_alias),
+        assignee(assignee_) { }
 
 Order::Order(const sc2::UpgradeData &data_) :
         name(data_.name),

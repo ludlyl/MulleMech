@@ -12,7 +12,7 @@ struct Governor : Plugin {
 
     void OnStep(Builder* builder_) final;
 
-    void OnUnitIdle(const Unit& unit_, Builder* builder_) final;
+    void OnUnitIdle(Unit* unit_, Builder* builder_) final;
 
     void OnBuildingConstructionComplete(const Unit& unit_) final;
 
@@ -21,4 +21,5 @@ struct Governor : Plugin {
 
     private:
         std::list<sc2::UNIT_TYPEID> m_planner_queue;
+    void OnBuildingConstructionComplete(Unit* unit_) final;
 };
