@@ -8,7 +8,7 @@
 sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLocation) {
     // TODO: Reuse Map's Clusters?
     auto resources = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-        {IsVisibleMineralPatch(), IsWithinDist(baseLocation, 15.0f)}))();
+        {IsVisibleMineralPatch(), IsWithinDist(baseLocation, 15.0f)}));
 
     if (resources.empty())
         return baseLocation;

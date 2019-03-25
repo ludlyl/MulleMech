@@ -6,6 +6,10 @@
 
 #include "Blueprint.h"
 
-struct Mutation: Blueprint {
+namespace bp {
+
+struct Mutation : Blueprint {
     bool Build(Order* order_) final;
 };
+
+}

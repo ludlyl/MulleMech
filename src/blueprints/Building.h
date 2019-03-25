@@ -6,6 +6,10 @@
 
 #include "Blueprint.h"
 
-struct Building: Blueprint {
+namespace bp {
+
+struct Building : Blueprint {
     bool Build(Order* order_) final;
 };
+
+}
