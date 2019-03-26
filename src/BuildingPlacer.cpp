@@ -1,10 +1,8 @@
 #include "BuildingPlacer.h"
-
 #include "core/API.h"
 #include "core/Helpers.h"
 
 #include <sc2api/sc2_common.h>
-#include <c++/8.2.1/iostream>
 
 sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLocation) {
     // TODO: Reuse Map's Clusters?
@@ -68,6 +66,7 @@ std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceBehindMinerals(
     return std::nullopt;
 }
 
+//method calculate point in front of CC, away from mineral line
 sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) {
     sc2::Point2D point;
 
@@ -115,6 +114,7 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
     return pointFront;
 }
 
+//method which gets a random building point through a line in the point in front of CC
 std::optional<sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& order, const sc2::Point3D baseLocation) {
     unsigned attempt = 0;
     while (attempt < 20) {

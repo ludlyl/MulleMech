@@ -7,7 +7,6 @@
 #include "core/API.h"
 
 #include <limits>
-#include <c++/8.2.1/iostream>
 
 Units::Units(const sc2::Units& units_) : m_units(units_) {
 }
@@ -53,12 +52,6 @@ const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D
             targetSecondLowest = i;
         }
     }
-
-    std::cout << "targetLowestX: " << targetLowest -> pos.x << "\n";
-    std::cout << "targetLowestY: " << targetLowest -> pos.y << "\n\n";
-
-    std::cout << "targetSecX: " << targetSecondLowest -> pos.x << "\n";
-    std::cout << "targetSecY: " << targetSecondLowest -> pos.y << "\n\n";
 
     std::vector<const sc2::Unit*> targetTwoClosestUnits;
 
