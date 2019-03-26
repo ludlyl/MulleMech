@@ -33,7 +33,7 @@ endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 # Create the executable.
-add_executable(MulleMech ${BOT_SOURCES} blueprints/Barrack.cpp blueprints/Barrack.h blueprints/Factory.cpp blueprints/Factory.h blueprints/Starport.cpp blueprints/Starport.h plugins/BuildInfo.cpp plugins/BuildInfo.h)
+add_executable(MulleMech ${BOT_SOURCES})
 target_link_libraries(MulleMech
     sc2api sc2lib sc2utils sc2protocol civetweb libprotobuf
 )
