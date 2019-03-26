@@ -11,9 +11,6 @@
 #include <optional>
 
 struct BuildingPlacer : Plugin {
-    void OnGameStart(Builder*) final;
-
-    BuildingPlacer();
 
     static sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D baseLocation);
 
@@ -32,14 +29,4 @@ struct BuildingPlacer : Plugin {
 
     static float getKValue(sc2::Point2D p1, sc2::Point2D p2);
 
-private:
-    static BuildingPlacer* m;
-
-    const sc2::ObservationInterface* m_observer;
 };
-
-/*static sc2::Point3D buildingPoint;
-
-static float baseKValue;
-
-const std::vector<const sc2::Unit*> geysersPos;*/

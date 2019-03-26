@@ -1,5 +1,4 @@
 #include "Factory.h"
-
 #include "../BuildingPlacer.h"
 #include "../Hub.h"
 #include "../Historican.h"
