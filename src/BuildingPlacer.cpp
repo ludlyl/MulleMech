@@ -5,30 +5,6 @@
 
 #include <sc2api/sc2_common.h>
 #include <c++/8.2.1/iostream>
-#include <plugins/BuildInfo.h>
-
-/*void Dispatcher::OnGameStart() {
-    //find point to building line
-    BuildingPlacer::buildingPoint = BuildingPlacer::GetPointFrontOfCC(gAPI->observer().StartingLocation());
-
-    //find direction for building line
-    BuildingPlacer::baseKValue = BuildingPlacer::GetBaseKValue();
-}*/
-
-//BuildingPlacer::BuildingPlacer() = default;
-
-//void BuildingPlacer::OnGameStart(Builder*) {
-    //geysersPos = getGeysersPos();
-    /*
-    //find point to building line
-    buildingPoint = BuildingPlacer::GetPointFrontOfCC(m_observer->GetStartLocation());
-
-    //find direction for building line
-    baseKValue = BuildingPlacer::GetBaseKValue();
-    std::cout << "firstEvalKVal: " << baseKValue << "\n";
-    std::cout << "---------------------------" << "\n\n";
-     */
-//}
 
 sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLocation) {
     // TODO: Reuse Map's Clusters?
@@ -93,11 +69,9 @@ std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceBehindMinerals(
 }
 
 sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) {
-    std::cout << "fjdhksalkfjhjdsklafasd: " << "\n";
-    std::cout << "BHejeeheje " << "\n\n";
     sc2::Point2D point;
 
-    //TODO:use method instead
+    //TODO:use method instead GetBaseKValue(). Or remove GetBaseKValue()
     std::vector<const sc2::Unit*> posGeysers = getGeysersPos();
 
     const sc2::Unit* geyser1 = posGeysers.back();
@@ -112,6 +86,7 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
     sc2::Point2D baseToPoint1 = sc2::operator-(point1, baseLocation);
 
     float kValue = getKValue(point1, point2);
+
     sc2::Point2D secondPointInBaseLine = getPointInLine(baseLocation, kValue, 1);
     sc2::Point2D vecInBaseLine = sc2::operator-(secondPointInBaseLine, baseLocation);
 
@@ -126,8 +101,8 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
 
     sc2::Point2D doubleVec = sc2::operator*(finalVecInBaseLine, 2);
 
-    sc2::Point2D partFinal1 = sc2::operator-(doubleVec, baseToPoint1);
-    point = sc2::operator-(partFinal1, baseToPoint1);
+    sc2::Point2D helperVec = sc2::operator-(doubleVec, baseToPoint1);
+    point = sc2::operator-(helperVec, baseToPoint1);
 
     point.x = point.x + baseLocation.x;
     point.y = point.y + baseLocation.y;
@@ -141,56 +116,17 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
 }
 
 std::optional<sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& order, const sc2::Point3D baseLocation) {
-    //auto base = GetPointFrontOfCC(baseLocation);
-
-    //float kValue = baseKValue();
-
-/*    std::vector<const sc2::Unit*> posGeysers = getGeysersPos();
-
-    const sc2::Unit* geyser1 = posGeysers.back();
-    posGeysers.pop_back();
-
-    const sc2::Unit* geyser2 = posGeysers.back();
-    posGeysers.pop_back();
-
-    sc2::Point2D point1(geyser1 -> pos.x, geyser1 -> pos.y);
-    sc2::Point2D point2(geyser2 -> pos.x, geyser2 -> pos.y);
-
-    float kValue = getKValue(point1, point2);
-    */
-
     unsigned attempt = 0;
     while (attempt < 20) {
         float randomDist = sc2::GetRandomScalar() * 10.0f;
-        std::cout << "BuildingPointX: " << buildingPoint.x << "\n";
-        std::cout << "BuildingPointY: " << buildingPoint.y << "\n\n";
-        std::cout << "---------------------------" << "\n\n";
-        sc2::Point2D newPoint = getPointInLine(buildingPoint, baseKValue, randomDist);
+        sc2::Point2D newPoint = getPointInLine(BuildInfo::buildingPoint, BuildInfo::baseKValue, randomDist);
         sc2::Point3D pos = sc2::Point3D(newPoint.x, newPoint.y, baseLocation.z);
 
-        std::cout << newPoint.x << "\n";
-        std::cout << newPoint.y << "\n\n";
-
-        std::cout << "base-x: " << baseLocation.x << "\n";
-        std::cout << "base-y: " << baseLocation.y << "\n\n";
-
-        std::cout << "k-valueREF: " << baseKValue << "\n";
-        std::cout << "k-valueNEWLINE: " << getKValue(newPoint, buildingPoint) << "\n\n";
-
-        std::cout << "NewPoint X from base: " << buildingPoint.x - baseLocation.x << "\n";
-        std::cout << "NewPoint Y from base: " << buildingPoint.y - baseLocation.y << "\n\n";
-        std::cout << "---------------------------" << "\n\n";
-
         if (gAPI->query().CanBePlaced(order, pos)) {
-            std::cout << "hej, you successed. Congratulation sir" << "\n";
-            std::cout << "---------------------------" << "\n\n";
             return pos;
         }
         attempt++;
     }
-
-    std::cout << "hej, you fucked up. Sorry" << "\n";
-    std::cout << "---------------------------" << "\n\n";
 
     return std::nullopt;
 }
@@ -207,27 +143,14 @@ float BuildingPlacer::GetBaseKValue() {
     sc2::Point2D point1(geyser1 -> pos.x, geyser1 -> pos.y);
     sc2::Point2D point2(geyser2 -> pos.x, geyser2 -> pos.y);
 
-    std::cout << "baseKValue, is it ok?" << getKValue(point1, point2) << "\n";
-
     return getKValue(point1, point2);
 }
 
 const std::vector<const sc2::Unit*> BuildingPlacer::getGeysersPos() {
-
     auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
                                              sc2::Unit::Alliance::Neutral);
 
-    //std::vector<const sc2::Unit*> closestGeysers = geysers.GetClosestUnit(gAPI->observer().StartingLocation());
-
-    //auto refinery = gAPI->observer().GetUnits(IsRefinery(),
-//                                                              sc2::Unit::Alliance::Ally);
-
-   // const sc2::Unit* closestRef = refinery.GetClosestUnit(gAPI->observer().StartingLocation());
-
-    //closestGeysers.emplace_back(closestRef);
-
     return geysers.GetTwoClosestUnits(gAPI->observer().StartingLocation());
-
 }
 
 float BuildingPlacer::getKValue(sc2::Point2D p1, sc2::Point2D p2) {

@@ -1,5 +1,3 @@
-#include "Factory.h"
-
 #include "../BuildingPlacer.h"
 #include "Starport.h"
 #include "../Hub.h"
