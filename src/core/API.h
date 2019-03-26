@@ -11,6 +11,7 @@
 #include <sc2api/sc2_interfaces.h>
 #include <sc2api/sc2_control_interfaces.h>
 #include <sc2api/sc2_map_info.h>
+#include <sc2api/sc2_score.h>
 
 #include <memory>
 #include <string>
@@ -115,6 +116,12 @@ struct Observer {
     int32_t GetVespene() const;
 
     float GetAvailableFood() const;
+
+    //returns Minerals/min
+    float GetMineralIncomeRate() const;
+
+    //returns Vespene/min
+    float GetVespeneIncomeRate() const;
 
     sc2::UnitTypeData GetUnitTypeData(sc2::UNIT_TYPEID id_) const;
 
