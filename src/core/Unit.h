@@ -7,6 +7,7 @@
 class Worker;
 
 namespace API { struct Interface; }
+namespace sc2 { struct UnitTypeData; }
 
 class Unit : public sc2::Unit {
 public:
@@ -25,6 +26,8 @@ public:
     MicroPlugin* Micro() const;
 
     Worker* AsWorker();
+
+    sc2::UnitTypeData GetTypeData() const;
 
 private:
     std::unique_ptr<MicroPlugin> m_micro;

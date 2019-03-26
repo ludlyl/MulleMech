@@ -51,3 +51,7 @@ Worker* Unit::AsWorker() {
     }
     return nullptr;
 }
+
+sc2::UnitTypeData Unit::GetTypeData() const {
+    return gAPI->observer().GetUnitTypeData(this->unit_type);
+}

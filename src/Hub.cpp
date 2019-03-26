@@ -74,7 +74,7 @@ void Hub::OnStep() {
 void Hub::OnUnitCreated(Unit* unit_) {
     // Record newly started constructions, noting which SCV is constructing it
     if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
-        auto buildingData = gAPI->observer().GetUnitTypeData(unit_->unit_type);
+        auto buildingData = unit_->GetTypeData();
 
         // Find the SCV that's constructing this building
         auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
