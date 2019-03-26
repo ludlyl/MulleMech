@@ -10,7 +10,7 @@
 
 #include <optional>
 
-struct BuildingPlacer : Plugin {
+struct BuildingPlacer {
 
     static sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D baseLocation);
 
