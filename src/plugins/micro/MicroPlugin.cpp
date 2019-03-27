@@ -20,7 +20,7 @@ MicroPlugin::MicroPlugin(Unit* unit) :
 }
 
 void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies) {
-    m_self = std::move(self);
+    m_self = self;
     OnCombatStep(enemies);
 }
 
