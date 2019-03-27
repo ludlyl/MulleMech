@@ -17,7 +17,7 @@ struct Governor : Plugin {
     void OnBuildingConstructionComplete(Unit* unit_) final;
 
     //Return values are Minerals and Vespene in that order.
-    std::pair<float, float> Governor::CurrentConsumption();
+    std::pair<float, float> CurrentConsumption();
 
     private:
         std::list<sc2::UNIT_TYPEID> m_planner_queue;

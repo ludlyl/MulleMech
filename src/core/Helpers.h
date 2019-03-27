@@ -68,12 +68,13 @@ struct IsRefinery {
 };
 
 struct IsIdleUnit {
-    explicit IsIdleUnit(sc2::UNIT_TYPEID type_);
+    explicit IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_idle_ = true);
 
     bool operator()(const sc2::Unit& unit_) const;
 
  private:
     sc2::UNIT_TYPEID m_type;
+    bool m_count_non_full_reactor_as_idle;
 };
 
 struct IsWorker {

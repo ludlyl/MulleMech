@@ -98,37 +98,24 @@ void Governor::OnStep(Builder* builder_) {
 }
 
 void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
-    sc2::UNIT_TYPEID type;
-    Unit* addOnAsUnit;
-
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
-            if (unit_->add_on_tag != 0) {
-                addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-                type = addOnAsUnit->unit_type;
-                if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
-                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
-                    gHistory.info() << "Schedule Marauder training" << std::endl;
-                    return;
-                }
-            }
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORY:
             //TODO sometimes we might want to produce cyclons
-            if (unit_->add_on_tag == 0)
-                return;
-            addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-            type = addOnAsUnit->unit_type;
-            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
+            if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                 gHistory.info() << "Schedule siegetank training" << std::endl;
                 return;
             }
-            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) {
-                //TODO fix so that this will awlays build 2 hellions at all times.
+            else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
+                //TODO We don't always want to schedule 2 units here...
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 gHistory.info() << "Schedule Hellion training" << std::endl;
                 return;
+            } else {
+                // Naked
             }
             break;
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
@@ -145,7 +132,6 @@ void Governor::OnBuildingConstructionComplete(Unit* unit_) {
         gAPI->action().LowerDepot(unit_);
     }
 }
-
 
 //TODO this function should take a State as input. The state can be the current state or a future state
 std::pair<float, float> Governor::CurrentConsumption() {
