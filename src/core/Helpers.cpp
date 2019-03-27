@@ -18,6 +18,10 @@ IsUnit::IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished):
 }
 
 bool IsUnit::operator()(const sc2::Unit& unit_) const {
+    // Note for future development of function:
+    // Returning true if the unit is a tech alias as default is NOT ok here
+    // (as that would break e.g. IsIdleUnit (a flying factory can be assigned to produce a helion))
+    // Instead add another parameter to the constructor or create a new Helper function
     return unit_.unit_type == m_type &&
         unit_.build_progress >= m_build_progress;
 }
@@ -157,11 +161,19 @@ bool IsRefinery::operator()(const sc2::Unit& unit_) const {
         unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
 }
 
-IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_): m_type(type_) {
+IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_idle) :
+        m_type(type_), m_count_non_full_reactor_as_idle(count_non_full_reactor_as_idle) {
 }
 
 bool IsIdleUnit::operator()(const sc2::Unit& unit_) const {
-    return IsUnit(m_type)(unit_) && unit_.orders.empty();
+    if (IsUnit(m_type)(unit_)) {
+        if (m_count_non_full_reactor_as_idle && HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
+            return unit_.orders.size() < 2;
+        } else {
+            return unit_.orders.empty();
+        }
+    }
+    return false;
 }
 
 bool IsWorker::operator()(const sc2::Unit& unit_) const {
