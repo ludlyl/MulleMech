@@ -2,6 +2,7 @@
 
 #include "plugins/micro/MicroPlugin.h"
 #include <sc2api/sc2_unit.h>
+#include <sc2api/sc2_data.h>
 #include <memory>
 
 class Worker;
@@ -25,6 +26,8 @@ public:
     MicroPlugin* Micro() const;
 
     Worker* AsWorker();
+
+    sc2::UnitTypeData GetTypeData() const;
 
 private:
     std::unique_ptr<MicroPlugin> m_micro;

@@ -253,7 +253,7 @@ bool HasAddon::operator()(const sc2::Unit& unit_) const {
     auto addonType = addonAsUnit->unit_type.ToType();
     // The second part (after the or) is needed for the function to return true
     // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
-    return addonType == m_addon_type || gAPI->observer().GetUnitTypeData(addonType).tech_alias.front() == m_addon_type;
+    return addonType == m_addon_type || addonAsUnit->GetTypeData().tech_alias.front() == m_addon_type;
 }
 
 MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
