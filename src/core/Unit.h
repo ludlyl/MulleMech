@@ -2,12 +2,12 @@
 
 #include "plugins/micro/MicroPlugin.h"
 #include <sc2api/sc2_unit.h>
+#include <sc2api/sc2_data.h>
 #include <memory>
 
 class Worker;
 
 namespace API { struct Interface; }
-namespace sc2 { struct UnitTypeData; }
 
 class Unit : public sc2::Unit {
 public:
