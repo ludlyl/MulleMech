@@ -15,13 +15,9 @@ public:
     virtual ~Unit() = default;
     void UpdateAPIData(const sc2::Unit& unit);
 
-    // Implicit conversion: Unit -> const sc2::Unit*
-    operator const sc2::Unit*() const;
-
     bool operator==(const Unit& other) const;
 
     // Micro plugin for this unit
-    void InstallMicro();
     MicroPlugin* Micro() const;
 
     Worker* AsWorker();
