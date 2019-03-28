@@ -145,7 +145,7 @@ bool Builder::Build(Order* order_) {
 
 void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
     for (sc2::UnitTypeID unitTypeID : order_.tech_requirements) {
-        if (gAPI->observer().CountUnitType(unitTypeID) == 0 && CountScheduledStructures(unitTypeID) == 0) {
+        if (gAPI->observer().CountUnitType(unitTypeID, true) == 0 && CountScheduledStructures(unitTypeID) == 0) {
             ScheduleConstruction(unitTypeID, urgent);
         }
     }

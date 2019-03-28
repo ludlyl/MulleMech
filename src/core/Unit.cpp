@@ -6,19 +6,14 @@
 
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) { }
-
-Unit::operator const sc2::Unit*() const {
-    return static_cast<const sc2::Unit*>(this);
+Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) {
+    if (unit.alliance == Unit::Alliance::Self) {
+        m_micro = MicroPlugin::MakePlugin(this);
+    }
 }
 
 bool Unit::operator==(const Unit& other) const {
     return tag == other.tag;
-}
-
-void Unit::InstallMicro() {
-    if (!m_micro)
-        m_micro = MicroPlugin::MakePlugin(this);
 }
 
 MicroPlugin* Unit::Micro() const {
