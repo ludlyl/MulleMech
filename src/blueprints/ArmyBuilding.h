@@ -2,7 +2,7 @@
 
 #include "Building.h"
 
-class Starport : public Blueprint {
+class ArmyBuilding : public Blueprint {
 public:
     bool Build(Order* order) final;
 };
