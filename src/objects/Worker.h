@@ -7,6 +7,8 @@
 #include "core/Unit.h"
 #include "core/Order.h"
 
+struct Expansion;
+
 enum Job {
     GATHERING_MINERALS = 0,
     GATHERING_VESPENE = 1,
@@ -24,6 +26,16 @@ public:
 
     void GatherVespene(const Unit* target_);
 
+    void SetHomeBase(std::shared_ptr<Expansion> base);
+
+    std::shared_ptr<Expansion> GetHomeBase() const;
+
+    // Make SCV go back to gathering minerals
+    void Mine();
+
+    Job GetJob() const { return m_job; }
+
 private:
     Job m_job;
+    std::shared_ptr<Expansion> m_homeBase;
 };
