@@ -67,11 +67,11 @@ std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceBehindMinerals(
 }
 
 //method calculate point in front of CC, away from mineral line
-sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) {
+sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D& baseLocation) {
     sc2::Point2D point;
 
     //TODO:use method instead GetBaseKValue(). Or remove GetBaseKValue()
-    std::vector<const sc2::Unit*> posGeysers = getGeysersPos();
+    std::vector<const sc2::Unit*> posGeysers = GetGeysersPos();
 
     const sc2::Unit* geyser1 = posGeysers.back();
     posGeysers.pop_back();
@@ -79,8 +79,8 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
     const sc2::Unit* geyser2 = posGeysers.back();
     posGeysers.pop_back();
 
-    sc2::Point2D point1(geyser1 -> pos.x, geyser1 -> pos.y);
-    sc2::Point2D point2(geyser2 -> pos.x, geyser2 -> pos.y);
+    sc2::Point2D point1(geyser1->pos.x, geyser1->pos.y);
+    sc2::Point2D point2(geyser2->pos.x, geyser2->pos.y);
 
     sc2::Point2D baseToPoint1 = sc2::operator-(point1, baseLocation);
 
@@ -115,7 +115,7 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D baseLocation) 
 }
 
 //method which gets a random building point through a line in the point in front of CC
-std::optional<sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& order, const sc2::Point3D baseLocation) {
+std::optional<const sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& order, const sc2::Point3D baseLocation) {
     unsigned attempt = 0;
     while (attempt < 20) {
         float randomDist = sc2::GetRandomScalar() * 10.0f;
@@ -132,7 +132,7 @@ std::optional<sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Order& or
 }
 
 float BuildingPlacer::GetBaseKValue() {
-    std::vector<const sc2::Unit*> posGeysers = getGeysersPos();
+    std::vector<const sc2::Unit*> posGeysers = GetGeysersPos();
 
     const sc2::Unit* geyser1 = posGeysers.back();
     posGeysers.pop_back();
@@ -140,13 +140,13 @@ float BuildingPlacer::GetBaseKValue() {
     const sc2::Unit* geyser2 = posGeysers.back();
     posGeysers.pop_back();
 
-    sc2::Point2D point1(geyser1 -> pos.x, geyser1 -> pos.y);
-    sc2::Point2D point2(geyser2 -> pos.x, geyser2 -> pos.y);
+    sc2::Point2D point1(geyser1->pos.x, geyser1->pos.y);
+    sc2::Point2D point2(geyser2->pos.x, geyser2->pos.y);
 
     return getKValue(point1, point2);
 }
 
-const std::vector<const sc2::Unit*> BuildingPlacer::getGeysersPos() {
+const std::vector<const sc2::Unit*> BuildingPlacer::GetGeysersPos() {
     auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
                                              sc2::Unit::Alliance::Neutral);
 

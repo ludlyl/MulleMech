@@ -10,9 +10,7 @@
 #include "Queen.h"
 #include "Refinery.h"
 #include "SupplyDepot.h"
-#include "Barrack.h"
-#include "Factory.h"
-#include "Starport.h"
+#include "ArmyBuilding.h"
 #include "TownHall.h"
 #include "Unit.h"
 #include "core/API.h"
@@ -36,13 +34,9 @@ std::shared_ptr<Blueprint> Blueprint::Plot(sc2::ABILITY_ID ability_) {
             return std::make_shared<TownHall>();
 
         case sc2::ABILITY_ID::BUILD_BARRACKS:
-            return std::make_shared<Barrack>();
-
         case sc2::ABILITY_ID::BUILD_FACTORY:
-            return std::make_shared<Factory>();
-
         case sc2::ABILITY_ID::BUILD_STARPORT:
-            return std::make_shared<Starport>();
+            return std::make_shared<ArmyBuilding>();
 
         case sc2::ABILITY_ID::BUILD_SUPPLYDEPOT:
             return std::make_shared<SupplyDepot>();
