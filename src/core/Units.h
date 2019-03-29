@@ -17,6 +17,8 @@ struct Units {
 
     const sc2::Unit* GetClosestUnit(sc2::Tag tag_) const;
 
+    sc2::Units GetUnitsWithin(float dist) const;
+
     const std::vector<const sc2::Unit*> GetTwoClosestUnits(sc2::Tag tag_) const;
 
     const sc2::Unit* GetRandomUnit() const;

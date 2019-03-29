@@ -79,20 +79,21 @@ sc2::Point3D BuildingPlacer::GetPointFrontOfCC(const sc2::Point3D& baseLocation)
     sc2::Point2D point;
 
     //TODO:use method instead GetBaseKValue(). Or remove GetBaseKValue()
-    std::vector<const sc2::Unit*> posGeysers = GetGeysersPos();
+    Units posVisibleGeysers = GetVisibleGeysersPos();
+    sc2::Units unitsWithin = posVisibleGeysers.GetUnitsWithin(20);
+    //std::vector<const sc2::Unit*> posGeysers = GetTwoClosestUnits(posVisibleGeysers);
 
-    const sc2::Unit* geyser1 = posGeysers.back();
-    posGeysers.pop_back();
+    const sc2::Unit* geyser1 = unitsWithin.back();
+    unitsWithin.pop_back();
 
-    const sc2::Unit* geyser2 = posGeysers.back();
-    posGeysers.pop_back();
+    const sc2::Unit* geyser2 = unitsWithin.back();
+    unitsWithin.pop_back();
 
     sc2::Point2D point1(geyser1->pos.x, geyser1->pos.y);
     sc2::Point2D point2(geyser2->pos.x, geyser2->pos.y);
 
     sc2::Point2D baseToPoint1 = point1 - baseLocation;
     float kValue = GetKValue(point1, point2);
-    std::cout << "kValue: " << kValue << "\n\n";
     sc2::Point2D secondPointInBaseLine = GetPointInLine(baseLocation, kValue, 1);
     sc2::Point2D vecInBaseLine = secondPointInBaseLine - baseLocation;
 
@@ -139,13 +140,15 @@ std::optional<const sc2::Point3D> BuildingPlacer::FindPlaceInFrontOfCC(const Ord
 }
 
 float BuildingPlacer::GetBaseKValue() {
-    std::vector<const sc2::Unit*> posGeysers = GetGeysersPos();
+    Units posVisibleGeysers = GetVisibleGeysersPos();
+    sc2::Units unitsWithin = posVisibleGeysers.GetUnitsWithin(20);
+    //std::vector<const sc2::Unit*> posGeysers = GetTwoClosestUnits(posVisibleGeysers);
 
-    const sc2::Unit* geyser1 = posGeysers.back();
-    posGeysers.pop_back();
+    const sc2::Unit* geyser1 = unitsWithin.back();
+    unitsWithin.pop_back();
 
-    const sc2::Unit* geyser2 = posGeysers.back();
-    posGeysers.pop_back();
+    const sc2::Unit* geyser2 = unitsWithin.back();
+    unitsWithin.pop_back();
 
     sc2::Point2D point1(geyser1->pos.x, geyser1->pos.y);
     sc2::Point2D point2(geyser2->pos.x, geyser2->pos.y);
@@ -153,11 +156,13 @@ float BuildingPlacer::GetBaseKValue() {
     return GetKValue(point1, point2);
 }
 
-const std::vector<const sc2::Unit*> BuildingPlacer::GetGeysersPos() {
-    Units geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
+Units BuildingPlacer::GetVisibleGeysersPos() {
+    return gAPI->observer().GetUnits(IsFreeGeyser(),
                                              sc2::Unit::Alliance::Neutral);
+}
 
-    return geysers.GetTwoClosestUnits(gAPI->observer().StartingLocation());
+const std::vector<const sc2::Unit*> BuildingPlacer::GetTwoClosestUnits(Units units) {
+    return units.GetTwoClosestUnits(gAPI->observer().StartingLocation());
 }
 
 float BuildingPlacer::GetKValue(const sc2::Point2D& p1, const sc2::Point2D& p2) {
