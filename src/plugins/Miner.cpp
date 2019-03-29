@@ -16,15 +16,19 @@
 #include <vector>
 
 namespace {
-const int mule_energy_cost = 50;
+constexpr int mule_energy_cost = 50;
+constexpr float maximum_resource_distance = 10.0f;  // Resources further than this => doesn't belong to this base
+constexpr int steps_between_balance = 20;           // How often we recalculate SCV balance
+constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance we must have before transferring any
+constexpr int maxium_workers = 70;                  // Never go above this number of workers
 
-int NeededWorkers(const std::shared_ptr<Expansion>& expansion) {
+int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
     auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsCommandCenter(),
         IsRefinery()}), sc2::Unit::Alliance::Self);
 
     int needed = 0;
     for (auto& structure : gatherStructures) {
-        if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < 10.0f)
+        if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < maximum_resource_distance)
             needed += structure->ideal_harvesters;
     }
     return needed;
@@ -47,19 +51,23 @@ void SecureMineralsIncome(Builder* builder_) {
 
     // Calculate Optimal Workers
     for (auto& cc : command_centers)
-        optimal_workers += cc->ideal_harvesters;
+        optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
     for (auto& refinery : refineries)
         optimal_workers += refinery->ideal_harvesters;
-    optimal_workers = static_cast<int>(std::ceil(optimal_workers * 1.5f)); // Assume ~50% overproduction
+    optimal_workers = std::min(optimal_workers, maxium_workers);                        // Don't make too many, though
 
     if (num_workers >= optimal_workers)
         return;
 
     // Schedule training at our Command Centers
     for (auto& cc : command_centers) {
+        if (num_workers++ >= optimal_workers)
+            break;
+
         if (cc->build_progress != 1.0f)
             continue;
 
+        // TODO: This should include orders scheduled this step; add functionality to Unit
         if (!cc->orders.empty())
             continue;
 
@@ -132,7 +140,7 @@ void CallDownMULE() {
 }  // namespace
 
 void Miner::OnStep(Builder* builder_) {
-    if (gAPI->observer().GetGameLoop() % 300 == 0) // no need to attempt balance too often (every ~12 seconds)
+    if (gAPI->observer().GetGameLoop() % steps_between_balance == 0)
         BalanceWorkers();
     SecureMineralsIncome(builder_);
     SecureVespeneIncome();
@@ -251,13 +259,13 @@ void Miner::BalanceWorkers() {
     std::multimap<int, std::shared_ptr<Expansion>> sortedExpansions; // note: maps are ordered by key
 
     for (auto& pair : m_expansionWorkers) {
-        int over = static_cast<int>(pair.second.size()) - NeededWorkers(pair.first);
+        int over = static_cast<int>(pair.second.size()) - IdealWorkerCount(pair.first);
         sortedExpansions.emplace(std::make_pair(std::max(0, over), pair.first));
     }
 
     // If ideal difference is >= 4 of top and bottom guy => balance workers
     int diff = sortedExpansions.rbegin()->first - sortedExpansions.begin()->first;
-    if (diff >= 4) {
+    if (diff >= req_imbalance_to_transfer) {
         int move = static_cast<int>(std::ceil(diff / 2.0f));
         int moved = move;
         while (move--) {
@@ -276,7 +284,7 @@ void Miner::BalanceWorkers() {
         for (auto& exp : sortedExpansions) {
             int numWorkers = static_cast<int>(m_expansionWorkers[exp.second].size());
             str += std::to_string(exp.first) + " (now: " + std::to_string(numWorkers) + "/" +
-                std::to_string(NeededWorkers(exp.second)) + ")    ";
+                std::to_string(IdealWorkerCount(exp.second)) + ")    ";
         }
         gHistory.debug(LogChannel::economy) << str << std::endl;
 #endif

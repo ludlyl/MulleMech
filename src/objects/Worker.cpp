@@ -39,7 +39,7 @@ std::shared_ptr<Expansion> Worker::GetHomeBase() const {
 }
 
 void Worker::Mine() {
-    auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
+    auto visibleMinerals = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
 
     sc2::Point2D pos;
     if (m_homeBase)
@@ -47,9 +47,9 @@ void Worker::Mine() {
     else
         pos = gAPI->observer().StartingLocation();
 
-    auto mineral_target = units.GetClosestUnit(pos);
-    if (mineral_target) {
-        gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineral_target);
+    auto mineralTarget = visibleMinerals.GetClosestUnit(pos);
+    if (mineralTarget) {
+        gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineralTarget);
         m_job = GATHERING_MINERALS;
     }
 }
