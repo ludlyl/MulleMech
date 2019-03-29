@@ -75,6 +75,9 @@ void Dispatcher::OnGameStart() {
 
     for (const auto& i : m_plugins)
         i->OnGameStart(m_builder.get());
+
+    BuildingPlacer m_placer;
+    m_placer.Setup();
 }
 
 void Dispatcher::OnGameEnd() {
