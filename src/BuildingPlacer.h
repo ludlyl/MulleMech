@@ -2,7 +2,6 @@
 
 #include "core/Order.h"
 #include "plugins/Plugin.h"
-#include "plugins/BuildInfo.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -25,8 +24,14 @@ public:
 
     static const std::vector<const sc2::Unit*> GetGeysersPos();
 
-    static sc2::Point2D getPointInLine(sc2::Point2D p1, float kValue, float dist);
+    static sc2::Point2D GetPointInLine(const sc2::Point2D& p1, float kValue, float dist);
 
-    static float getKValue(sc2::Point2D p1, sc2::Point2D p2);
+    static float GetKValue(const sc2::Point2D& p1, const sc2::Point2D& p2);
+
+    void Setup();
+
+    static sc2::Point3D buildingPoint;
+
+    static float baseKValue;
 
 };

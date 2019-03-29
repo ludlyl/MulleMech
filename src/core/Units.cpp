@@ -53,6 +53,18 @@ const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D
         }
     }
 
+    //TODO: BUG: kValue is "inf" when geysers are above each other. Mnipulate them so they are not some way
+    /*if ((targetLowest->pos.x - targetSecondLowest->pos.x) == 0) {
+        sc2::Unit* newTargetLowest;
+        newTargetLowest->pos.y = targetSecondLowest->pos.y;
+        newTargetLowest->pos.x = targetSecondLowest->pos.x + 1;
+        targetLowest = newTargetLowest;
+        targetLowest = gAPI->observer().StartingLocation();
+    }*/
+
+    //const sc2::Units& targetTwoClosestUnits = sc2::Units();
+    //Units unit(targetTwoClosestUnits);
+
     std::vector<const sc2::Unit*> targetTwoClosestUnits;
 
     targetTwoClosestUnits.emplace_back(targetLowest);
