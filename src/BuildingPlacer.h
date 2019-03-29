@@ -6,6 +6,7 @@
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
 #include "Dispatcher.h"
+#include "core/Units.h"
 
 #include <optional>
 
@@ -22,7 +23,9 @@ public:
 
     static float GetBaseKValue();
 
-    static const std::vector<const sc2::Unit*> GetGeysersPos();
+    static Units GetVisibleGeysersPos();
+
+    static const std::vector<const sc2::Unit*> GetTwoClosestUnits(Units units);
 
     static sc2::Point2D GetPointInLine(const sc2::Point2D& p1, float kValue, float dist);
 

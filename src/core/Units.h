@@ -48,6 +48,8 @@ public:
     T::iterator erase(T::iterator it) { return m_wrappedUnits.erase(it); }
     T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }
 
+    sc2::Units GetUnitsWithin(float dist) const;
+
     const std::vector<const sc2::Unit*> GetTwoClosestUnits(sc2::Tag tag_) const;
 
 private:

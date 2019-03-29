@@ -64,12 +64,16 @@ const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(const sc2::Point2D
     //const sc2::Units& targetTwoClosestUnits = sc2::Units();
     //Units unit(targetTwoClosestUnits);
 
+    sc2::Units units;
+    units.push_back(targetLowest);
+    units.push_back(targetSecondLowest);
+
     std::vector<const sc2::Unit*> targetTwoClosestUnits;
 
     targetTwoClosestUnits.emplace_back(targetLowest);
     targetTwoClosestUnits.emplace_back(targetSecondLowest);
 
-    return targetTwoClosestUnits;
+    return units;
 }
 
 Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
@@ -109,4 +113,16 @@ sc2::Units Units::ToAPI() const {
         return {};
 
     return GetTwoClosestUnits(unit->pos);
+}
+
+sc2::Units Units::GetUnitsWithin(float f) const {
+    sc2::Units unitsWithin;
+    for (const auto& i : m_units) {
+        const sc2::Point2D p1 = sc2::Point2D(i->pos.x, i->pos.y);
+        float dist = sc2::Distance2D(gAPI->observer().StartingLocation(), p1);
+        if (dist < f) {
+            unitsWithin.push_back(i);
+        }
+    }
+    return unitsWithin;
 }
