@@ -123,13 +123,14 @@ void Hub::OnUnitCreated(Unit* unit_) {
                         std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
                     continue;
 
-                if (i->alliance == sc2::Unit::Alliance::Self)
-                    return;
-
                 i->alliance = sc2::Unit::Alliance::Self;
-                gHistory.info() << "Captured region: (" <<
-                    unit_->pos.x << ", " << unit_->pos.y <<
-                    ")" << std::endl;
+                i->command_center = unit_;
+
+                if (i->alliance != sc2::Unit::Alliance::Self) {
+                    gHistory.info() << "Captured region: (" <<
+                        unit_->pos.x << ", " << unit_->pos.y <<
+                        ")" << std::endl;
+                }
                 return;
             }
             return;
@@ -183,6 +184,7 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
                     continue;
 
                 i->alliance = sc2::Unit::Alliance::Neutral;
+                i->command_center = nullptr;
                 gHistory.info() << "Lost region: (" <<
                     unit_->pos.x << ", " << unit_->pos.y <<
                     ")" << std::endl;

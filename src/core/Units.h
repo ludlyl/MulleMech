@@ -46,6 +46,8 @@ public:
     T::iterator erase(T::iterator it) { return m_wrappedUnits.erase(it); }
     T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }
 
+    void remove(const Unit* unit);
+
 private:
     T m_wrappedUnits;
 };

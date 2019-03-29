@@ -51,3 +51,9 @@ sc2::Units Units::ToAPI() const {
         apiUnits.push_back(unit);
     return apiUnits;
 }
+
+void Units::remove(const Unit* unit) {
+    auto itr = std::find(m_wrappedUnits.begin(), m_wrappedUnits.end(), unit);
+    if (itr != m_wrappedUnits.end())
+        m_wrappedUnits.erase(itr);
+}
