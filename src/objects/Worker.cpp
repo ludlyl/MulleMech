@@ -28,10 +28,14 @@ void Worker::Build(Order* order_, const sc2::Point2D& point_) {
 void Worker::GatherVespene(const Unit* target_) {
     gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_);
     m_job = Job::GATHERING_VESPENE;
+
+    Units ccs = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    if (auto cc = ccs.GetClosestUnit(target_->pos))
+        SetHomeBase(gHub->GetClosestExpansion(cc->pos));
 }
 
 void Worker::SetHomeBase(std::shared_ptr<Expansion> base) {
-    m_homeBase = base;
+    m_homeBase = std::move(base);
 }
 
 std::shared_ptr<Expansion> Worker::GetHomeBase() const {

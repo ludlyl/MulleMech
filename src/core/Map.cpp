@@ -138,7 +138,7 @@ void CalculateAirDistances(Expansions& expansions) {
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
-    town_hall_location(town_hall_location_), alliance(sc2::Unit::Alliance::Neutral) {
+    town_hall_location(town_hall_location_), alliance(sc2::Unit::Alliance::Neutral), command_center(nullptr) {
 }
 
 Expansions CalculateExpansionLocations() {

@@ -20,11 +20,13 @@ struct Miner : Plugin {
     void OnUnitIdle(Unit* unit_, Builder*) final;
 
 private:
-    // When TownHall dies we use this to reassign workers to new CCs
-    void SplitWorkersOf(const std::shared_ptr<Expansion>& expansion);
+    // Send workers to mine at another base (expansionDied=false => Only miners get redistributed)
+    void SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool expansionDied);
 
     // Balance Workers by means of redistribution
     void BalanceWorkers();
+
+    void AbandonMinedOutBases();
 
     std::unordered_map<std::shared_ptr<Expansion>, Units> m_expansionWorkers; // Map of Expansion -> Worker
 };

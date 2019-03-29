@@ -20,7 +20,7 @@ constexpr int mule_energy_cost = 50;
 constexpr float maximum_resource_distance = 10.0f;  // Resources further than this => doesn't belong to this base
 constexpr int steps_between_balance = 20;           // How often we recalculate SCV balance
 constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance we must have before transferring any
-constexpr int maxium_workers = 70;                  // Never go above this number of workers
+constexpr int maximum_workers = 70;                 // Never go above this number of workers
 
 int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
     auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsCommandCenter(),
@@ -54,7 +54,7 @@ void SecureMineralsIncome(Builder* builder_) {
         optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
     for (auto& refinery : refineries)
         optimal_workers += refinery->ideal_harvesters;
-    optimal_workers = std::min(optimal_workers, maxium_workers);                        // Don't make too many, though
+    optimal_workers = std::min(optimal_workers, maximum_workers);                       // Don't make too many, though
 
     if (num_workers >= optimal_workers)
         return;
@@ -89,28 +89,22 @@ void SecureMineralsIncome(Builder* builder_) {
 void SecureVespeneIncome() {
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     Units workers = gAPI->observer().GetUnits(IsGasWorker(), sc2::Unit::Alliance::Self);
+
     for (const auto& i : refineries) {
-     
        if (i->assigned_harvesters == i->ideal_harvesters)
             continue;
        // Makes sure that we never have more than 3 workers on gas.
        else if (i->assigned_harvesters > i->ideal_harvesters) { 
-           for (const auto& j : workers) {
+           for (auto& j : workers) {
                if (i->tag == j->orders.front().target_unit_tag) {
-                   auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
-                       sc2::Unit::Alliance::Neutral);
-                   auto mineral_target = units.GetClosestUnit(i->pos);
-                   if (!mineral_target)
-                       return;
-
-                   // If to many workers on gas -> put one to mine minerals
-                   gAPI->action().Cast(j, sc2::ABILITY_ID::SMART, mineral_target); 
+                   j->AsWorker()->Mine();
                    break;
                }
            }
            continue;
        }
 
+       // NOTE: Home base is updated in Worker::GatherVespene()
        gHub->AssignVespeneHarvester(i);
     }
 }
@@ -177,7 +171,7 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
         // A Town Hall died => Reassing workers
         auto expo = gHub->GetClosestExpansion(unit_->pos);
 
-        SplitWorkersOf(expo);
+        SplitWorkersOf(expo, true);
 
         auto itr = m_expansionWorkers.find(expo);
         if (itr != m_expansionWorkers.end())
@@ -218,7 +212,7 @@ void Miner::OnUnitIdle(Unit* unit_, Builder*) {
     }
 }
 
-void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion) {
+void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool expansionDied) {
     // Assumption: Other bases are already balanced or closed to balanced
     // Then, if we distribute these workers evenly our bases should still be balanced
 
@@ -230,7 +224,8 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion) {
     std::vector<std::shared_ptr<Expansion>> otherExpansions;
     otherExpansions.reserve(m_expansionWorkers.size());
     for (auto& pair : m_expansionWorkers) {
-        if (pair.first != expansion)
+        // Ignore mined out bases unless we have to reshuffle (i.e. expansion died)
+        if (pair.first != expansion && (expansionDied || pair.first->command_center->ideal_harvesters != 0))
             otherExpansions.push_back(pair.first);
     }
 
@@ -239,12 +234,23 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion) {
 
     // Send workers in round-robin fashion
     auto roundRobinItr = otherExpansions.begin();
-    for (auto& worker : itr->second) {
-        worker->AsWorker()->SetHomeBase(*roundRobinItr);
-        worker->AsWorker()->Mine();
+    for (auto worker_itr = itr->second.begin(); worker_itr != itr->second.end();) {
+        auto worker = (*worker_itr)->AsWorker();
+        if (!expansionDied &&  worker->GetJob() != GATHERING_MINERALS) {
+            ++worker_itr;
+            continue;
+        }
+
+        worker->SetHomeBase(*roundRobinItr);
+        worker->Mine();
         m_expansionWorkers[*roundRobinItr].push_back(worker);
         if (++roundRobinItr == otherExpansions.end())
             roundRobinItr = otherExpansions.begin();
+
+        if (!expansionDied)
+            worker_itr = itr->second.erase(worker_itr);
+        else
+            ++worker_itr;
     }
 }
 
@@ -255,13 +261,21 @@ void Miner::BalanceWorkers() {
     Timer timer;
     timer.Start();
 
+    // Leave expansions with no more mining to do
+    AbandonMinedOutBases();
+
     // Build a map of how many workers above their ideal each expansion has
     std::multimap<int, std::shared_ptr<Expansion>> sortedExpansions; // note: maps are ordered by key
 
     for (auto& pair : m_expansionWorkers) {
+        if (pair.first->command_center->ideal_harvesters == 0)
+            continue; // Skip mined out command centers
         int over = static_cast<int>(pair.second.size()) - IdealWorkerCount(pair.first);
         sortedExpansions.emplace(std::make_pair(std::max(0, over), pair.first));
     }
+
+    if (sortedExpansions.size() <= 1)
+        return;
 
     // If ideal difference is >= 4 of top and bottom guy => balance workers
     int diff = sortedExpansions.rbegin()->first - sortedExpansions.begin()->first;
@@ -288,5 +302,15 @@ void Miner::BalanceWorkers() {
         }
         gHistory.debug(LogChannel::economy) << str << std::endl;
 #endif
+    }
+}
+
+void Miner::AbandonMinedOutBases() {
+    // TODO: Should this work for expired gas geysers too?
+
+    // Abandon empty bases: mine somewhere else
+    for (auto& pair : m_expansionWorkers) {
+        if (pair.first->command_center->ideal_harvesters == 0)
+            SplitWorkersOf(pair.first, false);
     }
 }
