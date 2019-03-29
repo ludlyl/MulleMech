@@ -28,6 +28,10 @@ public:
     // Returns a copy of Units as an API-recognizable vector with sc2::Unit objects
     sc2::Units ToAPI() const;
 
+    const std::vector<const sc2::Unit*> GetTwoClosestUnits(const sc2::Point2D& point_) const;
+
+    const sc2::Unit* GetClosestUnit(sc2::Tag tag_) const;
+
     // Common functions found in std::vector implementations
     T::iterator begin() { return m_wrappedUnits.begin(); }
     T::iterator end() { return m_wrappedUnits.end(); }
@@ -51,6 +55,11 @@ public:
     sc2::Units GetUnitsWithin(float dist) const;
 
     const std::vector<const sc2::Unit*> GetTwoClosestUnits(sc2::Tag tag_) const;
+    sc2::Units GetUnitsWithin(float dist) const;
+
+    const std::vector<const sc2::Unit*> GetTwoClosestUnits(sc2::Tag tag_) const;
+
+    const sc2::Unit* GetRandomUnit() const;
 
 private:
     T m_wrappedUnits;

@@ -57,17 +57,8 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ReaperHarass());
     m_plugins.emplace_back(new Reaper());
 
-    //if (current_race == sc2::Race::Protoss)
-    //    m_plugins.emplace_back(new WarpSmith());
-
-    /*std::cout << "x: " << gAPI->observer().StartingLocation().x;
-    std::cout << "y: " << gAPI->observer().StartingLocation().y;
-
-    //find point to building line
-    BuildingPlacer::buildingPoint = BuildingPlacer::GetPointFrontOfCC(gAPI->observer().StartingLocation());
-
-    //find direction for building line
-    BuildingPlacer::baseKValue = BuildingPlacer::GetBaseKValue();*/
+    if (current_race == sc2::Race::Protoss)
+        m_plugins.emplace_back(new WarpSmith());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
