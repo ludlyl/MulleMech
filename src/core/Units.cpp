@@ -107,17 +107,18 @@ sc2::Units Units::ToAPI() const {
     return apiUnits;
 }
 
-/*const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
+/*
+const std::vector<const sc2::Unit*> Units::GetTwoClosestUnits(sc2::Tag tag_) const {
     const sc2::Unit* unit = gAPI->observer().GetUnit(tag_);
     if (!unit)
         return {};
 
     return GetTwoClosestUnits(unit->pos);
-}
+}*/
 
 sc2::Units Units::GetUnitsWithin(float f) const {
     sc2::Units unitsWithin;
-    for (const auto& i : m_units) {
+    for (const auto& i : m_wrappedUnits) {
         const sc2::Point2D p1 = sc2::Point2D(i->pos.x, i->pos.y);
         float dist = sc2::Distance2D(gAPI->observer().StartingLocation(), p1);
         if (dist < f) {
