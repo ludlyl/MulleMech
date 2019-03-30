@@ -206,7 +206,9 @@ bool IsGasWorker::operator()(const sc2::Unit& unit_) const {
 bool IsTownHall::operator()(const sc2::Unit& unit_) const {
     return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_NEXUS ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS ||
            unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
            unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE ||
@@ -215,14 +217,6 @@ bool IsTownHall::operator()(const sc2::Unit& unit_) const {
 
 bool IsIdleTownHall::operator()(const sc2::Unit& unit_) const {
     return IsTownHall()(unit_) && unit_.orders.empty() && unit_.build_progress == 1.0f;
-}
-
-bool IsCommandCenter::operator()(const sc2::Unit& unit_) const {
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS;
 }
 
 IsOrdered::IsOrdered(sc2::UNIT_TYPEID type_): m_type(type_) {
