@@ -145,7 +145,7 @@ bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
-    return unit_.vespene_contents > 0;
+    return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
 
 bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
