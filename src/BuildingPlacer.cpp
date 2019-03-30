@@ -5,7 +5,7 @@
 
 #include <sc2api/sc2_common.h>
 
-sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLocation) {
+sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D& baseLocation) {
     // TODO: Reuse Map's Clusters?
     auto resources = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
         {IsVisibleMineralPatch(), IsWithinDist(baseLocation, 15.0f)}));
@@ -33,7 +33,7 @@ sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D baseLoca
 }
 
 std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceBehindMinerals(
-    const Order &order, const sc2::Point3D baseLocation) {
+    const Order &order, const sc2::Point3D& baseLocation) {
     auto center = GetCenterBehindMinerals(baseLocation);
     auto startDirection = sc2::Point2D(center - baseLocation);
     sc2::Normalize2D(startDirection);
