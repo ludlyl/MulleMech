@@ -19,7 +19,6 @@
 #include "plugins/RepairMan.h"
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
-#include "plugins/WarpSmith.h"
 #include "plugins/micro/Reaper.h"
 #include "plugins/ReaperHarass.h"
 
@@ -57,9 +56,6 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new Scouting());
     m_plugins.emplace_back(new ReaperHarass());
     m_plugins.emplace_back(new Reaper());
-
-    if (current_race == sc2::Race::Protoss)
-        m_plugins.emplace_back(new WarpSmith());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
