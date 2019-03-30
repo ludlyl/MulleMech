@@ -281,7 +281,11 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
 }
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {
-    sc2::Point2D pos = unit_->pos;
+    return GetTerranAddonPosition(unit_->pos);
+}
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) {
+    sc2::Point2D pos = parentBuildingPosition;
     pos.x += ADDON_DISPLACEMENT_IN_X;
     pos.y += ADDON_DISPLACEMENT_IN_Y;
     return pos;

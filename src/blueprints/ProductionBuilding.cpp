@@ -8,7 +8,7 @@
 bool bp::ProductionBuilding::Build(Order* order_) {
     Timer timer;
     timer.Start();
-    auto pos = BuildingPlacer::CalculateFreePlaceInFrontOfTownHall(*order_, gAPI->observer().StartingLocation());
+    auto pos = BuildingPlacer::CalculateFreePlaceInFrontOfTownHall(*order_, gAPI->observer().StartingLocation(), true);
     auto ms = timer.Finish();
     gHistory.debug() << "Trying to calculate placement for production building took " << ms << " ms" << std::endl;
     if (pos.has_value())

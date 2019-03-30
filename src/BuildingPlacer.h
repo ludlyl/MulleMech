@@ -19,7 +19,8 @@ public:
 
     // Returns a random building point through a line in the point in front of HQ (i.e. CC)
     static std::optional<sc2::Point3D> CalculateFreePlaceInFrontOfTownHall(const Order& order,
-                                                                           const sc2::Point3D& baseLocation);
+                                                                           const sc2::Point3D& baseLocation,
+                                                                           bool includeSpaceForAddon = false);
 
 private:
     static float GetBaseKValue(const sc2::Point3D& baseLocation);

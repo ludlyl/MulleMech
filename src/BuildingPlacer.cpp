@@ -108,7 +108,11 @@ sc2::Point3D BuildingPlacer::GetPointInFrontOfTownHall(const sc2::Point3D& baseL
 }
 
 std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceInFrontOfTownHall(const Order& order,
-                                                                                const sc2::Point3D& baseLocation) {
+                                                                                const sc2::Point3D& baseLocation,
+                                                                                bool includeSpaceForAddon) {
+    // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
+    Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+
     int attempt = 0;
     // TODO: These values should be cached
     auto pointInFrontOfTownHall = GetPointInFrontOfTownHall(baseLocation);
@@ -120,7 +124,13 @@ std::optional<sc2::Point3D> BuildingPlacer::CalculateFreePlaceInFrontOfTownHall(
         sc2::Point3D pos = sc2::Point3D(newPoint.x, newPoint.y, baseLocation.z);
 
         if (gAPI->query().CanBePlaced(order, pos)) {
-            return pos;
+            if (includeSpaceForAddon) {
+                if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(pos))) {
+                    return pos;
+                }
+            } else {
+                return pos;
+            }
         }
         attempt++;
     }
