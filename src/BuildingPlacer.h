@@ -9,8 +9,7 @@
 
 class BuildingPlacer {
 public:
-    static sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D baseLocation);
+    static sc2::Point3D GetCenterBehindMinerals(sc2::Point3D baseLocation);
 
-    static std::optional<sc2::Point3D> CalculateFreePlaceBehindMinerals(const Order &order,
-        const sc2::Point3D baseLocation);
+    static std::optional<sc2::Point3D> CalculateFreePlaceBehindMinerals(const Order &order, sc2::Point3D baseLocation);
 };
