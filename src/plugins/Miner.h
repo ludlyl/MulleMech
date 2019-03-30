@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "../Builder.h"
+#include "Builder.h"
 #include "Plugin.h"
 #include "core/Units.h"
+#include "core/Map.h"
 
 #include <unordered_map>
 

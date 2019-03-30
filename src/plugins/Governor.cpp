@@ -2,11 +2,11 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include "Governor.h"
 #include "core/Helpers.h"
 #include "core/Converter.h"
-#include "../Historican.h"
-#include "../Hub.h"
-#include "Governor.h"
+#include "Historican.h"
+#include "Hub.h"
 
 #include <sc2api/sc2_agent.h>
 

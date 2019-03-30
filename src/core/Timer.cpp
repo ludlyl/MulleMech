@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "Historican.h"
 #include "Timer.h"
+#include "Historican.h"
 
 void Timer::Start() {
     m_start = std::chrono::high_resolution_clock::now();

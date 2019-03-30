@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Plugin.h"
+
 #include <unordered_set>
 #include <vector>
 

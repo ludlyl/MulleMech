@@ -2,9 +2,9 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "../Historican.h"
-#include "../Hub.h"
 #include "QuarterMaster.h"
+#include "Historican.h"
+#include "Hub.h"
 #include "core/API.h"
 
 #include <numeric>

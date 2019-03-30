@@ -3,7 +3,6 @@
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
 #include "Helpers.h"
-
 #include "API.h"
 #include "Converter.h"
 #include "Hub.h"

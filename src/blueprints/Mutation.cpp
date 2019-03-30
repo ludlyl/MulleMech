@@ -5,7 +5,7 @@
 #include "Mutation.h"
 #include "core/API.h"
 #include "core/Helpers.h"
-#include "../Hub.h"
+#include "Hub.h"
 
 bool bp::Mutation::Build(Order* order_) {
     if (gHub->AssignBuildingProduction(order_, order_->tech_alias.back())) {
