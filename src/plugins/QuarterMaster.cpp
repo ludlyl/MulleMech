@@ -18,6 +18,8 @@ struct CalcSupplies {
 };
 
 float CalcSupplies::operator()(float sum, const Unit* unit_) const {
+    // Even though MulleMech is only able to play terran,
+    // it's good that this function is valid for all races if we want to calculate our opponents supply
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
@@ -54,13 +56,10 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
 
 float CalcSupplies::operator()(float sum, const Order& order_) const {
     switch (order_.ability_id.ToType()) {
-        case sc2::ABILITY_ID::BUILD_NEXUS:
         case sc2::ABILITY_ID::BUILD_COMMANDCENTER:
             return sum + 15.0f;
 
-        case sc2::ABILITY_ID::BUILD_PYLON:
         case sc2::ABILITY_ID::BUILD_SUPPLYDEPOT:
-        case sc2::ABILITY_ID::TRAIN_OVERLORD:
             return sum + 8.0f;
 
         default:
@@ -120,25 +119,11 @@ void QuarterMaster::OnStep(Builder* builder_) {
 
     m_skip_turn = true;
 
-    switch (gHub->GetCurrentRace()) {
-        case sc2::Race::Terran:
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, true);
-            return;
-
-        case sc2::Race::Zerg:
-            builder_->ScheduleTraining(sc2::UNIT_TYPEID::ZERG_OVERLORD, true);
-            return;
-
-        default:
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::PROTOSS_PYLON, true);
-            return;
-    }
+    builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, true);
 }
 
 void QuarterMaster::OnUnitCreated(Unit* unit_) {
-    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT ||
-        unit_->unit_type == sc2::UNIT_TYPEID::ZERG_OVERLORD ||
-        unit_->unit_type == sc2::UNIT_TYPEID::PROTOSS_PYLON) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
         m_skip_turn = false;
     }
 }
