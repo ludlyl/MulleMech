@@ -10,6 +10,10 @@ PlayStyle Reasoner::GetPlayStyle() {
     return m_latest_play_style;
 }
 
+std::vector<UnitClass> Reasoner::GetNeededUnitClasses() {
+    return {};
+}
+
 std::vector<std::shared_ptr<Expansion>> Reasoner::GetLikelyEnemyExpansions() {
     auto main = gBrain->memory().GetEnemyBase(0);
     if (!main)
