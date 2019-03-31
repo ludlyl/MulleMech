@@ -115,15 +115,15 @@ void Governor::OnStep(Builder* builder_) {
 }
 
 int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {
-    int total_structures = (int)builder_->CountScheduledStructures(type);
+    int total_structures = static_cast<int>(builder_->CountScheduledStructures(type));
 
     for (const auto i : m_planner_queue) {
         if (i == type)
             total_structures++;
     }
 
-    total_structures += (int)gAPI->observer().GetUnits(IsUnit(type, true),
-        sc2::Unit::Alliance::Self).size();
+    total_structures += static_cast<int>(gAPI->observer().GetUnits(IsUnit(type, true),
+        sc2::Unit::Alliance::Self).size());
 
     return total_structures;
 }
