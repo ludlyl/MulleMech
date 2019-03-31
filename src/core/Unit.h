@@ -1,7 +1,10 @@
 #pragma once
 
 #include "plugins/micro/MicroPlugin.h"
+
 #include <sc2api/sc2_unit.h>
+#include <sc2api/sc2_data.h>
+
 #include <memory>
 
 class Worker;
@@ -15,16 +18,14 @@ public:
     virtual ~Unit() = default;
     void UpdateAPIData(const sc2::Unit& unit);
 
-    // Implicit conversion: Unit -> const sc2::Unit*
-    operator const sc2::Unit*() const;
-
     bool operator==(const Unit& other) const;
 
     // Micro plugin for this unit
-    void InstallMicro();
     MicroPlugin* Micro() const;
 
     Worker* AsWorker();
+
+    sc2::UnitTypeData GetTypeData() const;
 
 private:
     std::unique_ptr<MicroPlugin> m_micro;

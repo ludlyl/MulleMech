@@ -5,7 +5,9 @@
 #pragma once
 
 #include "core/Unit.h"
+
 #include <sc2api/sc2_unit.h>
+
 #include <functional>
 #include <memory>
 #include <optional>
@@ -45,6 +47,8 @@ public:
     void clear() { m_wrappedUnits.clear(); }
     T::iterator erase(T::iterator it) { return m_wrappedUnits.erase(it); }
     T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }
+
+    void remove(const Unit* unit);
 
 private:
     T m_wrappedUnits;

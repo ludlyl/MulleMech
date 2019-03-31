@@ -1,5 +1,4 @@
 #include "Marine.h"
-
 #include "core/API.h"
 
 Marine::Marine(Unit* unit)

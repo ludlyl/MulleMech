@@ -2,11 +2,11 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include "Governor.h"
 #include "core/Helpers.h"
 #include "core/Converter.h"
-#include "../Historican.h"
-#include "../Hub.h"
-#include "Governor.h"
+#include "Historican.h"
+#include "Hub.h"
 
 #include <sc2api/sc2_agent.h>
 
@@ -15,7 +15,6 @@
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
-    gHistory.info() << "Started game as Terran" << std::endl;
     builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
 
     enum Strategies {mech, bio, bunkerRush};
@@ -42,7 +41,6 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
             break;
     }
-    return;
 }
 
 void Governor::OnStep(Builder* builder_) {
@@ -131,37 +129,24 @@ int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {
 }
 
 void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
-    sc2::UNIT_TYPEID type;
-    Unit* addOnAsUnit;
-
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
-            if (unit_->add_on_tag != 0) {
-                addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-                type = addOnAsUnit->unit_type;
-                if (type == sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB) {
-                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARAUDER, false, unit_);
-                    gHistory.info() << "Schedule Marauder training" << std::endl;
-                    return;
-                }
-            }
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORY:
             //TODO sometimes we might want to produce cyclons
-            if (unit_->add_on_tag == 0)
-                return;
-            addOnAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
-            type = addOnAsUnit->unit_type;
-            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) {
+            if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                 gHistory.info() << "Schedule siegetank training" << std::endl;
                 return;
             }
-            if (type == sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) {
-                //TODO fix so that this will awlays build 2 hellions at all times.
+            else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
+                //TODO We don't always want to schedule 2 units here...
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
-                gHistory.info() << "Schedule Hellion training" << std::endl;
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                gHistory.info() << "Schedule double hellion training" << std::endl;
                 return;
+            } else {
+                // Naked
             }
             break;
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
@@ -196,7 +181,7 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
     float viking_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).build_time;
 
     int banshee_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).mineral_cost;
-    int banshee_vepsene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).vespene_cost;
+    int banshee_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).vespene_cost;
     float banshee_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).build_time;
 
 

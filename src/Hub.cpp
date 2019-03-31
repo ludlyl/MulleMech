@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "Historican.h"
 #include "Hub.h"
+#include "Historican.h"
 #include "core/Helpers.h"
 
 #include <algorithm>
@@ -74,7 +74,7 @@ void Hub::OnStep() {
 void Hub::OnUnitCreated(Unit* unit_) {
     // Record newly started constructions, noting which SCV is constructing it
     if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
-        auto buildingData = gAPI->observer().GetUnitTypeData(unit_->unit_type);
+        auto buildingData = unit_->GetTypeData();
 
         // Find the SCV that's constructing this building
         auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
@@ -123,13 +123,14 @@ void Hub::OnUnitCreated(Unit* unit_) {
                         std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
                     continue;
 
-                if (i->alliance == sc2::Unit::Alliance::Self)
-                    return;
-
                 i->alliance = sc2::Unit::Alliance::Self;
-                gHistory.info() << "Captured region: (" <<
-                    unit_->pos.x << ", " << unit_->pos.y <<
-                    ")" << std::endl;
+                i->command_center = unit_;
+
+                if (i->alliance != sc2::Unit::Alliance::Self) {
+                    gHistory.info() << "Captured region: (" <<
+                        unit_->pos.x << ", " << unit_->pos.y <<
+                        ")" << std::endl;
+                }
                 return;
             }
             return;
@@ -176,6 +177,8 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
 
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
+        case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
+        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
             for (const auto& i : m_expansions) {
                 if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
@@ -183,6 +186,7 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
                     continue;
 
                 i->alliance = sc2::Unit::Alliance::Neutral;
+                i->command_center = nullptr;
                 gHistory.info() << "Lost region: (" <<
                     unit_->pos.x << ", " << unit_->pos.y <<
                     ")" << std::endl;
@@ -200,7 +204,7 @@ void Hub::OnUnitIdle(Unit* unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            if (m_free_workers.Swap(unit_->AsWorker(), m_busy_workers))
+            if (m_busy_workers.Swap(unit_->AsWorker(), m_free_workers))
                 gHistory.info() << "Our busy worker has finished task" << std::endl;
             return;
         }
@@ -298,13 +302,13 @@ void Hub::AssignVespeneHarvester(const Unit* refinery_) {
 bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
         if (m_assignedBuildings.find(order_->assignee->tag) == m_assignedBuildings.end()
-            && order_->assignee->orders.empty()) {
+            && IsIdleUnit(order_->assignee->unit_type)(*order_->assignee)) {
             m_assignedBuildings.insert(order_->assignee->tag);
             return true;
         }
     } else {
         for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)) {
-            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end() && unit->orders.empty()) {
+            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
                 m_assignedBuildings.insert(unit->tag);
                 order_->assignee = unit;
                 return true;
@@ -322,7 +326,7 @@ bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc
     for (const auto& unit : gAPI->observer().GetUnits(
             MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
             sc2::Unit::Alliance::Self)) {
-        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end() && unit->orders.empty()) {
+        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
             m_assignedBuildings.insert(unit->tag);
             order_->assignee = unit;
             return true;

@@ -1,12 +1,10 @@
-//
-// Created by kevin on 2019-03-07.
-//
 #include "plugins/Plugin.h"
 #include "plugins/micro/MicroPlugin.h"
 #include "core/Units.h"
+#include "DefaultUnit.h"
+
 #include <unordered_set>
 #include <vector>
-#include "DefaultUnit.h"
 
 class Reaper : public Plugin {
 public:

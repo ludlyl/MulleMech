@@ -11,8 +11,6 @@
 #include <sc2utils/sc2_arg_parser.h>
 #include <sc2utils/sc2_manage_process.h>
 
-#include <iostream>
-
 #ifdef DEBUG
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -21,10 +19,11 @@ int main(int argc, char* argv[]) {
     }
 
     gHistory.Init("history.log");
-    // gHistory.SetSeverity(LogSeverity::debug);
+    gHistory.SetSeverity(LogSeverity::debug);
     // gHistory.AddFilter(LogChannel::general);
     // gHistory.AddFilter(LogChannel::scouting);
     // gHistory.AddFilter(LogChannel::reaperharass);
+    // gHistory.AddFilter(LogChannel::economy);
 
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);

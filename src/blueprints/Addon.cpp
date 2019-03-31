@@ -1,5 +1,4 @@
 #include "Addon.h"
-
 #include "core/API.h"
 #include "core/Helpers.h"
 #include "Historican.h"
@@ -16,7 +15,7 @@ bool bp::Addon::Build(Order *order_) {
     if (!order_->assignee) {
         // Get all idle parent buildings that doesn't already have an add-on
         auto parent_buildings = gAPI->observer().GetUnits(
-                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
+                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType, false), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
                             sc2::Unit::Alliance::Self);
 
         for (auto& building : parent_buildings) {
