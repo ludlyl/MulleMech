@@ -94,33 +94,6 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsFlying::operator()(const sc2::Unit& unit_) const {
-    switch (unit_.unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
-        case sc2::UNIT_TYPEID::TERRAN_LIBERATOR:
-        case sc2::UNIT_TYPEID::TERRAN_LIBERATORAG:
-        case sc2::UNIT_TYPEID::TERRAN_MEDIVAC:
-        case sc2::UNIT_TYPEID::TERRAN_RAVEN:
-        case sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
-
-        case sc2::UNIT_TYPEID::ZERG_BROODLORD:
-        case sc2::UNIT_TYPEID::ZERG_CORRUPTOR:
-        case sc2::UNIT_TYPEID::ZERG_MUTALISK:
-        case sc2::UNIT_TYPEID::ZERG_VIPER:
-
-        case sc2::UNIT_TYPEID::PROTOSS_CARRIER:
-        case sc2::UNIT_TYPEID::PROTOSS_MOTHERSHIP:
-        case sc2::UNIT_TYPEID::PROTOSS_ORACLE:
-        case sc2::UNIT_TYPEID::PROTOSS_PHOENIX:
-        case sc2::UNIT_TYPEID::PROTOSS_TEMPEST:
-        case sc2::UNIT_TYPEID::PROTOSS_VOIDRAY:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }

@@ -31,10 +31,6 @@ struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsFlying {
-    bool operator()(const sc2::Unit& unit_) const;
-};
-
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID) const;

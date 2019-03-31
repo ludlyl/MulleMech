@@ -10,17 +10,23 @@ Hellion::Hellion(Unit* unit)
 void Hellion::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
+
     if (m_self->weapon_cooldown == 0) {
 
-        //Get rid of flying units
-        auto it = std::remove_if(enemies.ToAPI().begin(), enemies.ToAPI().end(), [](const Unit *unit_) {
-            return IsFlying()(*unit_);
+
+        sc2::Units reachableEnemiesAPI = enemies.ToAPI();
+        //Get ground units
+        auto it = std::remove_if(reachableEnemiesAPI.begin(), reachableEnemiesAPI.end(), [](const Unit *unit_) {
+            return unit_->is_flying;
         });
 
-        enemies.ToAPI().erase(it, enemies.ToAPI().end());
 
-        if (!enemies.ToAPI().empty()) {
-        const Unit *target = enemies.GetClosestUnit(m_self->pos);
+        reachableEnemiesAPI.erase(it, reachableEnemiesAPI.end());
+
+        Units reachableEnemies(reachableEnemiesAPI);
+
+        if (!reachableEnemies.empty()) {
+        const Unit *target = reachableEnemies.GetClosestUnit(m_self->pos);
 
         Cast(sc2::ABILITY_ID::SMART, target);
     }
