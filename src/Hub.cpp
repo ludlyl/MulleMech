@@ -202,7 +202,7 @@ void Hub::OnUnitIdle(Unit* unit_) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            if (m_free_workers.Swap(unit_->AsWorker(), m_busy_workers))
+            if (m_busy_workers.Swap(unit_->AsWorker(), m_free_workers))
                 gHistory.info() << "Our busy worker has finished task" << std::endl;
             return;
         }
