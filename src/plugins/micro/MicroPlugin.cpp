@@ -2,6 +2,8 @@
 
 #include "DefaultUnit.h"
 #include "Marine.h"
+#include "Hellion.h"
+
 
 #include "core/API.h"
 
@@ -9,6 +11,8 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
     case sc2::UNIT_TYPEID::TERRAN_MARINE:
         return std::make_unique<Marine>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_HELLION:
+            return std::make_unique<Hellion>(unit);
     default:
         return std::make_unique<DefaultUnit>(unit);
     }
