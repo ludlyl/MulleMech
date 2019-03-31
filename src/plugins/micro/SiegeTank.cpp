@@ -10,8 +10,20 @@ SiegeTank::SiegeTank(Unit* unit)
 void SiegeTank::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
-    // Siege if within siege range and not on top of unit
-    if (DistanceSquared2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) < 14 && DistanceSquared2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) > 4) {
+    if(m_self->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SIEGETANK) {
+        // Siege if within siege range and not on top of unit
+        if (Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) < siegeMaxRange &&
+            DistanceSquared2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) > siegeMinRange + 1) {
             Cast(sc2::ABILITY_ID::MORPH_SIEGEMODE);
+        }
+
+    }
+
+    if(m_self->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED){
+
+    // Unsiege if out of siege range or if on top of unit
+    if ((Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) > siegeMaxRange+1) || (DistanceSquared2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos) < siegeMinRange)) {
+        Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
+    }
     }
 }

@@ -12,8 +12,6 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
         return std::make_unique<Marine>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
             return std::make_unique<SiegeTank>(unit);
-        case sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
-            return std::make_unique<SiegeTankSieged>(unit);
     default:
         return std::make_unique<DefaultUnit>(unit);
     }
