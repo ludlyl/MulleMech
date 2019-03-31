@@ -202,7 +202,7 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB) *
         banshee_mineral / banshee_build_time;
     vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB) *
-        banshee_vepsene / banshee_build_time;
+        banshee_vespene / banshee_build_time;
 
     std::pair<float, float> total_consumption;
     total_consumption.first = mineral_consumption;
