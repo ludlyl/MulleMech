@@ -17,7 +17,10 @@ struct Governor : Plugin {
     void OnBuildingConstructionComplete(Unit* unit_) final;
 
     //Return values are Minerals and Vespene in that order.
-    std::pair<float, float> Governor::CurrentConsumption();
+    // Return value is in Resource/frame
+    std::pair<float, float> Governor::CurrentConsumption(Builder* builder_);
+
+    int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type);
 
     private:
         std::list<sc2::UNIT_TYPEID> m_planner_queue;

@@ -10,13 +10,8 @@
 
 #include <sc2api/sc2_agent.h>
 
-#define TANK_PRODUCTION_TIME 32.0
-
-#define HELLION_PRODUCTION_TIME 21.0
-
-#define VIKING_PRODUCTION_TIME 30.0
-
-#define BANSHEE_PRODUCTION_TIME 30.0
+//Placeholder, might wanna move this in future
+#define FRAMES_PER_SECOND 21.4f
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
@@ -43,7 +38,7 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
             break;
     }
@@ -53,16 +48,17 @@ void Governor::OnGameStart(Builder* builder_) {
 void Governor::OnStep(Builder* builder_) {
     int minerals = gAPI->observer().GetMinerals();
 
-    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
+    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).mineral_cost;
     float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
+
+    int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
+    int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
+    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
 
     if (minerals < 50)
        return;
     //TODO add priority flag for factory production
     //TODO create exeception handler for planner_queue
-    //TODO Army compesition for military production
-    //TODO Get current army
-    //TODO compare military strength of us and enemy
     auto it = m_planner_queue.begin();
     int planned_cost = 0;
     while (it != m_planner_queue.end()) {
@@ -74,14 +70,23 @@ void Governor::OnStep(Builder* builder_) {
         it = m_planner_queue.erase(it);
     }
 
+    // Note: Returns Minerals/Min
     float mineral_income = gAPI->observer().GetMineralIncomeRate();
     float vespene_income = gAPI->observer().GetVespeneIncomeRate();
-    std::pair<float, float> consumption = CurrentConsumption();
+    std::pair<float, float> consumption = CurrentConsumption(builder_); // Note: Returns Mineral/frame, Vespene/frame
+
     float mineral_consumption = consumption.first;
     float vespene_consumption = consumption.second;
 
+    //Converting from Mineral/frames to Mineral/min
+    mineral_consumption = mineral_consumption * FRAMES_PER_SECOND * 60.f;
+    vespene_consumption = vespene_consumption * FRAMES_PER_SECOND * 60.f;
+
+    //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
+
+    gHistory.info() << mineral_consumption << std::endl;
 
     if (mineral_overproduction < 0)
         return;
@@ -89,12 +94,40 @@ void Governor::OnStep(Builder* builder_) {
     if (vespene_overproduction < 0) {
         // In this case we have minerals but not vespene -> produce hellions
 
-        if (mineral_overproduction < (2.0 * hellion_mineral / (hellion_build_time / 60.0))) //cost of factory with reactor producing  
+        //cost of factory with reactor producing  
+        if (mineral_overproduction < (FRAMES_PER_SECOND * 60.f * 2.f * hellion_mineral / hellion_build_time)) 
             return;
 
+        //TODO Confirm this value (2)
+        //We never want more than 2 factories producing hellions
+        if (CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) > 1)
+            return;
+
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
     }
-    //TODO start planning on what we want to spend our overproduction on based on current army compersition
-    //TODO or expand our base based on enum from higher-order plugin.
+
+    if (mineral_overproduction > (FRAMES_PER_SECOND * 60.f * tank_mineral / tank_build_time) &&
+        vespene_overproduction > (FRAMES_PER_SECOND * 60.f * tank_vespene / tank_build_time)) {
+
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+    }
+    //TODO expand our base based on enum from higher-order plugin.
+}
+
+int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {
+    int total_structures = (int)builder_->CountScheduledStructures(type);
+
+    for (const auto i : m_planner_queue) {
+        if (i == type)
+            total_structures++;
+    }
+
+    total_structures += (int)gAPI->observer().GetUnits(IsUnit(type, true),
+        sc2::Unit::Alliance::Self).size();
+
+    return total_structures;
 }
 
 void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
@@ -146,96 +179,45 @@ void Governor::OnBuildingConstructionComplete(Unit* unit_) {
     }
 }
 
+std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
+    float mineral_consumption = 0; // Minerals/frame
+    float vespene_consumption = 0; // Vespene/frame
 
-//TODO this function should take a State as input. The state can be the current state or a future state
-std::pair<float, float> Governor::CurrentConsumption() {
-    //TODO add buildings that are being built and that are in building queue to calculations
-    auto barracks = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_BARRACKS), sc2::Unit::Alliance::Self);
-    auto factories = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_FACTORY), sc2::Unit::Alliance::Self);
-    auto starports = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_STARPORT), sc2::Unit::Alliance::Self);
-    float mineral_consumption = 0; // Minerals/min
-    float vespene_consumption = 0; // Vespene/min
+
     int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).mineral_cost;
     float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
+
     int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
     int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
     float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
+
     int viking_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).mineral_cost;
     int viking_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).vespene_cost;
     float viking_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).build_time;
+
     int banshee_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).mineral_cost;
     int banshee_vepsene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).vespene_cost;
     float banshee_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).build_time;
 
-    for (const auto& i : barracks) {
-        //assumed zero production incase of mechbuild
-        if (i->add_on_tag == 0) {
-            continue;
-        }
-        auto type = i->unit_type.ToType();
 
-        switch (type) {
-        case sc2::UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
-            break;
-        case sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
-            break;
-        default:
-            break;
-        }
-    }
+    //Since we will never have a production building without an addon it's safe to calculate cost based on addons
+    mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) *
+        2.f * hellion_mineral / hellion_build_time;
 
-    for (const auto& i : factories) {
-        //TODO if factory doesnt have addon -> check what addon it's building assuming it's building one
-        if (i->add_on_tag == 0) {
-            continue;
-        }
+    mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
+         tank_mineral / tank_build_time;
+    vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
+        tank_vespene / tank_build_time;
 
-        auto type = i->unit_type.ToType();
+    mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) *
+        2.f * viking_mineral / viking_build_time;
+    vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) *
+        2.f * viking_vespene / viking_build_time;
 
-        switch (type) {
-        case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
-            //assuming hellion prodcution
-
-            mineral_consumption += 2.0 * ( hellion_mineral / (hellion_build_time / 60.0));
-            break;
-        case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
-            // assuming tank production
-
-            mineral_consumption += tank_mineral / (tank_build_time / 60.0);
-            vespene_consumption += tank_vespene / (tank_build_time / 60.0);
-            break;
-        default:
-            break;
-        }
-
-    }
-
-    // TODO Starport wont produce units continiusly, add a flag to know when it is and when it isn't.
-    for (const auto& i : starports) {
-        //TODO if starport doesnt have addon -> check what addon it's building assuming it's building one
-        if (i->add_on_tag == 0) {
-            continue;
-        }
-
-        auto type = i->unit_type.ToType();
-
-        switch (type) {
-        case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
-            //assuming viking production
-
-            mineral_consumption += 2.0 * viking_mineral / (viking_build_time / 60.0);
-            vespene_consumption += 2.0 * viking_vespene / (viking_build_time / 60.0);
-            break;
-        case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
-            //assuming banshee production
-
-            mineral_consumption += banshee_mineral / (banshee_build_time / 60.0);
-            vespene_consumption += banshee_vepsene / (banshee_build_time / 60.0);
-            break;
-        default:
-            break;
-        }
-    }
+    mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB) *
+        banshee_mineral / banshee_build_time;
+    vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB) *
+        banshee_vepsene / banshee_build_time;
 
     std::pair<float, float> total_consumption;
     total_consumption.first = mineral_consumption;
