@@ -4,7 +4,7 @@
 
 class DefaultUnit : public MicroPlugin {
 public:
-    DefaultUnit(Unit* unit);
+    explicit DefaultUnit(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 

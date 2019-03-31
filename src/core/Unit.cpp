@@ -1,9 +1,7 @@
 #include "Unit.h"
-
 #include "API.h"
 #include "Helpers.h"
 #include "objects/Worker.h"
-
 #include "plugins/micro/MicroPlugin.h"
 
 Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) {

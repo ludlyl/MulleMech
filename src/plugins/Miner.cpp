@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "../Hub.h"
 #include "Miner.h"
+#include "Hub.h"
 #include "core/API.h"
 #include "core/Brain.h"
 #include "core/Helpers.h"
@@ -23,7 +23,7 @@ constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance w
 constexpr int maximum_workers = 70;                 // Never go above this number of workers
 
 int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
-    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsCommandCenter(),
+    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
         IsRefinery()}), sc2::Unit::Alliance::Self);
 
     int needed = 0;
@@ -44,7 +44,7 @@ Unit* GetMovableWorker(const Units& workers) {
 
 void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
-    auto command_centers = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
     int optimal_workers = 0;

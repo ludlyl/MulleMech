@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
-#include <memory>
+
 #include "Blueprint.h"
 #include "Building.h"
 #include "Mutation.h"
@@ -12,6 +12,8 @@
 #include "core/API.h"
 #include "core/Errors.h"
 #include "Addon.h"
+
+#include <memory>
 
 bp::Blueprint::~Blueprint() {
 }

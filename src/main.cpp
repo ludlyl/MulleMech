@@ -11,8 +11,6 @@
 #include <sc2utils/sc2_arg_parser.h>
 #include <sc2utils/sc2_manage_process.h>
 
-#include <iostream>
-
 #ifdef DEBUG
 int main(int argc, char* argv[]) {
     if (argc < 2) {

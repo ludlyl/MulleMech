@@ -1,6 +1,6 @@
+#include "Reasoner.h"
 #include "core/Brain.h"
 #include "Hub.h"
-#include "Reasoner.h"
 
 PlayStyle Reasoner::CalculatePlayStyle() {
     return PlayStyle::normal;

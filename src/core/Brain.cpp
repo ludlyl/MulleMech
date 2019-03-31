@@ -1,5 +1,4 @@
 #include "Brain.h"
-
 #include "API.h"
 #include "Helpers.h"
 #include "Historican.h"

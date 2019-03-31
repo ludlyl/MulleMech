@@ -4,7 +4,7 @@
 #include "core/Helpers.h"
 #include "Historican.h"
 #include "Hub.h"
-#include "../BuildingPlacer.h"
+#include "BuildingPlacer.h"
 
 ReaperHarass::ReaperHarass() :
         strikeInProgress(false) {
