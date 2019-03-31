@@ -27,8 +27,7 @@ void Hellion::OnCombatStep(const Units& enemies) {
 
         if (!reachableEnemies.empty()) {
         const Unit *target = reachableEnemies.GetClosestUnit(m_self->pos);
-
-        Cast(sc2::ABILITY_ID::SMART, target);
+        Attack(target);
     }
 
     } else {
