@@ -1,25 +1,10 @@
-//
-// Created by kevin on 2019-03-07.
-//
-#include "plugins/Plugin.h"
-#include "plugins/micro/MicroPlugin.h"
-#include "core/Units.h"
-#include <unordered_set>
-#include <vector>
+#pragma once
+
 #include "DefaultUnit.h"
 
-class Reaper : public Plugin {
+class Reaper : public DefaultUnit {
 public:
+    Reaper(Unit* unit);
 
-    Reaper();
-
-    void OnStep(Builder *builder) final;
-
-    void OnUnitCreated(Unit* unit_) final;
-
-    void OnUnitDestroyed(Unit* unit_, Builder *) final;
-
-
-private:
-    Units m_reapers;
+    void OnCombatStep(const Units& enemies) override;
 };

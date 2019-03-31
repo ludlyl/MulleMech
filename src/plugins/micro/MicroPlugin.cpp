@@ -2,20 +2,23 @@
 
 #include "DefaultUnit.h"
 #include "Marine.h"
-
+#include "Reaper.h"
 #include "core/API.h"
+
 
 std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
-    case sc2::UNIT_TYPEID::TERRAN_MARINE:
-        return std::make_unique<Marine>(unit);
-    default:
-        return std::make_unique<DefaultUnit>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_MARINE:
+            return std::make_unique<Marine>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_REAPER:
+            return std::make_unique<Reaper>(unit);
+        default:
+            return std::make_unique<DefaultUnit>(unit);
     }
 }
 
 MicroPlugin::MicroPlugin(Unit* unit) :
-    m_self(unit), m_target(nullptr), m_moving(false)
+        m_self(unit), m_target(nullptr), m_moving(false)
 {
 }
 
