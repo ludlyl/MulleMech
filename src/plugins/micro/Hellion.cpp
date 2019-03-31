@@ -10,24 +10,18 @@ Hellion::Hellion(Unit* unit)
 void Hellion::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
-
     if (m_self->weapon_cooldown == 0) {
-
-
         sc2::Units reachableEnemiesAPI = enemies.ToAPI();
         //Get ground units
         auto it = std::remove_if(reachableEnemiesAPI.begin(), reachableEnemiesAPI.end(), [](const Unit *unit_) {
             return unit_->is_flying;
         });
-
-
         reachableEnemiesAPI.erase(it, reachableEnemiesAPI.end());
-
         Units reachableEnemies(reachableEnemiesAPI);
 
         if (!reachableEnemies.empty()) {
-        const Unit *target = reachableEnemies.GetClosestUnit(m_self->pos);
-        Attack(target);
+            const Unit *target = reachableEnemies.GetClosestUnit(m_self->pos);
+            Attack(target);
     }
 
     } else {
