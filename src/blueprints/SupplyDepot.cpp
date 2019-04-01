@@ -1,8 +1,7 @@
 #include "SupplyDepot.h"
-
-#include "../BuildingPlacer.h"
-#include "../Hub.h"
-#include "../Historican.h"
+#include "BuildingPlacer.h"
+#include "Hub.h"
+#include "Historican.h"
 #include "core/API.h"
 #include "core/Timer.h"
 

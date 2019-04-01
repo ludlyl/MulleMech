@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "../Historican.h"
 #include "ChatterBox.h"
+#include "Historican.h"
 #include "core/API.h"
 
 void ChatterBox::OnGameStart(Builder*) {

@@ -1,9 +1,5 @@
-//
-// Created by kevin on 2019-03-14.
-//
-
-#include <blueprints/Unit.h>
 #include "Reaper.h"
+#include "blueprints/Unit.h"
 #include "core/API.h"
 #include "core/Brain.h"
 #include "core/Helpers.h"

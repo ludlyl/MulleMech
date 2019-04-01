@@ -29,7 +29,7 @@ void Worker::GatherVespene(const Unit* target_) {
     gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_);
     m_job = Job::GATHERING_VESPENE;
 
-    Units ccs = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    Units ccs = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     if (auto cc = ccs.GetClosestUnit(target_->pos))
         SetHomeBase(gHub->GetClosestExpansion(cc->pos));
 }

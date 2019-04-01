@@ -1,6 +1,6 @@
+#include "Reasoner.h"
 #include "core/Brain.h"
 #include "Hub.h"
-#include "Reasoner.h"
 
 PlayStyle Reasoner::CalculatePlayStyle() {
     return PlayStyle::normal;
@@ -8,6 +8,10 @@ PlayStyle Reasoner::CalculatePlayStyle() {
 
 PlayStyle Reasoner::GetPlayStyle() {
     return m_latest_play_style;
+}
+
+std::vector<UnitClass> Reasoner::GetNeededUnitClasses() {
+    return {};
 }
 
 std::vector<std::shared_ptr<Expansion>> Reasoner::GetLikelyEnemyExpansions() {

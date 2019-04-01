@@ -5,7 +5,9 @@
 #pragma once
 
 #include "core/Unit.h"
+
 #include <sc2api/sc2_unit.h>
+
 #include <functional>
 #include <memory>
 #include <optional>
