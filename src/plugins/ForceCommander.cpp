@@ -12,42 +12,62 @@
 
 #include <algorithm>
 
-ForceCommander::ForceCommander() : m_attack_limit(16), m_inCombat(false) {
+ForceCommander::ForceCommander() : m_attack_limit(8) {
 }
 
 void ForceCommander::AttackEnemiesCloseToBase() {
-    auto enemyUnits = gAPI->observer().GetUnits(sc2::Unit::Alliance::Enemy);
-    sc2::Point3D baseLocation3D = gAPI->observer().StartingLocation();
-    sc2::Point2D baseLocation2D = sc2::Point2D(baseLocation3D.x, baseLocation3D.y);
-    auto closestEnemyUnit = enemyUnits.GetClosestUnit(baseLocation2D);
-    if (!closestEnemyUnit)
+    if (!m_defenseSquads.empty())
         return;
-    sc2::Point3D enemyPos3D = closestEnemyUnit->pos;
-    sc2::Point2D enemyPos2D = sc2::Point2D(enemyPos3D.x, enemyPos3D.y);
-    double lengthToEnemy = sqrt(std::pow(baseLocation3D.x-enemyPos3D.x, 2) + std::pow(baseLocation3D.y-enemyPos3D.y, 2));
-    int limit = 50;
-    if (lengthToEnemy < limit) {
-        gAPI->action().Attack(m_units, enemyPos2D);
+
+    // Calculate a circle using all our buildings for search radius and then increase it a bit
+    float searchRadius = gAPI->observer().GetUnits(IsBuilding(),
+        sc2::Unit::Alliance::Self).CalculateCircle().second + SearchEnemyRadiusPadding;
+    auto enemyUnits = gAPI->observer().GetUnits(IsWithinDist(
+        gAPI->observer().StartingLocation(), searchRadius), sc2::Unit::Alliance::Enemy);
+    if (enemyUnits.empty())
+        return;
+
+    Units defenseUnits;
+    int steal = static_cast<int>(enemyUnits.size()) + 1;
+    while (--steal >= 0 && !m_mainSquad.GetUnits().empty()) {
+        auto unit = m_mainSquad.GetUnits().GetRandomUnit();
+        defenseUnits.push_back(unit);
+        m_mainSquad.RemoveUnit(unit);
     }
+
+    if (defenseUnits.empty())
+        return;
+
+    m_defenseSquads.push_back(DefenseSquad(std::move(defenseUnits), std::move(enemyUnits)));
 }
 
 void ForceCommander::OnStep(Builder*) {
-    RemoveDeadUnits();
+    // TODO: If the enemies retreat out of vision our defense squad will
+    //       remain as they never disposed the targets we gave them
+    for (auto itr = m_defenseSquads.begin(); itr != m_defenseSquads.end(); ) {
+        itr->OnStep();
+        if (itr->IsFinished()) {
+            gHistory.info(LogChannel::combat) << "Defense Squad task finished, re-merging " <<
+                itr->GetUnits().size() << " units to main squad" << std::endl;
+            m_mainSquad.Absorb(*itr);
+            itr = m_defenseSquads.erase(itr);
+        }
+        else
+            ++itr;
+    }
 
     AttackEnemiesCloseToBase();
 
-    UpdateOffensiveUnits();
+    m_mainSquad.OnStep();
 
-    if (m_units.size() < m_attack_limit)
+    if (m_mainSquad.GetUnits().size() < m_attack_limit)
+        return;
+
+    if (!m_mainSquad.IsFinished())
         return;
 
     auto targets = gAPI->observer().GameInfo().enemy_start_locations;
-    gAPI->action().MoveTo(m_units, targets.front());
-
-    for (auto& unit : m_units) {
-        m_offensiveUnits.push_back(unit);
-    }
-    m_units.clear();
+    m_mainSquad.TakeOver(targets.front());
 
     m_attack_limit = std::min<float>(m_attack_limit * 1.5f, 170.0f);
 }
@@ -56,48 +76,12 @@ void ForceCommander::OnUnitCreated(Unit* unit_) {
     if (!IsCombatUnit()(*unit_))
         return;
 
-    gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
-        " added to attack group" << std::endl;
-
-    m_units.push_back(unit_);
+    m_mainSquad.AddUnit(unit_);
 }
 
-void ForceCommander::UpdateOffensiveUnits() {
-    if (m_offensiveUnits.empty())
-        return;
-
-    auto nearbyEnemies = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-        {IsWithinDist(m_offensiveUnits[0]->pos, SearchEnemyRadius), IsCombatUnit()}), sc2::Unit::Alliance::Enemy);
-
-    // If all enemies are dead => Continue moving
-    if (nearbyEnemies.empty() && m_inCombat) {
-        auto pos = gAPI->observer().GameInfo().enemy_start_locations.front();
-        for (auto& unit : m_offensiveUnits) {
-            gAPI->action().MoveTo(unit, pos);
-            unit->Micro()->OnCombatOver(unit);
-        }
-        m_inCombat = false;
-    // If we still have enemies => Update micro plugins
-    } else if (!nearbyEnemies.empty()) {
-        m_inCombat = true;
-        for (auto& unit : m_offensiveUnits) {
-            unit->Micro()->OnCombatFrame(unit, nearbyEnemies);
-        }
-    }
-}
-
-void ForceCommander::RemoveDeadUnits() {
-    for (auto itr = m_units.begin(); itr != m_units.end(); ) {
-        if ((*itr)->is_alive)
-            ++itr;
-        else
-            itr = m_units.erase(itr);
-    }
-
-    for (auto itr = m_offensiveUnits.begin(); itr != m_offensiveUnits.end(); ) {
-        if ((*itr)->is_alive)
-            ++itr;
-        else
-            itr = m_offensiveUnits.erase(itr);
-    }
+void ForceCommander::OnUnitDestroyed(Unit* unit_, Builder*) {
+    m_mainSquad.RemoveUnit(unit_);
+    if (!m_defenseSquads.empty())
+        for (auto& squad : m_defenseSquads)
+            squad.RemoveUnit(unit_);
 }

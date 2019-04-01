@@ -27,3 +27,7 @@ void SiegeTank::OnCombatStep(const Units& enemies) {
         }
     }
 }
+
+void SiegeTank::OnCombatEnded() {
+    Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
+}

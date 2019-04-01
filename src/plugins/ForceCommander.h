@@ -5,6 +5,8 @@
 #pragma once
 
 #include "Plugin.h"
+#include "OffenseSquad.h"
+#include "DefenseSquad.h"
 #include "core/Units.h"
 #include "plugins/micro/MicroPlugin.h"
 
@@ -15,18 +17,14 @@ struct ForceCommander : Plugin {
 
     void OnUnitCreated(Unit* unit_) final;
 
+    void OnUnitDestroyed(Unit* unit_, Builder*) final;
+
     void AttackEnemiesCloseToBase();
 
 private:
-    void UpdateOffensiveUnits();
-
-    void RemoveDeadUnits();
-
     float m_attack_limit;
-    Units m_units;
-    Units m_offensiveUnits;
+    OffenseSquad m_mainSquad;
+    std::vector<DefenseSquad> m_defenseSquads; // only one supported, temporary code for testing
 
-    bool m_inCombat;
-
-    static constexpr float SearchEnemyRadius = 20.0f;
+    static constexpr float SearchEnemyRadiusPadding = 10.0f;
 };

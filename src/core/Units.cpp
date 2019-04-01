@@ -6,6 +6,8 @@
 #include "Units.h"
 #include "core/API.h"
 
+#include <algorithm>
+#include <numeric>
 #include <limits>
 
 Units::Units(const sc2::Units& units_) {
@@ -42,6 +44,29 @@ Unit* Units::GetRandomUnit() const {
         return nullptr;
     int index = sc2::GetRandomInteger(0, static_cast<int>(size()) - 1);
     return m_wrappedUnits[static_cast<unsigned>(index)];
+}
+
+std::pair<sc2::Point2D, float> Units::CalculateCircle() const {
+    if (m_wrappedUnits.empty())
+        return std::make_pair(sc2::Point2D(), 0.0f);
+
+    // Centroid of a finite set of points
+    sc2::Point2D center = std::accumulate(m_wrappedUnits.begin(), m_wrappedUnits.end(), sc2::Point2D(0, 0),
+        [](const sc2::Point2D& p, const Unit* u) {
+            return p + u->pos;
+        });
+    center /= static_cast<float>(m_wrappedUnits.size());
+
+    // Find unit furthest from center
+    auto u = std::max_element(m_wrappedUnits.begin(), m_wrappedUnits.end(),
+        [&center](const Unit* a, const Unit* b) {
+            return DistanceSquared2D(center, a->pos) < DistanceSquared2D(center, b->pos);
+        });
+
+    // Use that to calculate radius of circle
+    float radius = Distance2D((*u)->pos, center);
+
+    return std::make_pair(center, radius);
 }
 
 sc2::Units Units::ToAPI() const {
