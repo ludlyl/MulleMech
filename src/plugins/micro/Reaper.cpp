@@ -1,5 +1,4 @@
 #include "Reaper.h"
-
 #include "core/API.h"
 
 Reaper::Reaper(Unit* unit)

@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <string>
-
 #include <sc2api/sc2_gametypes.h>
 #include <sc2api/sc2_typeenums.h>
+
+#include <string>
 
 // The collection of type conversion utilities
 namespace convert {

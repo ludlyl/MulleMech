@@ -1,8 +1,6 @@
-//
-// Created by kevin on 2019-03-07.
-//
 #include "Plugin.h"
 #include "core/Units.h"
+
 #include <unordered_set>
 #include <vector>
 
