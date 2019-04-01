@@ -76,32 +76,41 @@ sc2::Point3D BuildingPlacer::GetPointInFrontOfTownHall(const sc2::Point3D& baseL
         return sc2::Point3D{};
     }
 
-    sc2::Point2D point1(geysers.at(0)->pos.x, geysers.at(0)->pos.y);
-    sc2::Point2D baseToPoint1 = point1 - baseLocation;
+    sc2::Point2D geyserOnePos(geysers.at(0)->pos.x, geysers.at(0)->pos.y);
+    // Vector between CC and a geyser
+    sc2::Point2D baseToOneGeyser = geyserOnePos - baseLocation;
+    // Rate of change of y in each x-step. Between geysers in HQ
     float kValue = GetBaseKValue(baseLocation);
-    sc2::Point2D secondPointInBaseLine = GetPointInLine(baseLocation, kValue, 1);
-    sc2::Point2D vecInBaseLine = secondPointInBaseLine - baseLocation;
+    // Retrieves a point located in same line as HQs CC. Same direction of line as the geysers line.
+    sc2::Point2D pointInBaseLine = GetPointInLine(baseLocation, kValue, 1);
+    sc2::Point2D vecInBaseLine = pointInBaseLine - baseLocation;
 
-    float dotProd = sc2::Dot2D(baseToPoint1, vecInBaseLine);
-
+    // Vector projection of a vector from HQs CC to a geyser (a) onto a vector in line as HQs CC and with same direction as the geyser line (b)
+    // a scalar b: a dot b
+    float dotProd = sc2::Dot2D(baseToOneGeyser, vecInBaseLine);
+    // size of b: |b|
     float magnitude = sqrtf((vecInBaseLine.x * vecInBaseLine.x) + (vecInBaseLine.y * vecInBaseLine.y));
+    // size of vector a in vector b's direction: (a dot b)/|b|
     float baseComponent = dotProd / magnitude;
 
+    // Unit vector in baseLine direction
     sc2::Point2D normalizedBaseVec = vecInBaseLine / magnitude;
+    // Projected vector = unit vector * size of vector a in vector b's direction
+    sc2::Point2D projectedBaseLineVec = normalizedBaseVec * baseComponent;
 
-    sc2::Point2D finalVecInBaseLine = normalizedBaseVec * baseComponent;
+    // Additions of vectors to get point in front of HQs CC
+    sc2::Point2D doubleVec = projectedBaseLineVec * 2;
+    sc2::Point2D helperVec = doubleVec - baseToOneGeyser;
+    sc2::Point2D pointFrontOfCC2D = helperVec - baseToOneGeyser;
 
-    sc2::Point2D doubleVec = finalVecInBaseLine * 2;
+    // Move vector relatively to CC
+    pointFrontOfCC2D.x = pointFrontOfCC2D.x + baseLocation.x;
+    pointFrontOfCC2D.y = pointFrontOfCC2D.y + baseLocation.y;
 
-    sc2::Point2D helperVec = doubleVec - baseToPoint1;
-    sc2::Point2D point = helperVec - baseToPoint1;
-
-    point.x = point.x + baseLocation.x;
-    point.y = point.y + baseLocation.y;
-
+    // Transform 2D point to 3D point
     sc2::Point3D pointFront;
-    pointFront.x = point.x;
-    pointFront.y = point.y;
+    pointFront.x = pointFrontOfCC2D.x;
+    pointFront.y = pointFrontOfCC2D.y;
     pointFront.z = baseLocation.z;
 
     return pointFront;
