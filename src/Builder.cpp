@@ -151,7 +151,7 @@ void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
     }
 }
 
-bool Builder::HasTechRequirements(Order *order_) const {
+bool Builder::HasTechRequirements(const Order *order_) const {
     for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
         if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
             return false;

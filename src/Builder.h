@@ -33,13 +33,13 @@ struct Builder {
 
     int64_t CountScheduledTrainings(sc2::UNIT_TYPEID id_) const;
 
+    bool HasTechRequirements(const Order* order_) const;
+
  private:
     bool Build(Order* order_);
 
     // Used to prevent deadlock in construction orders
     void ScheduleRequiredStructures(const Order& order_, bool urgent);
-
-    bool HasTechRequirements(Order* order_) const;
 
     void ResolveMissingWorkers();
 
