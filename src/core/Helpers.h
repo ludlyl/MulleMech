@@ -103,13 +103,16 @@ struct IsOrdered {
 };
 
 struct IsWithinDist {
-    explicit IsWithinDist(sc2::Point3D center, float dist_) : m_center(center), m_distSq(dist_ * dist_) { }
+    explicit IsWithinDist(const sc2::Point3D& center, float dist_) : m_center(center), m_distSq(dist_ * dist_), m_2d(false) { }
+    explicit IsWithinDist(const sc2::Point2D& center, float dist_) :
+        m_center(sc2::Point3D(center.x, center.y, 0)), m_distSq(dist_ * dist_), m_2d(true) { }
 
     bool operator()(const sc2::Unit& unit_) const;
 
 private:
     sc2::Point3D m_center;
     float m_distSq;
+    bool m_2d;
 };
 
 // Send in sc2::UNIT_TYPEID::INVALID to check if the building doesn't have an add-on

@@ -227,6 +227,8 @@ bool IsOrdered::operator()(const Order& order_) const {
 }
 
 bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+    if (m_2d)
+        return sc2::DistanceSquared2D(m_center, unit_.pos) < m_distSq;
     return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
 }
 

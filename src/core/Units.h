@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 
 class Units {
 public:
@@ -24,6 +25,9 @@ public:
     Unit* GetClosestUnit(sc2::Tag tag_) const;
 
     Unit* GetRandomUnit() const;
+
+    // Calculate the center point of all units and the radius of the circle encompassing them
+    std::pair<sc2::Point2D, float> CalculateCircle() const;
 
     // Returns a copy of Units as an API-recognizable vector with sc2::Unit objects
     sc2::Units ToAPI() const;
@@ -49,6 +53,7 @@ public:
     T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }
 
     void remove(const Unit* unit);
+    bool contains(const Unit* unit) const { return std::find(m_wrappedUnits.begin(), m_wrappedUnits.end(), unit) != m_wrappedUnits.end(); }
 
 private:
     T m_wrappedUnits;
