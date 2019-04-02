@@ -91,7 +91,7 @@ void Squad::UpdateMovement() {
                 RegroupAt(GetCenter());
             } else {
                 // TODO: Slightly unncessary to reissue the movement command each step
-                gAPI->action().MoveTo(GetUnits(), m_approachPos);
+                IssueMoveCommand(m_approachPos);
             }
             break;
 
@@ -106,8 +106,35 @@ void Squad::UpdateMovement() {
                 }
             } else {
                 // TODO: Slightly unncessary to reissue the movement command each step
-                gAPI->action().MoveTo(GetUnits(), m_regroupPos);
+                IssueMoveCommand(m_regroupPos);
             }
             break;
     }
+}
+
+void Squad::IssueMoveCommand(const sc2::Point2D& position) {
+    bool needToWait = false;
+
+    // Unsiege/unburrow units that have a stationary state that prevent them from moving
+    for (auto& unit : GetUnits()) {
+        switch (unit->unit_type.ToType()) {
+            case sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
+                gAPI->action().Cast(unit, sc2::ABILITY_ID::MORPH_UNSIEGE);
+                needToWait = true;
+                break;
+            case sc2::UNIT_TYPEID::TERRAN_LIBERATORAG:
+                gAPI->action().Cast(unit, sc2::ABILITY_ID::MORPH_LIBERATORAAMODE);
+                needToWait = true;
+                break;
+            case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
+                gAPI->action().Cast(unit, sc2::ABILITY_ID::BURROWUP_WIDOWMINE);
+                needToWait = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (!needToWait)
+        gAPI->action().MoveTo(GetUnits(), position);
 }

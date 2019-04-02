@@ -10,7 +10,7 @@ public:
     Squad();
     virtual ~Squad() = default;
 
-    virtual bool IsFinished() const = 0;
+    virtual bool IsTaskFinished() const = 0;
 
     void OnStep();
 
@@ -55,6 +55,8 @@ private:
     void CalculateCenter();
 
     void UpdateMovement();
+
+    void IssueMoveCommand(const sc2::Point2D& position);
 
     enum class MovementState {
         idle,

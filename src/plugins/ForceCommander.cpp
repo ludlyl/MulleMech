@@ -16,7 +16,7 @@ ForceCommander::ForceCommander() : m_attack_limit(8) {
 }
 
 void ForceCommander::AttackEnemiesCloseToBase() {
-    if (!m_defenseSquads.empty())
+    if (!m_defenseSquads.empty() || m_mainSquad.GetUnits().empty())
         return;
 
     // Calculate a circle using all our buildings for search radius and then increase it a bit
@@ -35,9 +35,6 @@ void ForceCommander::AttackEnemiesCloseToBase() {
         m_mainSquad.RemoveUnit(unit);
     }
 
-    if (defenseUnits.empty())
-        return;
-
     m_defenseSquads.push_back(DefenseSquad(std::move(defenseUnits), std::move(enemyUnits)));
 }
 
@@ -46,7 +43,7 @@ void ForceCommander::OnStep(Builder*) {
     //       remain as they never disposed the targets we gave them
     for (auto itr = m_defenseSquads.begin(); itr != m_defenseSquads.end(); ) {
         itr->OnStep();
-        if (itr->IsFinished()) {
+        if (itr->IsTaskFinished()) {
             gHistory.info(LogChannel::combat) << "Defense Squad task finished, re-merging " <<
                 itr->GetUnits().size() << " units to main squad" << std::endl;
             m_mainSquad.Absorb(*itr);
@@ -63,7 +60,7 @@ void ForceCommander::OnStep(Builder*) {
     if (m_mainSquad.GetUnits().size() < m_attack_limit)
         return;
 
-    if (!m_mainSquad.IsFinished())
+    if (!m_mainSquad.IsTaskFinished())
         return;
 
     auto targets = gAPI->observer().GameInfo().enemy_start_locations;

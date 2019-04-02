@@ -5,13 +5,13 @@
 
 class OffenseSquad : public Squad {
 public:
-    OffenseSquad() : m_finished(true) { }
+    OffenseSquad() : m_finished(true), m_defending(false) { }
 
-    bool IsFinished() const override;
+    bool IsTaskFinished() const override;
 
-    void TakeOver(const sc2::Point2D& position);
+    void TakeOver(sc2::Point2D position);
 
-    void AbortTakeOver() { m_finished = true; }
+    void AbortTakeOver() { m_finished = true; m_defending = false; }
 
 protected:
     void Update() override;
@@ -21,6 +21,7 @@ protected:
 private:
     sc2::Point2D m_attackPosition;
     bool m_finished;
+    bool m_defending;
 
     static constexpr float TakeOverRadius = 10.0f;          // to determine if we're close enough to our target pos
     static constexpr float AggroRadius = 10.0f;             // attack enemies that are within this distance

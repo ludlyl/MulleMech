@@ -6,7 +6,7 @@ class DefenseSquad : public Squad {
 public:
     DefenseSquad(Units units, Units enemies);
 
-    bool IsFinished() const override;
+    bool IsTaskFinished() const override;
 
 protected:
     void Update() override;

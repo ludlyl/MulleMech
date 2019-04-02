@@ -8,17 +8,17 @@ DefenseSquad::DefenseSquad(Units units, Units enemies) : m_engaged(false) {
         ", #enemies: " << GetEnemies().size() << ")" << std::endl;
 }
 
-bool DefenseSquad::IsFinished() const {
+bool DefenseSquad::IsTaskFinished() const {
     return GetEnemies().empty() || GetUnits().empty();
 }
 
 void DefenseSquad::Update() {
-    if (IsFinished())
+    if (IsTaskFinished())
         return;
 
     if (m_engaged) {
         // Is combat over?
-        if (IsFinished()) {
+        if (IsTaskFinished()) {
             gHistory.debug(LogChannel::combat) << SquadName() << " finished" << std::endl;
             for (auto& unit : GetUnits())
                 unit->Micro()->OnCombatOver(unit);
