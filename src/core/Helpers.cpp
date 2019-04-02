@@ -144,7 +144,7 @@ bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
-    return unit_.vespene_contents > 0;
+    return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
 
 bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
@@ -276,7 +276,11 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
 }
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {
-    sc2::Point2D pos = unit_->pos;
+    return GetTerranAddonPosition(unit_->pos);
+}
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) {
+    sc2::Point2D pos = parentBuildingPosition;
     pos.x += ADDON_DISPLACEMENT_IN_X;
     pos.y += ADDON_DISPLACEMENT_IN_Y;
     return pos;
