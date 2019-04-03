@@ -146,7 +146,7 @@ Units Observer::GetUnits(const sc2::Filter& filter_) const {
     //       does ForEachExistingUnit, and only applies the filter, it doesn't
     //       force alliance Self
     auto units = m_observer->GetUnits(filter_);
-    return Units(std::move(units));
+    return Units(units);
 }
 
 Units Observer::GetUnits(const sc2::Filter& filter_,
