@@ -21,9 +21,10 @@ public:
     bool operator==(const Unit& other) const;
 
     // Micro plugin for this unit
-    MicroPlugin* Micro() const;
+    MicroPlugin* Micro();
 
     Worker* AsWorker();
+    const Worker* AsWorker() const;
 
     sc2::UnitTypeData GetTypeData() const;
 

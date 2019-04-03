@@ -47,7 +47,7 @@ bool MicroPlugin::CanCast(sc2::ABILITY_ID ability_id) {
     return false;
 }
 
-void MicroPlugin::Attack(Unit* target) {
+void MicroPlugin::Attack(const Unit* target) {
     if (m_self && !IsAttacking(target)) {
         gAPI->action().Attack(m_self, target);
         m_target = target;
