@@ -6,6 +6,7 @@
 #include "Historican.h"
 #include "Hub.h"
 #include "Reasoner.h"
+#include "IntelligenceHolder.h"
 #include "core/API.h"
 #include "core/Brain.h"
 #include "core/Helpers.h"
@@ -30,6 +31,7 @@
 Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()) {
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
     gReasoner = std::make_unique<Reasoner>();
+    gIntelligenceHolder = std::make_unique<IntelligenceHolder>();
     gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
@@ -55,7 +57,6 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
     m_plugins.emplace_back(new ReaperHarass());
-    m_plugins.emplace_back(new Reaper());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
@@ -89,6 +90,7 @@ void Dispatcher::OnStep() {
 
     gAPI->OnStep();
     gHub->OnStep();
+    gIntelligenceHolder->Update();
     gReasoner->CalculatePlayStyle();
 
     for (const auto& i : m_plugins)
