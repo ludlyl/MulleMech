@@ -18,7 +18,10 @@
 #include <unordered_map>
 #include <vector>
 
+constexpr float steps_per_second = 22.4f;
+
 namespace API {
+
 
 struct Action {
     explicit Action(sc2::ActionInterface* action_);
@@ -181,6 +184,7 @@ struct Interface {
     Unit* WrapUnit(const sc2::Unit* unit_);
 
     void OnStep();
+
 
  private:
     sc2::ActionInterface* m_action;

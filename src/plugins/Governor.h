@@ -20,6 +20,7 @@ struct Governor : Plugin {
     // Return value is in Resource/frame
     std::pair<float, float> CurrentConsumption(Builder* builder_);
 
+    // Counts the total structres of "type" in ALL building queues and on the map
     int CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type);
 
     private:

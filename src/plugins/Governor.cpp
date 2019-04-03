@@ -10,8 +10,6 @@
 
 #include <sc2api/sc2_agent.h>
 
-//Placeholder, might wanna move this in future
-#define FRAMES_PER_SECOND 21.4f
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
@@ -77,8 +75,8 @@ void Governor::OnStep(Builder* builder_) {
     float vespene_consumption = consumption.second;
 
     //Converting from Mineral/frames to Mineral/min
-    mineral_consumption = mineral_consumption * FRAMES_PER_SECOND * 60.f;
-    vespene_consumption = vespene_consumption * FRAMES_PER_SECOND * 60.f;
+    mineral_consumption = mineral_consumption * steps_per_second * 60.f;
+    vespene_consumption = vespene_consumption * steps_per_second * 60.f;
 
     //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
@@ -93,7 +91,7 @@ void Governor::OnStep(Builder* builder_) {
         // In this case we have minerals but not vespene -> produce hellions
 
         //cost of factory with reactor producing  
-        if (mineral_overproduction < (FRAMES_PER_SECOND * 60.f * 2.f * hellion_mineral / hellion_build_time)) 
+        if (mineral_overproduction < (steps_per_second * 60.f * 2.f * hellion_mineral / hellion_build_time)) 
             return;
 
         //TODO Confirm this value (2)
@@ -105,8 +103,8 @@ void Governor::OnStep(Builder* builder_) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
     }
 
-    if (mineral_overproduction > (FRAMES_PER_SECOND * 60.f * tank_mineral / tank_build_time) &&
-        vespene_overproduction > (FRAMES_PER_SECOND * 60.f * tank_vespene / tank_build_time)) {
+    if (mineral_overproduction > (steps_per_second * 60.f * tank_mineral / tank_build_time) &&
+        vespene_overproduction > (steps_per_second * 60.f * tank_vespene / tank_build_time)) {
 
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
