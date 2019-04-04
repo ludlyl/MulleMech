@@ -7,6 +7,7 @@
 #include "core/Converter.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "Reasoner.h"
 
 #include <sc2api/sc2_agent.h>
 
@@ -51,6 +52,8 @@ void Governor::OnStep(Builder* builder_) {
     int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
     float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
 
+    PlayStyle playstyle = gReasoner->GetPlayStyle();
+
     if (minerals < 50)
        return;
     //TODO add priority flag for factory production
@@ -65,7 +68,13 @@ void Governor::OnStep(Builder* builder_) {
         builder_->ScheduleConstruction(m_planner_queue.front());
         it = m_planner_queue.erase(it);
     }
+    switch (playstyle) {
+    case PlayStyle::normal:
+        break;
 
+    case PlayStyle::greedy:
+        break;
+    }
     // Note: Returns Minerals/Min
     float mineral_income = gAPI->observer().GetMineralIncomeRate();
     float vespene_income = gAPI->observer().GetVespeneIncomeRate();
@@ -81,8 +90,6 @@ void Governor::OnStep(Builder* builder_) {
     //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
-
-    gHistory.info() << mineral_consumption << std::endl;
 
     if (mineral_overproduction < 0)
         return;
@@ -110,6 +117,34 @@ void Governor::OnStep(Builder* builder_) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
     }
     //TODO expand our base based on enum from higher-order plugin.
+
+    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
+    int optimal_workers = 0;
+
+
+    //Counting plannings of expansion
+    int planned_cc = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
+
+    for (const auto i : m_planner_queue) {
+        if (i == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
+            planned_cc++;
+    }
+
+    if (planned_cc == 0) {
+
+        // Calculate Optimal Workers
+        for (auto& cc : command_centers)
+            optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
+        for (auto& refinery : refineries)
+            optimal_workers += refinery->ideal_harvesters;
+
+        if (num_workers >= optimal_workers) {
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            //TODO add orbital command?
+        }
+    }
 }
 
 int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {

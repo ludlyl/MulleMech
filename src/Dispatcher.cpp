@@ -55,7 +55,6 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
     m_plugins.emplace_back(new ReaperHarass());
-    m_plugins.emplace_back(new Reaper());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
