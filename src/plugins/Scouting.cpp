@@ -5,6 +5,7 @@
 #include "Historican.h"
 #include "Hub.h"
 #include "Reasoner.h"
+#include "IntelligenceHolder.h"
 
 Scouting::Scouting() :
         m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(nullptr), m_defensiveScv(nullptr) {
@@ -64,40 +65,25 @@ void Scouting::OnUnitEnterVision(Unit* unit) {
         }
 
         // Is it THE main base or an expansion at another spawn location?
-        if (main_base && gBrain->memory().EnemyHasBase(0)) {
-            if (sc2::Distance2D(pos, gBrain->memory().GetEnemyBase(0)->town_hall_location) > 5.0f)
+        if (main_base && gIntelligenceHolder->EnemyHasBase(0)) {
+            if (sc2::Distance2D(pos, gIntelligenceHolder->GetEnemyBase(0)->town_hall_location) > 5.0f)
                 main_base = false;
         }
 
         // Save base location
         if (main_base) {
-            if (!gBrain->memory().EnemyHasBase(0))
-                gBrain->memory().MarkEnemyMainBase(pos);
+            if (!gIntelligenceHolder->EnemyHasBase(0))
+                gIntelligenceHolder->MarkEnemyMainBase(pos);
         } else {
             // NOTE: Currently we must know where the main base is before we save expansions
-            if (gBrain->memory().EnemyHasBase(0)) {
-                gBrain->memory().MarkEnemyExpansion(unit->pos);
+            if (gIntelligenceHolder->EnemyHasBase(0)) {
+                gIntelligenceHolder->MarkEnemyExpansion(unit->pos);
                 gHistory.info(LogChannel::scouting) << "Found enemy expansion!" << std::endl;
             } else {
                 return; // Do not remember the building until we've marked its location
             }
         }
     }
-
-    // Save buildings we've seen, they indicate tech
-    if (IsBuilding()(*unit)) {
-        if (gBrain->memory().EnemyBuildingCount(unit->unit_type) == 0) {
-            gHistory.info(LogChannel::scouting) << "New building type spotted: "
-                << sc2::UnitTypeToName(unit->unit_type) << std::endl;
-            // TODO: Invoke a callback at the Dispatcher to signify possibly finding new tech?
-        }
-
-        gBrain->memory().MarkEnemyBuilding(unit->unit_type, unit->pos);
-        m_seenUnits.insert(unit->tag);
-    }
-
-    // Save unit types we've seen (but not every unit?), they too indicate tech
-    // TODO: ^
 }
 
 void Scouting::ScvOffensiveScout() {
@@ -136,7 +122,7 @@ void Scouting::ScvOffensiveScout() {
     // APPROACHING ENEMY BASE
     if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->orders.empty()) {
         // If we found main base of enemy; go into exploring mode
-        if (gBrain->memory().EnemyHasBase(0)) {
+        if (gIntelligenceHolder->EnemyHasBase(0)) {
             m_scoutPhase = ScvScoutPhase::explore_enemy_base;
             gHistory.debug(LogChannel::scouting) << "Found enemy main base!" << std::endl;
         }
@@ -148,7 +134,7 @@ void Scouting::ScvOffensiveScout() {
 
             // Note down base location if we only have one left
             if (m_unscoutedBases.size() == 1) {
-                gBrain->memory().MarkEnemyMainBase(m_unscoutedBases.front());
+                gIntelligenceHolder->MarkEnemyMainBase(m_unscoutedBases.front());
                 gHistory.debug(LogChannel::scouting) << "Approaching inferred enemy location" << std::endl;
             } else {
                 gHistory.debug(LogChannel::scouting) << "Approaching possible enemy location" << std::endl;
@@ -159,7 +145,7 @@ void Scouting::ScvOffensiveScout() {
     }
     // EXPLORING ENEMY BASE
     else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->orders.empty()) {
-        auto mainBase = gBrain->memory().GetEnemyBase(0);
+        auto mainBase = gIntelligenceHolder->GetEnemyBase(0);
 
         // Scout the main base of the enemy
         gHistory.debug(LogChannel::scouting) << "Exploring main base" << std::endl;
@@ -167,7 +153,7 @@ void Scouting::ScvOffensiveScout() {
 
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
-        if (!gBrain->memory().EnemyHasBase(1))
+        if (!gIntelligenceHolder->EnemyHasBase(1))
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL

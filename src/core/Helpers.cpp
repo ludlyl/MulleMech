@@ -26,6 +26,8 @@ bool IsUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
+    // TODO: Check hallucinations
+
     switch (unit_.unit_type.ToType()) {
        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
@@ -67,6 +69,9 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::ZERG_VIPER:
        case sc2::UNIT_TYPEID::ZERG_ZERGLING:
        case sc2::UNIT_TYPEID::ZERG_ZERGLINGBURROWED:
+       case sc2::UNIT_TYPEID::ZERG_BROODLING:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
 
        case sc2::UNIT_TYPEID::PROTOSS_ADEPT:
        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
@@ -89,6 +94,24 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
             return true;
 
        default:
+            return false;
+    }
+}
+
+bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
+    // TODO: Check hallucinations
+
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
+        case sc2::UNIT_TYPEID::ZERG_BROODLING:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
+
+        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
+        case sc2::UNIT_TYPEID::PROTOSS_DISRUPTORPHASED:
+            return true;
+
+        default:
             return false;
     }
 }
@@ -273,6 +296,12 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
     }
 
     return false;
+}
+
+Inverse::Inverse(std::function<bool(const sc2::Unit& unit)> functor) : m_functor(std::move(functor)) {}
+
+bool Inverse::operator()(const sc2::Unit& unit_) const {
+    return !m_functor(unit_);
 }
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {

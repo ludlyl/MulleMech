@@ -1,6 +1,7 @@
 #include "Reasoner.h"
 #include "core/Brain.h"
 #include "Hub.h"
+#include "IntelligenceHolder.h"
 
 PlayStyle Reasoner::CalculatePlayStyle() {
     return PlayStyle::normal;
@@ -15,7 +16,7 @@ std::vector<UnitClass> Reasoner::GetNeededUnitClasses() {
 }
 
 std::vector<std::shared_ptr<Expansion>> Reasoner::GetLikelyEnemyExpansions() {
-    auto main = gBrain->memory().GetEnemyBase(0);
+    auto main = gIntelligenceHolder->GetEnemyBase(0);
     if (!main)
         return std::vector<std::shared_ptr<Expansion>>();
 
