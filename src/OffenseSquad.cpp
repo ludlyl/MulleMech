@@ -12,12 +12,16 @@ void OffenseSquad::TakeOver(sc2::Point2D position) {
     gHistory.info(LogChannel::combat) << SquadName() << " taking over new position" << std::endl;
     m_finished = false;
     m_defending = false;
+    m_hasTask = true;
     m_attackPosition = std::move(position);
 }
 
 void OffenseSquad::Update() {
-    if (m_finished && !m_defending)
+    if (m_finished && !m_defending){
+        m_hasTask = false;
         return;
+    }
+
 
     // Drop enemies that have gone too far away
     auto itr = std::remove_if(GetEnemies().begin(), GetEnemies().end(), [this](auto* u) {
@@ -51,4 +55,8 @@ void OffenseSquad::Update() {
         for (auto& unit : GetUnits())
             unit->Micro()->OnCombatFrame(unit, GetEnemies());
     }
+}
+
+bool OffenseSquad::HasTask(){ // osäker på om denna alltid ger rätt svar
+    return m_hasTask;
 }

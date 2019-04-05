@@ -138,3 +138,7 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
     if (!needToWait)
         gAPI->action().MoveTo(GetUnits(), position);
 }
+
+int Squad::Size(){
+    return m_units.size();
+}
