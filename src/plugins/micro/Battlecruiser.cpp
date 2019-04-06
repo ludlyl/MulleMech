@@ -10,11 +10,11 @@ Battlecruiser::Battlecruiser(Unit* unit)
 void Battlecruiser::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
-    if(m_self->health < 275){
+    if(m_self->health < retreatHealth){
         Cast(sc2::ABILITY_ID::EFFECT_TACTICALJUMP, sc2::Point2D(gAPI->observer().StartingLocation().x,
                                                                 gAPI->observer().StartingLocation().y));
     }
-    //Only consider using Yamato Cannon if we're above 275 hp, so we don't waste energy on a shot when we need to warp.
+    //Only consider using Yamato Cannon if we're above the designated reatreat health, so we don't waste energy on a shot when we need to warp.
     else{
         Units copy = enemies;
         //Find priority targets (Valuable targets, usually big units)

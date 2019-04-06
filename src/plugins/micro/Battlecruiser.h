@@ -8,4 +8,5 @@ public:
 
     void OnCombatStep(const Units& enemies) override;
 
+    static constexpr float retreatHealth = 275;
 };
