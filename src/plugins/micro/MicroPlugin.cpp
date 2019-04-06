@@ -1,6 +1,7 @@
 #include "MicroPlugin.h"
 #include "DefaultUnit.h"
 #include "Marine.h"
+#include "Thor.h"
 #include "Reaper.h"
 #include "SiegeTank.h"
 #include "core/API.h"
@@ -14,7 +15,9 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
         case sc2::UNIT_TYPEID::TERRAN_REAPER:
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
-            return std::make_unique<SiegeTank>(unit);    
+            return std::make_unique<SiegeTank>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_THOR:
+            return std::make_unique<Thor>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
