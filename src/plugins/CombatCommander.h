@@ -21,14 +21,14 @@ private:
     OffenseSquad m_harassSquad;
     sc2::Point2D m_mainAttackTarget;
     PlayStyle m_playStyle;
-    float m_attack_limit;
     bool m_changedPlayStyle;
 
     static constexpr float SearchEnemyRadiusPadding = 10.0f;
+    static constexpr float EnemyIsolationDistance = 20.0f;  // Enemies this far apart => different groups
+    static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
 
-    Units LookForEnemiesInBase();
+    std::vector<Units> IsolateEnemiesInBase();
     void DefenseCheck();
-    void GiveMainSquadNewTask(); //TODO
     void Harass(int limit);
 
     void PlayNormal();
@@ -39,6 +39,7 @@ private:
     void PlayGreedy();
     void PlayScout();
 
+    // TODO: Should be replaced by intelligent selecting of what units go to defend
+    bool StealUnitFromMainSquad(Units& defenders);
 };
-
 

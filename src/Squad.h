@@ -38,7 +38,7 @@ public:
 
     void AbortMovement();
 
-    int Size();
+    int Size() const;
 
     // Center point of our units
     const sc2::Point2D& GetCenter() const { return m_center; }

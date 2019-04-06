@@ -2,24 +2,20 @@
 #include "CombatCommander.h"
 #include "core/API.h"
 #include "Hub.h"
-#include <core/Helpers.h>
-#include <Historican.h>
-//#include <sc2api/sc2_map_info.h>
+#include "core/Helpers.h"
+#include "Historican.h"
+#include <sc2api/sc2_common.h>
 
 CombatCommander::CombatCommander() :
     m_mainAttackTarget(gAPI->observer().GameInfo().enemy_start_locations.front()),
-    m_attack_limit(10),
     m_changedPlayStyle(true)
 {
 
 }
 
 void CombatCommander::OnStep(Builder*){
-    DefenseCheck();
-
-    for(DefenseSquad d_squad : m_defenseSquads){
-        d_squad.OnStep();
-    }
+    for (auto& squad : m_defenseSquads)
+        squad.OnStep();
     m_mainSquad.OnStep();
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
@@ -27,6 +23,9 @@ void CombatCommander::OnStep(Builder*){
         m_changedPlayStyle = true;
         m_playStyle = newPlayStyle;
     }
+
+    if (m_playStyle != PlayStyle::all_in)
+        DefenseCheck();
 
     switch(m_playStyle) {
         case PlayStyle::normal : PlayNormal();
@@ -50,42 +49,35 @@ void CombatCommander::OnStep(Builder*){
 }
 
 void CombatCommander::PlayNormal(){
-    if(m_mainSquad.HasTask()){
-        if(m_mainSquad.IsTaskFinished()){
-            GiveMainSquadNewTask();
-        }
-    } else if(m_mainSquad.Size()> m_attack_limit){
+    if (m_mainSquad.IsTaskFinished() && gAPI->observer().GetFoodUsed() >= AttackOnSupply)
         m_mainSquad.TakeOver(m_mainAttackTarget);
-    }
     Harass(4);
 }
 
 void CombatCommander::PlayAllIn(){
-    if(!m_mainSquad.HasTask() && m_mainSquad.Size() > 0){
+    if (m_mainSquad.IsTaskFinished() && m_mainSquad.Size() > 0) {
+        // Abandon defense and harass, then attack with all we got
+        for (auto& def : m_defenseSquads)
+            m_mainSquad.Absorb(def);
+        m_defenseSquads.clear();
+        m_mainSquad.Absorb(m_harassSquad);
         m_mainSquad.TakeOver(m_mainAttackTarget);
-    } else {
-        if(m_mainSquad.IsTaskFinished()){
-            GiveMainSquadNewTask();
-        }
     }
-    Harass(0);
 }
 
 void CombatCommander::PlayOffensive(){ // TODO
-    PlayAllIn();
+    PlayNormal();
 }
 
 void CombatCommander::PlayDefensive(){ // TODO
     if(m_changedPlayStyle){
-        if(m_mainSquad.HasTask()){
-            m_mainSquad.AbortTakeOver();
-            //gAPI->MoveTo(m_mainSquad.GetUnits(), gAPI->observer().StartingLocation());
-        }
+        m_mainSquad.AbortTakeOver();
+        gAPI->action().MoveTo(m_mainSquad.GetUnits(), gAPI->observer().StartingLocation());
     }
 }
 
 void CombatCommander::PlayVeryDefensive(){ // TODO
-    PlayNormal();
+    PlayDefensive();
 }
 
 void CombatCommander::PlayGreedy(){ // TODO
@@ -96,29 +88,47 @@ void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
 }
 
-//TODO
-void CombatCommander::GiveMainSquadNewTask(){
-        // Called when mainSquad has finished its task
-}
-
 void CombatCommander::Harass(int limit){
-    if(!m_harassSquad.HasTask() && m_harassSquad.Size() > limit){
+    if (m_harassSquad.IsTaskFinished() && m_harassSquad.Size() > limit) {
         m_harassSquad.TakeOver(gAPI->observer().GameInfo().enemy_start_locations.front());
     }
 }
 
-Units CombatCommander::LookForEnemiesInBase(){
+std::vector<Units> CombatCommander::IsolateEnemiesInBase() {
     // Calculate a circle using all our buildings for search radius and then increase it a bit
+    // TODO: Improve this, using a circle for our base might spread way further than our perimeter
+    //       is on some maps where our bases don't end up in a pattern fitting well in a circle
     float searchRadius = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self)
             .CalculateCircle().second + SearchEnemyRadiusPadding;
     Units enemyUnits = gAPI->observer().GetUnits(IsWithinDist(gAPI->observer().StartingLocation(),
             searchRadius), sc2::Unit::Alliance::Enemy);
-    return enemyUnits;
+
+    // Split them up into groups that are together
+    std::vector<Units> enemyGroups;
+    while (!enemyUnits.empty()) {
+        Units newGroup;
+        auto leader = enemyUnits.front();
+        newGroup.push_back(leader);
+        enemyUnits.erase(enemyUnits.begin());
+
+        // Add units "grouped" with the selected "leader"
+        for (auto itr = enemyUnits.begin(); itr != enemyUnits.end(); ) {
+            if (sc2::Distance3D(leader->pos, (*itr)->pos) <= EnemyIsolationDistance) {
+                newGroup.push_back(*itr);
+                itr = enemyUnits.erase(itr);
+            } else {
+                ++itr;
+            }
+        }
+
+        enemyGroups.emplace_back(std::move(newGroup));
+    }
+
+    return enemyGroups;
 }
 
-void CombatCommander::DefenseCheck(){
+void CombatCommander::DefenseCheck() {
     for (auto itr = m_defenseSquads.begin(); itr != m_defenseSquads.end(); ) {
-        itr->OnStep();
         if (itr->IsTaskFinished()) {
             gHistory.info(LogChannel::combat) << "Defense Squad task finished, re-merging " <<
                                               itr->GetUnits().size() << " units to main squad" << std::endl;
@@ -129,26 +139,41 @@ void CombatCommander::DefenseCheck(){
             ++itr;
     }
 
-    Units enemyUnits = LookForEnemiesInBase();
-    if(enemyUnits.empty()){
+    auto enemyGroups = IsolateEnemiesInBase();
+    if (enemyGroups.empty())
         return;
+
+    for (auto& group : enemyGroups) {
+        bool dealtWith = false;
+
+        // Update enemy list if we have a squad dealing with them already
+        for (auto& squad : m_defenseSquads) {
+            if (squad.UpdateEnemies(group)) {
+                dealtWith = true;
+                break;
+            }
+        }
+
+        // Need a new squad to deal with this enemy group?
+        if (!dealtWith) {
+            // TODO: Intelligent defender selection
+            Units defenders;
+            int steal = group.size() + 1;
+            while (--steal >= 0 && StealUnitFromMainSquad(defenders))
+                /* empty */;
+            if (!defenders.empty())
+                m_defenseSquads.emplace_back(std::move(defenders), std::move(group));
+        }
     }
 
-    if(!m_defenseSquads.empty()){
-        int diff = enemyUnits.size() - m_defenseSquads.front().Size();
-        if (diff < 0) return;
-        while(--diff >= 0 && !m_mainSquad.GetUnits().empty()){
+    // Add more defenders if necessary (TODO: Intelligent selection)
+    for (auto& defSquad : m_defenseSquads) {
+        int diff = static_cast<int>(defSquad.GetEnemies().size()) - static_cast<int>(defSquad.Size());
+        while (--diff >= 0) {
             auto unit = m_mainSquad.GetUnits().GetRandomUnit();
-            m_defenseSquads.front().AddUnit(unit);
-            m_mainSquad.RemoveUnit(unit);
-        }
-        m_defenseSquads.front().SetEnemies(enemyUnits);
-    } else {
-        Units defenseUnits;
-        int steal = static_cast<int>(enemyUnits.size()) + 1;
-        while (--steal >= 0 && !m_mainSquad.GetUnits().empty()) {
-            auto unit = m_mainSquad.GetUnits().GetRandomUnit();
-            defenseUnits.push_back(unit);
+            if (!unit)
+                return; // No more units
+            defSquad.AddUnit(unit);
             m_mainSquad.RemoveUnit(unit);
         }
     }
@@ -159,8 +184,9 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
     if(unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REAPER){
         m_harassSquad.AddUnit(unit_);
+    } else {
+        m_mainSquad.AddUnit(unit_);
     }
-    m_mainSquad.AddUnit(unit_);
 }
 
 void CombatCommander::OnUnitDestroyed(Unit* unit_, Builder*) {
@@ -168,4 +194,14 @@ void CombatCommander::OnUnitDestroyed(Unit* unit_, Builder*) {
     if (!m_defenseSquads.empty())
         for (auto& squad : m_defenseSquads)
             squad.RemoveUnit(unit_);
+}
+
+bool CombatCommander::StealUnitFromMainSquad(Units& defenders) {
+    if (!m_mainSquad.GetUnits().empty()) {
+        auto unit = m_mainSquad.GetUnits().GetRandomUnit();
+        defenders.push_back(unit);
+        m_mainSquad.RemoveUnit(unit);
+        return true;
+    }
+    return false;
 }
