@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "Unit.h"
+
 #include <sc2api/sc2_unit.h>
 
 #include <list>

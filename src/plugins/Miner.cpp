@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
-#include "../Hub.h"
 #include "Miner.h"
+#include "Hub.h"
 #include "core/API.h"
 #include "core/Brain.h"
 #include "core/Helpers.h"
@@ -23,7 +23,7 @@ constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance w
 constexpr int maximum_workers = 70;                 // Never go above this number of workers
 
 int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
-    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsCommandCenter(),
+    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
         IsRefinery()}), sc2::Unit::Alliance::Self);
 
     int needed = 0;
@@ -43,8 +43,26 @@ Unit* GetMovableWorker(const Units& workers) {
 }
 
 void SecureMineralsIncome(Builder* builder_) {
+    // Halt scv production if an orbital command is next in the building queue and a free command center exists
+    // If we have a bank this will at worst cause a one step delay for potential scv production
+    if (builder_->GetConstructionOrders().front().unit_type_id == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND
+        && !gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)).empty()
+        && builder_->HasTechRequirements(&builder_->GetConstructionOrders().front())) {
+        if (builder_->GetConstructionOrders().front().assignee) {
+            if (builder_->GetConstructionOrders().front().assignee->orders.empty()) {
+                return;
+            }
+        } else {
+            for (const auto& cc : gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER))) {
+                if (cc->orders.empty()) {
+                    return;
+                }
+            }
+        }
+    }
+
     std::vector<Order> orders;
-    auto command_centers = gAPI->observer().GetUnits(IsCommandCenter(), sc2::Unit::Alliance::Self);
+    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
     int optimal_workers = 0;

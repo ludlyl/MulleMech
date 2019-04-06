@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <sc2api/sc2_common.h>
@@ -32,7 +31,7 @@ protected:
 
     bool CanCast(sc2::ABILITY_ID ability_id);
 
-    void Attack(Unit* target);
+    void Attack(const Unit* target);
 
     void MoveTo(const sc2::Point2D& pos);
 
@@ -49,6 +48,6 @@ protected:
     Unit* m_self;
 
 private:
-    Unit* m_target;
+    const Unit* m_target;
     bool m_moving;
 };

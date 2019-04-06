@@ -1,5 +1,4 @@
 #include "Addon.h"
-
 #include "core/API.h"
 #include "core/Helpers.h"
 #include "Historican.h"

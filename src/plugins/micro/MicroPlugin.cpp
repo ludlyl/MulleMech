@@ -1,11 +1,11 @@
 #include "MicroPlugin.h"
-
 #include "DefaultUnit.h"
 #include "Marine.h"
 #include "Hellion.h"
-
-
+#include "Reaper.h"
+#include "SiegeTank.h"
 #include "core/API.h"
+
 
 std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
@@ -13,13 +13,19 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Marine>(unit);
         case sc2::UNIT_TYPEID::TERRAN_HELLION:
             return std::make_unique<Hellion>(unit);
-    default:
-        return std::make_unique<DefaultUnit>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_MARINE:
+            return std::make_unique<Marine>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_REAPER:
+            return std::make_unique<Reaper>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
+            return std::make_unique<SiegeTank>(unit);    
+        default:
+            return std::make_unique<DefaultUnit>(unit);
     }
 }
 
 MicroPlugin::MicroPlugin(Unit* unit) :
-    m_self(unit), m_target(nullptr), m_moving(false)
+        m_self(unit), m_target(nullptr), m_moving(false)
 {
 }
 
@@ -45,7 +51,7 @@ bool MicroPlugin::CanCast(sc2::ABILITY_ID ability_id) {
     return false;
 }
 
-void MicroPlugin::Attack(Unit* target) {
+void MicroPlugin::Attack(const Unit* target) {
     if (m_self && !IsAttacking(target)) {
         gAPI->action().Attack(m_self, target);
         m_target = target;

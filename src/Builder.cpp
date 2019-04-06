@@ -2,11 +2,11 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include "Builder.h"
 #include "blueprints/Blueprint.h"
 #include "core/API.h"
 #include "core/Helpers.h"
 #include "objects/Worker.h"
-#include "Builder.h"
 #include "Historican.h"
 #include "Hub.h"
 
@@ -151,7 +151,7 @@ void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
     }
 }
 
-bool Builder::HasTechRequirements(Order *order_) const {
+bool Builder::HasTechRequirements(const Order *order_) const {
     for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
         if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
             return false;

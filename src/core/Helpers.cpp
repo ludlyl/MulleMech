@@ -3,7 +3,6 @@
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
 #include "Helpers.h"
-
 #include "API.h"
 #include "Converter.h"
 #include "Hub.h"
@@ -27,6 +26,8 @@ bool IsUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
+    // TODO: Check hallucinations
+
     switch (unit_.unit_type.ToType()) {
        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
@@ -68,6 +69,9 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::ZERG_VIPER:
        case sc2::UNIT_TYPEID::ZERG_ZERGLING:
        case sc2::UNIT_TYPEID::ZERG_ZERGLINGBURROWED:
+       case sc2::UNIT_TYPEID::ZERG_BROODLING:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
 
        case sc2::UNIT_TYPEID::PROTOSS_ADEPT:
        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
@@ -90,6 +94,24 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
             return true;
 
        default:
+            return false;
+    }
+}
+
+bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
+    // TODO: Check hallucinations
+
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
+        case sc2::UNIT_TYPEID::ZERG_BROODLING:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
+
+        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
+        case sc2::UNIT_TYPEID::PROTOSS_DISRUPTORPHASED:
+            return true;
+
+        default:
             return false;
     }
 }
@@ -145,7 +167,7 @@ bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
-    return unit_.vespene_contents > 0;
+    return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
 
 bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
@@ -207,7 +229,9 @@ bool IsGasWorker::operator()(const sc2::Unit& unit_) const {
 bool IsTownHall::operator()(const sc2::Unit& unit_) const {
     return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_NEXUS ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS ||
            unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
            unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE ||
@@ -218,14 +242,6 @@ bool IsIdleTownHall::operator()(const sc2::Unit& unit_) const {
     return IsTownHall()(unit_) && unit_.orders.empty() && unit_.build_progress == 1.0f;
 }
 
-bool IsCommandCenter::operator()(const sc2::Unit& unit_) const {
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS;
-}
-
 IsOrdered::IsOrdered(sc2::UNIT_TYPEID type_): m_type(type_) {
 }
 
@@ -234,6 +250,8 @@ bool IsOrdered::operator()(const Order& order_) const {
 }
 
 bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+    if (m_2d)
+        return sc2::DistanceSquared2D(m_center, unit_.pos) < m_distSq;
     return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
 }
 
@@ -280,8 +298,18 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
     return false;
 }
 
+Inverse::Inverse(std::function<bool(const sc2::Unit& unit)> functor) : m_functor(std::move(functor)) {}
+
+bool Inverse::operator()(const sc2::Unit& unit_) const {
+    return !m_functor(unit_);
+}
+
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {
-    sc2::Point2D pos = unit_->pos;
+    return GetTerranAddonPosition(unit_->pos);
+}
+
+sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) {
+    sc2::Point2D pos = parentBuildingPosition;
     pos.x += ADDON_DISPLACEMENT_IN_X;
     pos.y += ADDON_DISPLACEMENT_IN_Y;
     return pos;

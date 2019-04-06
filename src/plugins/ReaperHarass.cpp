@@ -4,7 +4,8 @@
 #include "core/Helpers.h"
 #include "Historican.h"
 #include "Hub.h"
-#include "../BuildingPlacer.h"
+#include "BuildingPlacer.h"
+#include "IntelligenceHolder.h"
 
 ReaperHarass::ReaperHarass() :
         strikeInProgress(false) {
@@ -28,7 +29,7 @@ void ReaperHarass::OnStep(Builder*) {
         auto it3 = std::remove_if(m_reaperStrikeTeam.begin(), m_reaperStrikeTeam.end(),[](const Unit* unit_) {
 
             if(unit_->weapon_cooldown == 0){
-                gAPI->action().MoveTo(unit_, BuildingPlacer::GetCenterBehindMinerals(gBrain->memory().GetLatestEnemyBase()->town_hall_location));
+                gAPI->action().MoveTo(unit_, BuildingPlacer::GetCenterBehindMinerals(gIntelligenceHolder->GetLatestEnemyBase()->town_hall_location));
             }
             return false;
         });

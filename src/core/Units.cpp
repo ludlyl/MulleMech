@@ -6,6 +6,8 @@
 #include "Units.h"
 #include "core/API.h"
 
+#include <algorithm>
+#include <numeric>
 #include <limits>
 
 Units::Units(const sc2::Units& units_) {
@@ -14,7 +16,11 @@ Units::Units(const sc2::Units& units_) {
         m_wrappedUnits.emplace_back(gAPI->WrapUnit(unit));
 }
 
-Unit* Units::GetClosestUnit(const sc2::Point2D& point_) const {
+Unit* Units::GetClosestUnit(const sc2::Point2D& point_) {
+    return const_cast<Unit*>(const_cast<const Units*>(this)->GetClosestUnit(point_));
+}
+
+const Unit* Units::GetClosestUnit(const sc2::Point2D& point_) const {
     float distance = std::numeric_limits<float>::max();
 
     Unit* target = nullptr;
@@ -29,7 +35,11 @@ Unit* Units::GetClosestUnit(const sc2::Point2D& point_) const {
     return target;
 }
 
-Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
+Unit* Units::GetClosestUnit(sc2::Tag tag_) {
+    return const_cast<Unit*>(const_cast<const Units*>(this)->GetClosestUnit(tag_));
+}
+
+const Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
     Unit* unit = gAPI->observer().GetUnit(tag_);
     if (!unit)
         return nullptr;
@@ -37,11 +47,38 @@ Unit* Units::GetClosestUnit(sc2::Tag tag_) const {
     return GetClosestUnit(unit->pos);
 }
 
-Unit* Units::GetRandomUnit() const {
+Unit* Units::GetRandomUnit() {
+    return const_cast<Unit*>(const_cast<const Units*>(this)->GetRandomUnit());
+}
+
+const Unit* Units::GetRandomUnit() const {
     if (empty())
         return nullptr;
     int index = sc2::GetRandomInteger(0, static_cast<int>(size()) - 1);
     return m_wrappedUnits[static_cast<unsigned>(index)];
+}
+
+std::pair<sc2::Point2D, float> Units::CalculateCircle() const {
+    if (m_wrappedUnits.empty())
+        return std::make_pair(sc2::Point2D(), 0.0f);
+
+    // Centroid of a finite set of points
+    sc2::Point2D center = std::accumulate(m_wrappedUnits.begin(), m_wrappedUnits.end(), sc2::Point2D(0, 0),
+        [](const sc2::Point2D& p, const Unit* u) {
+            return p + u->pos;
+        });
+    center /= static_cast<float>(m_wrappedUnits.size());
+
+    // Find unit furthest from center
+    auto u = std::max_element(m_wrappedUnits.begin(), m_wrappedUnits.end(),
+        [&center](const Unit* a, const Unit* b) {
+            return DistanceSquared2D(center, a->pos) < DistanceSquared2D(center, b->pos);
+        });
+
+    // Use that to calculate radius of circle
+    float radius = Distance2D((*u)->pos, center);
+
+    return std::make_pair(center, radius);
 }
 
 sc2::Units Units::ToAPI() const {

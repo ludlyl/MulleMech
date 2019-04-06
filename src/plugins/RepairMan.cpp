@@ -48,6 +48,13 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
         case sc2::UNIT_TYPEID::ZERG_LARVA:
             return;
 
+        // Morphed buildings (TODO: Is there some generic way to find parent building of a morphed building)
+        case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
+        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
+            builder_->ScheduleConstruction(unit_->unit_type.ToType(), true);                // Mutation
+            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, true);   // Parent
+            return;
+
         default:
             // Schedule an addon if the building had one
             if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {

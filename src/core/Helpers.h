@@ -31,6 +31,10 @@ struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsTemporaryUnit {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID) const;
@@ -93,10 +97,6 @@ struct IsIdleTownHall {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsCommandCenter {
-    bool operator()(const sc2::Unit& unit_) const;
-};
-
 struct IsOrdered {
     explicit IsOrdered(sc2::UNIT_TYPEID type_);
 
@@ -107,13 +107,16 @@ struct IsOrdered {
 };
 
 struct IsWithinDist {
-    explicit IsWithinDist(sc2::Point3D center, float dist_) : m_center(center), m_distSq(dist_ * dist_) { }
+    explicit IsWithinDist(const sc2::Point3D& center, float dist_) : m_center(center), m_distSq(dist_ * dist_), m_2d(false) { }
+    explicit IsWithinDist(const sc2::Point2D& center, float dist_) :
+        m_center(sc2::Point3D(center.x, center.y, 0)), m_distSq(dist_ * dist_), m_2d(true) { }
 
     bool operator()(const sc2::Unit& unit_) const;
 
 private:
     sc2::Point3D m_center;
     float m_distSq;
+    bool m_2d;
 };
 
 // Send in sc2::UNIT_TYPEID::INVALID to check if the building doesn't have an add-on
@@ -141,11 +144,21 @@ private:
     Selector m_selector;
 };
 
+struct Inverse {
+    explicit Inverse(std::function<bool(const sc2::Unit& unit)> functor);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    std::function<bool(const sc2::Unit& unit)> m_functor;
+};
+
 // These should maybe be public on be placed somewhere else
 static constexpr float ADDON_DISPLACEMENT_IN_X = 2.5f;
 static constexpr float ADDON_DISPLACEMENT_IN_Y = -0.5f;
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_);
+sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition);
 
 struct ClosestToPoint2D {
     explicit ClosestToPoint2D(sc2::Point2D point) : m_point(point) {

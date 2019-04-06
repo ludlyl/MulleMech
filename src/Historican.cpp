@@ -3,6 +3,7 @@
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
 #include "Historican.h"
+
 #include <iomanip>
 
 Historican::Historican() : m_severity(LogSeverity::info) {

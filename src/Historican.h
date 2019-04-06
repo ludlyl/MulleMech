@@ -22,7 +22,8 @@ enum class LogChannel {
     general,
     scouting,
     reaperharass,
-    economy
+    economy,
+    combat
 };
 
 inline std::string LogChannel_str(LogChannel channel) {
@@ -31,6 +32,7 @@ inline std::string LogChannel_str(LogChannel channel) {
     case LogChannel::scouting:      return "[SCOUTING]";
     case LogChannel::reaperharass:  return "[REAPERS]";
     case LogChannel::economy:       return "[ECONOMY]";
+    case LogChannel::combat:        return "[COMBAT]";
     }
 }
 

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "plugins/micro/MicroPlugin.h"
+
 #include <sc2api/sc2_unit.h>
 #include <sc2api/sc2_data.h>
+
 #include <memory>
 
 class Worker;
@@ -19,9 +21,10 @@ public:
     bool operator==(const Unit& other) const;
 
     // Micro plugin for this unit
-    MicroPlugin* Micro() const;
+    MicroPlugin* Micro();
 
     Worker* AsWorker();
+    const Worker* AsWorker() const;
 
     sc2::UnitTypeData GetTypeData() const;
 
