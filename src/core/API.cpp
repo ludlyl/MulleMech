@@ -7,6 +7,7 @@
 #include "Helpers.h"
 #include "plugins/micro/MicroPlugin.h"
 
+
 #include <sc2api/sc2_map_info.h>
 
 namespace API {
@@ -65,6 +66,11 @@ void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_) 
 void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
     const Unit* target_, bool queue_) {
     m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), target_, queue_);
+}
+
+void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+        const sc2::Point2D& point, bool queue_) {
+        m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), point, queue_);
 }
 
 void Action::LowerDepot(const Unit* assignee_) {

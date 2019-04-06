@@ -79,6 +79,11 @@ void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit* target) {
         gAPI->action().Cast(m_self, ability, target);
 }
 
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point) {
+    if (m_self && CanCast(ability))
+        gAPI->action().Cast(m_self, ability, point);
+}
+
 bool MicroPlugin::IsAttacking(const Unit* target) const {
     return m_target == target;
 }
