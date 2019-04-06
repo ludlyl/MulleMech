@@ -23,9 +23,10 @@ private:
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
-    static constexpr float SearchEnemyRadiusPadding = 10.0f;
-    static constexpr float EnemyIsolationDistance = 20.0f;  // Enemies this far apart => different groups
+    static constexpr float SearchEnemyRadiusPadding = 8.0f;
+    static constexpr float EnemyIsolationDistance = 15.0f;  // Enemies this far apart => different groups
     static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
+    static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
 
     std::vector<Units> IsolateEnemiesInBase();
     void DefenseCheck();
@@ -41,5 +42,7 @@ private:
 
     // TODO: Should be replaced by intelligent selecting of what units go to defend
     bool StealUnitFromMainSquad(Units& defenders);
+
+    sc2::Point3D CombatCommander::GetArmyIdlePosition() const;
 };
 

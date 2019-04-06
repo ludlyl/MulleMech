@@ -1,9 +1,10 @@
 
 #include "CombatCommander.h"
-#include "core/API.h"
-#include "Hub.h"
-#include "core/Helpers.h"
+#include "BuildingPlacer.h"
 #include "Historican.h"
+#include "Hub.h"
+#include "core/API.h"
+#include "core/Helpers.h"
 #include <sc2api/sc2_common.h>
 
 CombatCommander::CombatCommander() :
@@ -186,6 +187,8 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         m_harassSquad.AddUnit(unit_);
     } else {
         m_mainSquad.AddUnit(unit_);
+        if (m_mainSquad.IsTaskFinished())
+            gAPI->action().MoveTo(m_mainSquad.GetUnits(), GetArmyIdlePosition(), true);
     }
 }
 
@@ -204,4 +207,18 @@ bool CombatCommander::StealUnitFromMainSquad(Units& defenders) {
         return true;
     }
     return false;
+}
+
+sc2::Point3D CombatCommander::GetArmyIdlePosition() const {
+    // TODO: Calculate a more sensible position of where to keep our army
+
+    auto expansions = gHub->GetOurExpansions();
+    if (expansions.empty())
+        return gAPI->observer().StartingLocation();
+
+    auto town_hall = expansions.back()->town_hall_location;
+    auto direction_vector = town_hall - BuildingPlacer::GetCenterBehindMinerals(town_hall);
+    sc2::Normalize3D(direction_vector);
+
+    return town_hall + direction_vector * IdleDistance;
 }
