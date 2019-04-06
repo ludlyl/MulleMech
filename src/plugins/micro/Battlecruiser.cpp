@@ -24,7 +24,7 @@ void Battlecruiser::OnCombatStep(const Units& enemies) {
         copy.erase(itr, copy.end());
 
         if(!copy.empty()){
-            Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit());
+            Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit(m_self->pos));
         }
         else{
             Units copy = enemies;
@@ -34,7 +34,7 @@ void Battlecruiser::OnCombatStep(const Units& enemies) {
             });
             copy.erase(itr, copy.end());
             if(!copy.empty()){
-                Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit());
+                Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit(m_self->pos));
             }
             else{
                 Units copy = enemies;
@@ -44,7 +44,7 @@ void Battlecruiser::OnCombatStep(const Units& enemies) {
                 });
                 copy.erase(itr, copy.end());
                 if(!copy.empty()){
-                    Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit());
+                    Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit(m_self->pos));
                 }
                 else{
                     Units copy = enemies;
@@ -54,7 +54,7 @@ void Battlecruiser::OnCombatStep(const Units& enemies) {
                     });
                     copy.erase(itr, copy.end());
                     if(!copy.empty()){
-                        Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit());
+                        Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit(m_self->pos));
                     }
                 }
             }
