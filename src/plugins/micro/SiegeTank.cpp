@@ -10,7 +10,7 @@ SiegeTank::SiegeTank(Unit* unit)
 void SiegeTank::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
-    int closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);
+    int closestEnemyDistance = static_cast<int>(Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos));
 
     if(m_self->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SIEGETANK) {
         // Siege if within siege range and not on top of unit
