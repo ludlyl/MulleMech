@@ -99,9 +99,13 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
     // TODO: Check hallucinations
 
-    switch (unit_.unit_type.ToType()) {
+    switch (type_) {
         case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
         case sc2::UNIT_TYPEID::ZERG_BROODLING:
         case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
@@ -120,16 +124,37 @@ bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }
 
-bool IsBuilding::operator()(const sc2::UNIT_TYPEID unitTypeid_) const {
+bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     // NOTE: All units except overlord, larva & eggs require food,
     // thus we can use that to assume what is a building and what's not
-    auto data = gAPI->observer().GetUnitTypeData(unitTypeid_);
-    return data.food_required == 0 &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_EGG;
+    auto data = gAPI->observer().GetUnitTypeData(type_);
+    return data.food_required == 0 && !IsTemporaryUnit()(type_) &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+           type_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
+           type_ != sc2::UNIT_TYPEID::ZERG_EGG;
+}
+
+bool IsAddon::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsAddon::operator()(sc2::UNIT_TYPEID type_) const {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_REACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {

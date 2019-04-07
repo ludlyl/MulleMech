@@ -51,19 +51,19 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
         // Morphed buildings (TODO: Is there some generic way to find parent building of a morphed building)
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            builder_->ScheduleConstruction(unit_->unit_type.ToType(), true);                // Mutation
-            builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, true);   // Parent
+            builder_->ScheduleSequentialConstruction(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, true);   // Parent
+            builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                   // Mutation
             return;
 
         default:
             // Schedule an addon if the building had one
             if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {
                 // NOTE: The addon is not orphaned yet at this point, as such we can just reconstruct its type
-                builder_->ScheduleConstruction(addon->unit_type, true);
+                builder_->ScheduleNonsequentialConstruction(addon->unit_type);
             }
 
             // Schedule the building for reconstruction
-            builder_->ScheduleConstruction(unit_->unit_type.ToType(), true);
+            builder_->ScheduleConstructionInRecommendedQueue(unit_->unit_type.ToType(), true);
             return;
     }
 }
