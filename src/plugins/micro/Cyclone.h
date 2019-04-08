@@ -2,7 +2,7 @@
 
 #include "DefaultUnit.h"
 
-class Cyclone : public DefaultUnit {
+class Cyclone : public MicroPlugin {
 public:
     Cyclone(Unit* unit);
 

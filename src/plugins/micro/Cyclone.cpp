@@ -3,13 +3,11 @@
 #include "core/API.h"
 
 Cyclone::Cyclone(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 
 void Cyclone::OnCombatStep(const Units& enemies) {
-    DefaultUnit::OnCombatStep(enemies);
-
     const Unit* closestEnemy = enemies.GetClosestUnit(m_self->pos);
     float closestEnemyDistance = Distance2D(m_self->pos, closestEnemy->pos);
 
