@@ -17,3 +17,4 @@ void SCV::OnStep() {
         Cast(sc2::ABILITY_ID::SMART, commandCenters.GetClosestUnit(m_self->pos));
     }
 }
+void SCV::OnCombatStep(const Units &enemies) {}

@@ -7,4 +7,6 @@ public:
     explicit SCV(Unit* unit);
 
     void OnStep();
+
+    void OnCombatStep(const Units& enemies) override;
 };
