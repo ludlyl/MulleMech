@@ -8,5 +8,5 @@ public:
 
     void OnCombatStep(const Units& enemies) override;
 
-    static constexpr float minimumFlyingUnits = 3;
+    static constexpr float MinimumFlyingUnits = 3;
 };
