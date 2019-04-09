@@ -23,6 +23,8 @@ struct Governor : Plugin {
     // Counts the total structres of "type" in ALL building queues and on the map
     int CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type);
 
+    void PrioritizeCommandCenter();
+
     private:
         std::list<sc2::UNIT_TYPEID> m_planner_queue;
     

@@ -53,6 +53,26 @@ void Governor::OnStep(Builder* builder_) {
     float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
 
     PlayStyle playstyle = gReasoner->GetPlayStyle();
+    float playstyle_modifier;
+
+    //TODO, fill in the other ones aswell
+    switch (playstyle) {
+    case PlayStyle::all_in:
+    case PlayStyle::defensive:
+    case PlayStyle::very_defensive:
+    case PlayStyle::offensive:
+    case PlayStyle::scout:
+    case PlayStyle::normal:
+        playstyle_modifier = 1.f;
+        break;
+
+    case PlayStyle::greedy:
+        // This modifier is right now highly questionable.
+        playstyle_modifier = 2.f;
+        // resort the list
+        PrioritizeCommandCenter();
+        break;
+    }
 
     if (minerals < 50)
        return;
@@ -68,13 +88,7 @@ void Governor::OnStep(Builder* builder_) {
         builder_->ScheduleConstruction(m_planner_queue.front());
         it = m_planner_queue.erase(it);
     }
-    switch (playstyle) {
-    case PlayStyle::normal:
-        break;
 
-    case PlayStyle::greedy:
-        break;
-    }
     // Note: Returns Minerals/Min
     float mineral_income = gAPI->observer().GetMineralIncomeRate();
     float vespene_income = gAPI->observer().GetVespeneIncomeRate();
@@ -124,15 +138,15 @@ void Governor::OnStep(Builder* builder_) {
     int optimal_workers = 0;
 
 
-    //Counting plannings of expansion
-    int planned_cc = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
+    //Counting plans of expansion
+    int scheduled_cc = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
 
     for (const auto i : m_planner_queue) {
         if (i == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
-            planned_cc++;
+            scheduled_cc++;
     }
 
-    if (planned_cc == 0) {
+    if (scheduled_cc == 0) {
 
         // Calculate Optimal Workers
         for (auto& cc : command_centers)
@@ -140,9 +154,27 @@ void Governor::OnStep(Builder* builder_) {
         for (auto& refinery : refineries)
             optimal_workers += refinery->ideal_harvesters;
 
+        optimal_workers = optimal_workers / playstyle_modifier;
+
         if (num_workers >= optimal_workers) {
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            if(playstyle == PlayStyle::greedy)
+                m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            else
+                m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
             //TODO add orbital command?
+        }
+    }
+}
+
+void Governor::PrioritizeCommandCenter() {
+    int start_to_sort = 0;
+    for (auto it = m_planner_queue.begin(); it != m_planner_queue.end(); ++it) {
+        if (!start_to_sort && *it != sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
+            start_to_sort = 1;
+
+        if (*it == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER && start_to_sort) {
+            m_planner_queue.splice(m_planner_queue.begin(), m_planner_queue, it);
+            break;
         }
     }
 }

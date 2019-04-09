@@ -45,7 +45,10 @@ Unit* GetMovableWorker(const Units& workers) {
 void SecureMineralsIncome(Builder* builder_) {
     // Halt scv production if an orbital command is next in the building queue and a free command center exists
     // If we have a bank this will at worst cause a one step delay for potential scv production
-    if (builder_->GetConstructionOrders().front().unit_type_id == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND
+    if (builder_->GetConstructionOrders().empty()) {}
+
+
+    else if (builder_->GetConstructionOrders().front().unit_type_id == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND
         && !gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)).empty()
         && builder_->HasTechRequirements(&builder_->GetConstructionOrders().front())) {
         if (builder_->GetConstructionOrders().front().assignee) {
