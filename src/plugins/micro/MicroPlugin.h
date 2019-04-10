@@ -41,6 +41,8 @@ protected:
 
     void Cast(sc2::ABILITY_ID ability, const Unit* target);
 
+    void Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point);
+
     bool IsAttacking(const Unit* target) const;
 
     bool IsMoving() const;

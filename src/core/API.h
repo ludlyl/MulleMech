@@ -44,6 +44,8 @@ struct Action {
     void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_ = false);
     void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
         const Unit* target_, bool queue_ = false);
+    void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+              const sc2::Point2D& point, bool queue_ = false);
 
     void LowerDepot(const Unit* assignee_);
     void RaiseDepot(const Unit* assignee_);
