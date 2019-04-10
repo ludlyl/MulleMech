@@ -17,7 +17,7 @@ void Squad::OnStep() {
         [](const Unit* u) {
             if (!u->is_alive)
                 return true;
-            if (u->display_type != sc2::Unit::Visible && u->cloak == sc2::Unit::NotCloaked)
+            if (!u->IsInVision)
                 return true;
             return false;
         });

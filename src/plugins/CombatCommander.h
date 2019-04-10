@@ -15,20 +15,7 @@ public:
     void OnUnitDestroyed(Unit* unit_, Builder*);
 
 private:
-
-    std::vector<DefenseSquad> m_defenseSquads;
-    OffenseSquad m_mainSquad;
-    OffenseSquad m_harassSquad;
-    sc2::Point2D m_mainAttackTarget;
-    PlayStyle m_playStyle;
-    bool m_changedPlayStyle;
-
-    static constexpr float SearchEnemyRadiusPadding = 8.0f;
-    static constexpr float EnemyIsolationDistance = 15.0f;  // Enemies this far apart => different groups
-    static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
-    static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
-
-    std::vector<Units> IsolateEnemiesInBase();
+    std::vector<Units> GroupEnemiesInBase();
     void DefenseCheck();
     void Harass(int limit);
 
@@ -44,5 +31,17 @@ private:
     bool StealUnitFromMainSquad(Units& defenders);
 
     sc2::Point3D CombatCommander::GetArmyIdlePosition() const;
+
+    std::vector<DefenseSquad> m_defenseSquads;
+    OffenseSquad m_mainSquad;
+    OffenseSquad m_harassSquad;
+    sc2::Point2D m_mainAttackTarget;
+    PlayStyle m_playStyle;
+    bool m_changedPlayStyle;
+
+    static constexpr float SearchEnemyRadiusPadding = 8.0f;
+    static constexpr float EnemyGroupingDistance = 15.0f;   // Enemies this far apart => different groups
+    static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
+    static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
 };
 

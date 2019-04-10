@@ -95,7 +95,7 @@ void CombatCommander::Harass(int limit){
     }
 }
 
-std::vector<Units> CombatCommander::IsolateEnemiesInBase() {
+std::vector<Units> CombatCommander::GroupEnemiesInBase() {
     // Calculate a circle using all our buildings for search radius and then increase it a bit
     // TODO: Improve this, using a circle for our base might spread way further than our perimeter
     //       is on some maps where our bases don't end up in a pattern fitting well in a circle
@@ -114,7 +114,7 @@ std::vector<Units> CombatCommander::IsolateEnemiesInBase() {
 
         // Add units "grouped" with the selected "leader"
         for (auto itr = enemyUnits.begin(); itr != enemyUnits.end(); ) {
-            if (sc2::Distance3D(leader->pos, (*itr)->pos) <= EnemyIsolationDistance) {
+            if (sc2::Distance3D(leader->pos, (*itr)->pos) <= EnemyGroupingDistance) {
                 newGroup.push_back(*itr);
                 itr = enemyUnits.erase(itr);
             } else {
@@ -140,7 +140,7 @@ void CombatCommander::DefenseCheck() {
             ++itr;
     }
 
-    auto enemyGroups = IsolateEnemiesInBase();
+    auto enemyGroups = GroupEnemiesInBase();
     if (enemyGroups.empty())
         return;
 
