@@ -30,7 +30,7 @@ private:
     // TODO: Should be replaced by intelligent selecting of what units go to defend
     bool StealUnitFromMainSquad(Units& defenders);
 
-    sc2::Point3D CombatCommander::GetArmyIdlePosition() const;
+    sc2::Point3D GetArmyIdlePosition() const;
 
     std::vector<DefenseSquad> m_defenseSquads;
     OffenseSquad m_mainSquad;

@@ -159,7 +159,7 @@ void CombatCommander::DefenseCheck() {
         if (!dealtWith) {
             // TODO: Intelligent defender selection
             Units defenders;
-            int steal = group.size() + 1;
+            int steal = static_cast<int>(group.size()) + 1;
             while (--steal >= 0 && StealUnitFromMainSquad(defenders))
                 /* empty */;
             if (!defenders.empty())

@@ -147,5 +147,5 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
 }
 
 int Squad::Size() const {
-    return m_units.size();
+    return static_cast<int>(m_units.size());
 }
