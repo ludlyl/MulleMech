@@ -1,8 +1,11 @@
 
 #include "Plugin.h"
-#include "OffenseSquad.h"
 #include "DefenseSquad.h"
+#include "HarassSquad.h"
+#include "OffenseSquad.h"
+#include "ReinforceSquad.h"
 #include "Reasoner.h"
+#include <memory>
 
 class CombatCommander : public Plugin {
 public:
@@ -12,12 +15,9 @@ public:
 
     void OnUnitCreated(Unit* unit_) final;
 
-    void OnUnitDestroyed(Unit* unit_, Builder*);
-
 private:
     std::vector<Units> GroupEnemiesInBase();
     void DefenseCheck();
-    void Harass(int limit);
 
     void PlayNormal();
     void PlayAllIn();
@@ -33,8 +33,9 @@ private:
     sc2::Point3D GetArmyIdlePosition() const;
 
     std::vector<DefenseSquad> m_defenseSquads;
-    OffenseSquad m_mainSquad;
-    OffenseSquad m_harassSquad;
+    std::vector<ReinforceSquad> m_reinforceSquads;
+    std::shared_ptr<OffenseSquad> m_mainSquad;              // Shared with reinforce squads
+    HarassSquad m_harassSquad;
     sc2::Point2D m_mainAttackTarget;
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
@@ -43,5 +44,6 @@ private:
     static constexpr float EnemyGroupingDistance = 15.0f;   // Enemies this far apart => different groups
     static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
     static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
+    static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
+    static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
 };
-
