@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
     // gHistory.AddFilter(LogChannel::scouting);
     // gHistory.AddFilter(LogChannel::reaperharass);
     // gHistory.AddFilter(LogChannel::economy);
+    // gHistory.AddFilter(LogChannel::combat);
 
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);

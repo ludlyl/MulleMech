@@ -4,7 +4,7 @@
 #include "objects/Worker.h"
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) {
+Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit), IsInVision(true) {
     if (unit.alliance == Unit::Alliance::Self) {
         m_micro = MicroPlugin::MakePlugin(this);
     }

@@ -353,4 +353,21 @@ std::shared_ptr<Expansion> Hub::GetClosestExpansion(const sc2::Point2D& location
     return closest;
 }
 
+Expansions Hub::GetOurExpansions() const {
+    Expansions expos;
+
+    for (auto& expo : m_expansions) {
+        if (expo->alliance == sc2::Unit::Alliance::Self)
+            expos.push_back(expo);
+    }
+
+    // Use starting location as comparison
+    auto starting = GetClosestExpansion(gAPI->observer().StartingLocation());
+    std::sort(expos.begin(), expos.end(), [&starting](auto& e1, auto& e2) {
+        return starting->distanceTo(e1) < starting->distanceTo(e2);
+    });
+
+    return expos;
+}
+
 std::unique_ptr<Hub> gHub;

@@ -14,6 +14,7 @@ public:
     void AbortTakeOver() { m_finished = true; m_defending = false; }
 
 protected:
+
     void Update() override;
 
     std::string SquadName() const override { return "OffenseSquad (Id: #" + std::to_string(GetId()) + ")"; }
