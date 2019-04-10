@@ -3,7 +3,7 @@
 #include "core/API.h"
 
 Thor::Thor(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 

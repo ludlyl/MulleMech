@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
-class Thor : public DefaultUnit {
+class Thor : public MicroPlugin {
 public:
     Thor(Unit* unit);
 
