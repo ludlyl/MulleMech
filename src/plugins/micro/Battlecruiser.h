@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
-class Battlecruiser : public DefaultUnit {
+class Battlecruiser : public MicroPlugin {
 public:
     Battlecruiser(Unit* unit);
 

@@ -3,7 +3,7 @@
 #include "core/API.h"
 
 Battlecruiser::Battlecruiser(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 
