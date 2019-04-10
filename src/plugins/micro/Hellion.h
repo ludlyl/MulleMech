@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
-class Hellion : public DefaultUnit {
+class Hellion : public MicroPlugin {
 public:
     Hellion(Unit* unit);
 

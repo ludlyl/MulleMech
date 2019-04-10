@@ -3,12 +3,11 @@
 #include "core/API.h"
 
 Hellion::Hellion(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 
 void Hellion::OnCombatStep(const Units& enemies) {
-    DefaultUnit::OnCombatStep(enemies);
 
     if (m_self->weapon_cooldown == 0) {
         Units copy = enemies;
