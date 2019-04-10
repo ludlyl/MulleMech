@@ -14,7 +14,7 @@
 #include "core/Timer.h"
 #include "plugins/ChatterBox.h"
 #include "plugins/Diagnosis.h"
-#include "plugins/ForceCommander.h"
+#include "plugins/CombatCommander.h"
 #include "plugins/Governor.h"
 #include "plugins/Miner.h"
 #include "plugins/RepairMan.h"
@@ -53,10 +53,11 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new Miner());
     m_plugins.emplace_back(new QuarterMaster());
     m_plugins.emplace_back(new RepairMan());
-    m_plugins.emplace_back(new ForceCommander());
+    m_plugins.emplace_back(new CombatCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
-    m_plugins.emplace_back(new ReaperHarass());
+    //m_plugins.emplace_back(new ReaperHarass());
+    //m_plugins.emplace_back(new Reaper());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
