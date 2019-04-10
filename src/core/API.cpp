@@ -411,12 +411,16 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
 }
 
 void Interface::OnStep() {
+    for (auto& pair : m_unitObjects)
+        pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
+
     sc2::Units units = observer().m_observer->GetUnits();
     for (const sc2::Unit* unit : units) {
         auto itr = m_unitObjects.find(unit->tag);
         if (itr == m_unitObjects.end()) {
             m_unitObjects[unit->tag] = Unit::Make(*unit);
         } else {
+            itr->second->IsInVision = true;
             itr->second->UpdateAPIData(*unit);
         }
     }

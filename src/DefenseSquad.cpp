@@ -12,6 +12,17 @@ bool DefenseSquad::IsTaskFinished() const {
     return GetEnemies().empty() || GetUnits().empty();
 }
 
+bool DefenseSquad::UpdateEnemies(const Units& enemies) {
+    for (auto& enemy : enemies) {
+        if (GetEnemies().contains(enemy)) {
+            SetEnemies(enemies);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void DefenseSquad::Update() {
     if (IsTaskFinished())
         return;
@@ -30,14 +41,14 @@ void DefenseSquad::Update() {
             unit->Micro()->OnCombatFrame(unit, GetEnemies());
     } else {
         // Approach enemy if we've not engaged yet
-        auto enemyCenter = GetEnemies().CalculateCircle().first;
-        if (Distance2D(GetCenter(), enemyCenter) < EngageRadius) {
+        auto enemyCircle = GetEnemies().CalculateCircle();
+        if (Distance2D(GetCenter(), enemyCircle.first) < EngageRadius + enemyCircle.second) {
             gHistory.debug(LogChannel::combat) << SquadName() << " engaging enemies" << std::endl;
             AbortMovement();
             m_engaged = true;
         } else if (!IsMoving()) {
             gHistory.debug(LogChannel::combat) << SquadName() << " approaching enemies" << std::endl;
-            Approach(enemyCenter);
+            Approach(enemyCircle.first);
         }
     }
 }
