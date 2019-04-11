@@ -209,6 +209,9 @@ struct Hub {
 
     std::vector<Construction>& GetConstructions() { return m_constructions; }
 
+    // Returns a list of our expansions sorted with walking distance to starting location
+    Expansions GetOurExpansions() const;
+
  private:
     sc2::Race m_current_race;
     Expansions m_expansions;

@@ -1,20 +1,33 @@
 #include "MicroPlugin.h"
 #include "DefaultUnit.h"
 #include "Marine.h"
+#include "Thor.h"
+#include "Hellion.h"
 #include "Reaper.h"
+#include "Battlecruiser.h"
+#include "Cyclone.h"
 #include "SiegeTank.h"
 #include "core/API.h"
 
 
 std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
-
+        case sc2::UNIT_TYPEID::TERRAN_MARINE:
+            return std::make_unique<Marine>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_HELLION:
+            return std::make_unique<Hellion>(unit);
         case sc2::UNIT_TYPEID::TERRAN_MARINE:
             return std::make_unique<Marine>(unit);
         case sc2::UNIT_TYPEID::TERRAN_REAPER:
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
-            return std::make_unique<SiegeTank>(unit);    
+            return std::make_unique<SiegeTank>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER:
+            return std::make_unique<Battlecruiserk>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_THOR:
+            return std::make_unique<Thor>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
+            return std::make_unique<Cyclone>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
@@ -77,6 +90,11 @@ void MicroPlugin::Cast(sc2::ABILITY_ID ability) {
 void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit* target) {
     if (m_self && CanCast(ability))
         gAPI->action().Cast(m_self, ability, target);
+}
+
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point) {
+    if (m_self && CanCast(ability))
+        gAPI->action().Cast(m_self, ability, point);
 }
 
 bool MicroPlugin::IsAttacking(const Unit* target) const {

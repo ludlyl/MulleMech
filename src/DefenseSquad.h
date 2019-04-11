@@ -8,6 +8,10 @@ public:
 
     bool IsTaskFinished() const override;
 
+    // Update enemies if we currently are defending against at least one enemy in `enemies`,
+    // returns false otherwise
+    bool UpdateEnemies(const Units& enemies);
+
 protected:
     void Update() override;
 

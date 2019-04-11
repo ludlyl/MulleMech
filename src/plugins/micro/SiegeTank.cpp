@@ -10,21 +10,25 @@ SiegeTank::SiegeTank(Unit* unit)
 void SiegeTank::OnCombatStep(const Units& enemies) {
     DefaultUnit::OnCombatStep(enemies);
 
-    int closestEnemyDistance = static_cast<int>(Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos));
+    float closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);
+    Units copy = enemies;
+    //See if there are any ground units so we don't siege if we can't hit anything
+    auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit* u) {
+        return u->is_flying;
+    });
+    copy.erase(itr, copy.end());
 
-    if(m_self->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SIEGETANK) {
+    if (!copy.empty()) {
         // Siege if within siege range and not on top of unit
         if (closestEnemyDistance < siegeMaxRange && closestEnemyDistance > siegeMinRange + 1) {
             Cast(sc2::ABILITY_ID::MORPH_SIEGEMODE);
         }
-
-    }
-
-    if(m_self->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED){
-        // Unsiege if out of siege range or if on top of unit
-        if ((closestEnemyDistance > siegeMaxRange+1) || (closestEnemyDistance < siegeMinRange)) {
+        else if ((closestEnemyDistance > siegeMaxRange+1) || (closestEnemyDistance < siegeMinRange)) {
             Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
         }
+    }
+    else{
+        Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
     }
 }
 
