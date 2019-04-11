@@ -7,9 +7,20 @@
 #include "core/API.h"
 #include "core/Helpers.h"
 
+bool bp::Refinery::CanBeBuilt(const Order *order_) {
+    auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
+                                             sc2::Unit::Alliance::Neutral);
+
+    auto geyser = geysers.GetClosestUnit(gAPI->observer().StartingLocation());
+    if (!geyser)
+        return false;
+
+    return gHub->GetClosestFreeWorker(geyser->pos) != nullptr;
+}
+
 bool bp::Refinery::Build(Order* order_) {
     auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
-        sc2::Unit::Alliance::Neutral);
+                                             sc2::Unit::Alliance::Neutral);
 
     auto geyser = geysers.GetClosestUnit(gAPI->observer().StartingLocation());
     if (!geyser)

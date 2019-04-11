@@ -16,9 +16,6 @@
 
 #include <memory>
 
-bp::Blueprint::~Blueprint() {
-}
-
 std::shared_ptr<bp::Blueprint> bp::Blueprint::Plot(sc2::ABILITY_ID ability_) {
     switch (ability_) {
         // Specially handled Buildings

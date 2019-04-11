@@ -33,11 +33,17 @@ struct IsCombatUnit {
 
 struct IsTemporaryUnit {
     bool operator()(const sc2::Unit& unit_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
-    bool operator()(sc2::UNIT_TYPEID) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+struct IsAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
 struct IsVisibleMineralPatch {

@@ -299,40 +299,54 @@ void Hub::AssignVespeneHarvester(const Unit* refinery_) {
     m_busy_workers.Back()->GatherVespene(refinery_);
 }
 
-bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
+Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
         if (m_assignedBuildings.find(order_->assignee->tag) == m_assignedBuildings.end()
             && IsIdleUnit(order_->assignee->unit_type)(*order_->assignee)) {
-            m_assignedBuildings.insert(order_->assignee->tag);
-            return true;
+            return order_->assignee;
         }
     } else {
         for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)) {
             if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
-                m_assignedBuildings.insert(unit->tag);
-                order_->assignee = unit;
-                return true;
+                return unit;
             }
         }
     }
-    return false;
+    return nullptr;
 }
 
-bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
+Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_,
+                                             sc2::UNIT_TYPEID addon_requirement_) {
     if (order_->assignee) {
-        return AssignBuildingProduction(order_);
+        return GetFreeBuildingProductionAssignee(order_);
     }
 
     for (const auto& unit : gAPI->observer().GetUnits(
             MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
             sc2::Unit::Alliance::Self)) {
         if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
-            m_assignedBuildings.insert(unit->tag);
-            order_->assignee = unit;
-            return true;
+            return unit;
         }
     }
+    return nullptr;
+}
+
+bool Hub::AssignBuildingProduction(Order* order_, Unit* assignee) {
+    if (assignee && m_assignedBuildings.find(assignee->tag) == m_assignedBuildings.end()
+        && IsIdleUnit(assignee->unit_type)(*assignee)) {
+        m_assignedBuildings.insert(assignee->tag);
+        order_->assignee = assignee;
+        return true;
+    }
     return false;
+}
+
+bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
+    return AssignBuildingProduction(order_, GetFreeBuildingProductionAssignee(order_, building_));
+}
+
+bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
+    return AssignBuildingProduction(order_, GetFreeBuildingProductionAssignee(order_, building_, addon_requirement_));
 }
 
 const Expansions& Hub::GetExpansions() const {

@@ -4,52 +4,20 @@
 #include "Historican.h"
 #include "Hub.h"
 
+bool bp::Addon::CanBeBuilt(const Order* order_) {
+    return GetValidAssignee(order_) != nullptr;
+}
+
 bool bp::Addon::Build(Order *order_) {
     // TODO: If there isn't any space for the add-on (on any parent building), lift and re-place the building
 
-    // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
-    Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
-    auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
-    bool preSelected = order_->assignee != nullptr;
-
-    if (!order_->assignee) {
-        // Get all idle parent buildings that doesn't already have an add-on
-        auto parent_buildings = gAPI->observer().GetUnits(
-                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType, false), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
-                            sc2::Unit::Alliance::Self);
-
-        for (auto& building : parent_buildings) {
-            // Check if the addon can be placed
-            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(gAPI->observer().GetUnit(building->tag)))) {
-                order_->assignee = building;
-                break;
-            }
-        }
-
-        // Return false if no parent building that fulfilled the requirements was found
-        if (!order_->assignee) {
-            return false;
-        }
-    } else {
-        // Should there be more checks here (when the assignee/parent structure was already supplied) to see if the order will work?
-        // (e.g. check if it's the right kind of parent structure, if the parent structure doesn't already have an add-on etc.)
-        // Or is it preferred to let the function return true even if the action will fail?
-
-        // Check if the addon can be placed
-        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(order_->assignee))) {
-            return false;
-        }
+    Unit* assignee = GetValidAssignee(order_);
+    if (gHub->AssignBuildingProduction(order_, assignee)) {
+        gAPI->action().Build(*order_);
+        return true;
     }
 
-    if (!gHub->AssignBuildingProduction(order_, buildingType)) {
-        if (!preSelected)
-            order_->assignee = nullptr;
-        return false;
-    }
-
-    gAPI->action().Build(*order_);
-
-    return true;
+    return false;
 }
 
 sc2::UNIT_TYPEID bp::Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abilityId) {
@@ -66,4 +34,49 @@ sc2::UNIT_TYPEID bp::Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abil
         default:
             return sc2::UNIT_TYPEID::INVALID;
     }
+}
+
+Unit *bp::Addon::GetValidAssignee(const Order *order_) {
+    // TODO: This logic should be re-done in a nicer way when the whole "occupied logic" has been moved Hub to Unit
+
+    Unit* assignee = nullptr;
+    // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
+    Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+    auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
+    bool preSelected = order_->assignee != nullptr;
+
+    if (!order_->assignee) {
+        // Get all idle parent buildings that doesn't already have an add-on
+        auto parent_buildings = gAPI->observer().GetUnits(
+                MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(buildingType, false), HasAddon(sc2::UNIT_TYPEID::INVALID)}),
+                sc2::Unit::Alliance::Self);
+
+        for (auto& building : parent_buildings) {
+            // Check if the addon can be placed
+            if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(gAPI->observer().GetUnit(building->tag)))) {
+                assignee = building;
+                break;
+            }
+        }
+
+        // Return nullptr if no parent building that fulfilled the requirements was found
+        if (!assignee) {
+            return nullptr;
+        }
+    } else {
+        // Should there be more checks here (when the assignee/parent structure was already supplied) to see if the order will work?
+        // (e.g. check if it's the right kind of parent structure, if the parent structure doesn't already have an add-on etc.)
+        // Or is it preferred to let the function return true even if the action will fail?
+
+        // Check if the addon can be placed
+        if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(order_->assignee))) {
+            return nullptr;
+        }
+    }
+
+    if (!gHub->GetFreeBuildingProductionAssignee(order_, buildingType)) {
+        return nullptr;
+    }
+
+    return assignee;
 }

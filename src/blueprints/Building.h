@@ -9,6 +9,8 @@
 namespace bp {
 
 struct Building : Blueprint {
+    bool CanBeBuilt(const Order* order_) final;
+
     bool Build(Order* order_) final;
 };
 
