@@ -22,12 +22,19 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
     // it's good that this function is valid for all races if we want to calculate our opponents supply
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
+            return sum + 15;
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            return sum + 15.0f;
+            float CC_to_SB_ratio = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time /
+                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time;
+
+            if(unit_->build_progress > CC_to_SB_ratio) // We use this number because if it's smaller it will be faster to build a new
+                return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
+                                             
+            return sum;
 
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
         case sc2::UNIT_TYPEID::ZERG_HIVE:

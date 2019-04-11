@@ -16,14 +16,12 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Marine>(unit);
         case sc2::UNIT_TYPEID::TERRAN_HELLION:
             return std::make_unique<Hellion>(unit);
-        case sc2::UNIT_TYPEID::TERRAN_MARINE:
-            return std::make_unique<Marine>(unit);
         case sc2::UNIT_TYPEID::TERRAN_REAPER:
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
             return std::make_unique<SiegeTank>(unit);
         case sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER:
-            return std::make_unique<Battlecruiserk>(unit);
+            return std::make_unique<Battlecruiser>(unit);
         case sc2::UNIT_TYPEID::TERRAN_THOR:
             return std::make_unique<Thor>(unit);
         case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
