@@ -9,8 +9,6 @@
 
 class Worker;
 
-namespace API { struct Interface; }
-
 class Unit : public sc2::Unit {
 public:
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
@@ -21,11 +19,14 @@ public:
     bool operator==(const Unit& other) const;
 
     // Micro plugin for this unit
-    MicroPlugin* Micro() const;
+    MicroPlugin* Micro();
 
     Worker* AsWorker();
+    const Worker* AsWorker() const;
 
     sc2::UnitTypeData GetTypeData() const;
+
+    bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
 private:
     std::unique_ptr<MicroPlugin> m_micro;

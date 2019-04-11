@@ -14,7 +14,7 @@
 
 void Governor::OnGameStart(Builder* builder_) {
     // Initial build order
-    builder_->ScheduleConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
+    builder_->ScheduleSequentialConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
 
     enum Strategies {mech, bio, bunkerRush};
     Strategies strategy = mech;
@@ -85,7 +85,7 @@ void Governor::OnStep(Builder* builder_) {
         if (minerals < planned_cost)
             return;
         minerals -= planned_cost;
-        builder_->ScheduleConstruction(m_planner_queue.front());
+        builder_->ScheduleConstructionInRecommendedQueue(m_planner_queue.front());
         it = m_planner_queue.erase(it);
     }
 

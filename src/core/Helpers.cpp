@@ -26,6 +26,8 @@ bool IsUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
+    // TODO: Check hallucinations
+
     switch (unit_.unit_type.ToType()) {
        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
@@ -67,6 +69,9 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::ZERG_VIPER:
        case sc2::UNIT_TYPEID::ZERG_ZERGLING:
        case sc2::UNIT_TYPEID::ZERG_ZERGLINGBURROWED:
+       case sc2::UNIT_TYPEID::ZERG_BROODLING:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+       case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
 
        case sc2::UNIT_TYPEID::PROTOSS_ADEPT:
        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
@@ -93,20 +98,63 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
     }
 }
 
+bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
+    // TODO: Check hallucinations
+
+    switch (type_) {
+        case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
+        case sc2::UNIT_TYPEID::ZERG_BROODLING:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
+        case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
+
+        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
+        case sc2::UNIT_TYPEID::PROTOSS_DISRUPTORPHASED:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }
 
-bool IsBuilding::operator()(const sc2::UNIT_TYPEID unitTypeid_) const {
+bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     // NOTE: All units except overlord, larva & eggs require food,
     // thus we can use that to assume what is a building and what's not
-    auto data = gAPI->observer().GetUnitTypeData(unitTypeid_);
-    return data.food_required == 0 &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_EGG;
+    auto data = gAPI->observer().GetUnitTypeData(type_);
+    return data.food_required == 0 && !IsTemporaryUnit()(type_) &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+           type_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
+           type_ != sc2::UNIT_TYPEID::ZERG_EGG;
+}
+
+bool IsAddon::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsAddon::operator()(sc2::UNIT_TYPEID type_) const {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_REACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
@@ -273,6 +321,12 @@ bool MultiFilter::operator()(const sc2::Unit& unit_) const {
     }
 
     return false;
+}
+
+Inverse::Inverse(std::function<bool(const sc2::Unit& unit)> functor) : m_functor(std::move(functor)) {}
+
+bool Inverse::operator()(const sc2::Unit& unit_) const {
+    return !m_functor(unit_);
 }
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {

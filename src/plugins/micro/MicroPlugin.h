@@ -31,7 +31,7 @@ protected:
 
     bool CanCast(sc2::ABILITY_ID ability_id);
 
-    void Attack(Unit* target);
+    void Attack(const Unit* target);
 
     void MoveTo(const sc2::Point2D& pos);
 
@@ -41,6 +41,8 @@ protected:
 
     void Cast(sc2::ABILITY_ID ability, const Unit* target);
 
+    void Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point);
+
     bool IsAttacking(const Unit* target) const;
 
     bool IsMoving() const;
@@ -48,6 +50,6 @@ protected:
     Unit* m_self;
 
 private:
-    Unit* m_target;
+    const Unit* m_target;
     bool m_moving;
 };

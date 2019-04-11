@@ -20,11 +20,14 @@ public:
     Units() = default;
     explicit Units(const sc2::Units& units_);
 
-    Unit* GetClosestUnit(const sc2::Point2D& point_) const;
+    Unit* GetClosestUnit(const sc2::Point2D& point_);
+    const Unit* GetClosestUnit(const sc2::Point2D& point_) const;
 
-    Unit* GetClosestUnit(sc2::Tag tag_) const;
+    Unit* GetClosestUnit(sc2::Tag tag_);
+    const Unit* GetClosestUnit(sc2::Tag tag_) const;
 
-    Unit* GetRandomUnit() const;
+    Unit* GetRandomUnit();
+    const Unit* GetRandomUnit() const;
 
     // Calculate the center point of all units and the radius of the circle encompassing them
     std::pair<sc2::Point2D, float> CalculateCircle() const;

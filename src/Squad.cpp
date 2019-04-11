@@ -12,8 +12,15 @@ void Squad::OnStep() {
     auto itr = std::remove_if(m_units.begin(), m_units.end(), [](auto* u) { return !u->is_alive; });
     m_units.erase(itr, m_units.end());
 
-    // Remove dead enemies
-    auto jitr = std::remove_if(m_enemies.begin(), m_enemies.end(), [](auto* u) { return !u->is_alive; });
+    // Remove dead enemies or enemies that went back into fog of war
+    auto jitr = std::remove_if(m_enemies.begin(), m_enemies.end(),
+        [](const Unit* u) {
+            if (!u->is_alive)
+                return true;
+            if (!u->IsInVision)
+                return true;
+            return false;
+        });
     m_enemies.erase(jitr, m_enemies.end());
 
     CalculateCenter();
@@ -137,4 +144,8 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
 
     if (!needToWait)
         gAPI->action().MoveTo(GetUnits(), position);
+}
+
+int Squad::Size() const {
+    return static_cast<int>(m_units.size());
 }

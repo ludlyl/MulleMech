@@ -4,7 +4,7 @@
 #include "objects/Worker.h"
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) {
+Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit), IsInVision(true) {
     if (unit.alliance == Unit::Alliance::Self) {
         m_micro = MicroPlugin::MakePlugin(this);
     }
@@ -14,7 +14,7 @@ bool Unit::operator==(const Unit& other) const {
     return tag == other.tag;
 }
 
-MicroPlugin* Unit::Micro() const {
+MicroPlugin* Unit::Micro() {
     return m_micro.get();
 }
 
@@ -36,7 +36,11 @@ void Unit::UpdateAPIData(const sc2::Unit& unit) {
 }
 
 Worker* Unit::AsWorker() {
-    if (auto worker = dynamic_cast<Worker*>(this)) {
+    return const_cast<Worker*>(const_cast<const Unit*>(this)->AsWorker());
+}
+
+const Worker* Unit::AsWorker() const {
+    if (auto worker = dynamic_cast<const Worker*>(this)) {
         return worker;
     } else {
         if (IsWorker()(*this))

@@ -7,6 +7,7 @@
 #include "Helpers.h"
 #include "plugins/micro/MicroPlugin.h"
 
+
 #include <sc2api/sc2_map_info.h>
 
 namespace API {
@@ -65,6 +66,11 @@ void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_) 
 void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
     const Unit* target_, bool queue_) {
     m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), target_, queue_);
+}
+
+void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+        const sc2::Point2D& point, bool queue_) {
+        m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), point, queue_);
 }
 
 void Action::LowerDepot(const Unit* assignee_) {
@@ -146,7 +152,7 @@ Units Observer::GetUnits(const sc2::Filter& filter_) const {
     //       does ForEachExistingUnit, and only applies the filter, it doesn't
     //       force alliance Self
     auto units = m_observer->GetUnits(filter_);
-    return Units(std::move(units));
+    return Units(units);
 }
 
 Units Observer::GetUnits(const sc2::Filter& filter_,
@@ -405,12 +411,16 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
 }
 
 void Interface::OnStep() {
+    for (auto& pair : m_unitObjects)
+        pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
+
     sc2::Units units = observer().m_observer->GetUnits();
     for (const sc2::Unit* unit : units) {
         auto itr = m_unitObjects.find(unit->tag);
         if (itr == m_unitObjects.end()) {
             m_unitObjects[unit->tag] = Unit::Make(*unit);
         } else {
+            itr->second->IsInVision = true;
             itr->second->UpdateAPIData(*unit);
         }
     }

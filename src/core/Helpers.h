@@ -31,9 +31,19 @@ struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsTemporaryUnit {
+    bool operator()(const sc2::Unit& unit_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
-    bool operator()(sc2::UNIT_TYPEID) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+struct IsAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
 struct IsVisibleMineralPatch {
@@ -138,6 +148,15 @@ struct MultiFilter {
 private:
     std::vector<std::function<bool(const sc2::Unit& unit)>> m_functors;
     Selector m_selector;
+};
+
+struct Inverse {
+    explicit Inverse(std::function<bool(const sc2::Unit& unit)> functor);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    std::function<bool(const sc2::Unit& unit)> m_functor;
 };
 
 // These should maybe be public on be placed somewhere else
