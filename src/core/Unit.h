@@ -13,10 +13,11 @@ class Unit : public sc2::Unit {
 public:
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);
+    Unit(const Unit&) = delete;
     virtual ~Unit() = default;
-    void UpdateAPIData(const sc2::Unit& unit);
-
     bool operator==(const Unit& other) const;
+
+    void UpdateAPIData(const sc2::Unit& unit);
 
     // Micro plugin for this unit
     MicroPlugin* Micro();
@@ -29,6 +30,14 @@ public:
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
 private:
+    // Makes sc2::Unit::orders private, this isn't a very pretty solution but as sc2::Unit::orders
+    // should never be used outside of this class it might be good to pick up on some bugs
+
+    // TODO: Fix orders
+//    using sc2::Unit::orders;
+//
+//    UnitOrder
+
     std::unique_ptr<MicroPlugin> m_micro;
 };
 

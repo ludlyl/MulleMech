@@ -1,15 +1,10 @@
 #include "Scouting.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "Historican.h"
 #include "Hub.h"
 #include "Reasoner.h"
 #include "IntelligenceHolder.h"
-
-Scouting::Scouting() :
-        m_scoutPhase(ScvScoutPhase::not_started), m_offensiveScv(nullptr), m_defensiveScv(nullptr) {
-}
 
 void Scouting::OnStep(Builder*) {
     // Early game scouting: if food is >= 15 and we haven't yet found our enemy base
@@ -27,10 +22,8 @@ void Scouting::OnStep(Builder*) {
 void Scouting::OnUnitIdle(Unit* unit, Builder*) {
     // Return to mining if defensive scout finished
     if (unit == m_defensiveScv) {
+        m_defensiveScv->Mine();
         m_defensiveScv = nullptr;
-        gBrain->planner().ReleaseUnit(unit);
-        // TODO: A hack to trigger OnUnitIdle again, as we can't access the Dispatcher
-        gAPI->action().MoveTo(unit, sc2::Point2D(unit->pos.x + 0.5f, unit->pos.y + 0.5f));
     }
 }
 
@@ -42,47 +35,6 @@ void Scouting::OnUnitDestroyed(Unit* unit, Builder*) {
     if (unit == m_defensiveScv) {
         gHistory.debug(LogChannel::scouting) << "Defensive SCV died" << std::endl;
         m_defensiveScv = nullptr;
-    }
-}
-
-void Scouting::OnUnitEnterVision(Unit* unit) {
-    // Ignore units we've seen before
-    if (m_seenUnits.find(unit->tag) != m_seenUnits.end())
-        return;
-
-    // Save base locations of our enemy
-    if (IsTownHall()(*unit)) {
-        bool main_base = false;
-        sc2::Point2D pos = unit->pos;
-
-        // Is it a main base?
-        for (auto possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
-            if (sc2::Distance2D(unit->pos, possible_start) < 5.0f + unit->radius) {
-                main_base = true;
-                pos = possible_start;
-                break;
-            }
-        }
-
-        // Is it THE main base or an expansion at another spawn location?
-        if (main_base && gIntelligenceHolder->EnemyHasBase(0)) {
-            if (sc2::Distance2D(pos, gIntelligenceHolder->GetEnemyBase(0)->town_hall_location) > 5.0f)
-                main_base = false;
-        }
-
-        // Save base location
-        if (main_base) {
-            if (!gIntelligenceHolder->EnemyHasBase(0))
-                gIntelligenceHolder->MarkEnemyMainBase(pos);
-        } else {
-            // NOTE: Currently we must know where the main base is before we save expansions
-            if (gIntelligenceHolder->EnemyHasBase(0)) {
-                gIntelligenceHolder->MarkEnemyExpansion(unit->pos);
-                gHistory.info(LogChannel::scouting) << "Found enemy expansion!" << std::endl;
-            } else {
-                return; // Do not remember the building until we've marked its location
-            }
-        }
     }
 }
 
@@ -100,20 +52,27 @@ void Scouting::ScvOffensiveScout() {
 
     // NOT STARTED
     if (m_scoutPhase == ScvScoutPhase::not_started && gAPI->observer().GetFoodUsed() >= 15) {
-        m_offensiveScv = gBrain->planner().ReserveUnit(sc2::UNIT_TYPEID::TERRAN_SCV);
-        if (!m_offensiveScv)
-            return;
+        auto outermostExpansion = gHub->GetOurExpansions().back();
+        if (outermostExpansion) {
+            m_offensiveScv = gHub->GetClosestFreeWorker(outermostExpansion->town_hall_location);
+        } else {
+            m_offensiveScv = gHub->GetClosestFreeWorker(gAPI->observer().StartingLocation());
+        }
+        if (m_offensiveScv) {
+            gHub->MarkWorkerAsBusy(m_offensiveScv);
+            m_offensiveScv->SetAsScout();
 
-        gAPI->action().Stop(m_offensiveScv);
+            gAPI->action().Stop(m_offensiveScv); // Why is this needed?
 
-        // Add all potential enemy base locations to our scout plan
-        m_scoutPhase = ScvScoutPhase::approaching;
-        auto locations = gAPI->observer().GameInfo().enemy_start_locations;
-        m_unscoutedBases.insert(m_unscoutedBases.end(), locations.begin(), locations.end());
-        assert(!m_unscoutedBases.empty() && "Must have at least one enemy start location");
+            // Add all potential enemy starting base locations to our scout plan
+            m_scoutPhase = ScvScoutPhase::approaching;
+            auto locations = gAPI->observer().GameInfo().enemy_start_locations;
+            m_unscoutedBases.insert(m_unscoutedBases.end(), locations.begin(), locations.end());
+            assert(!m_unscoutedBases.empty() && "Must have at least one enemy start location");
 
-        gHistory.debug(LogChannel::scouting) << "Initiating SCV scouting with " << m_unscoutedBases.size() <<
-            " possible enemy base locations" << std::endl;
+            gHistory.debug(LogChannel::scouting) << "Initiating SCV scouting with " << m_unscoutedBases.size() <<
+                                                 " possible enemy base locations" << std::endl;
+        }
     }
 
     if (m_scoutPhase == ScvScoutPhase::not_started)
@@ -185,11 +144,13 @@ void Scouting::ConsiderDefensiveScouting() {
     if (gAPI->observer().GetGameLoop() != 1680) // 1:15
         return;
 
-    auto scv = gBrain->planner().ReserveUnit(sc2::UNIT_TYPEID::TERRAN_SCV);
+    auto scv = gHub->GetClosestFreeWorker(gAPI->observer().StartingLocation());
     if (scv) {
         gHistory.debug(LogChannel::scouting) << "Scouting our base for proxy enemy buildings" << std::endl;
         m_defensiveScv = scv;
-        ScoutBase(scv, gAPI->observer().StartingLocation());
+        gHub->MarkWorkerAsBusy(m_defensiveScv);
+        m_defensiveScv->SetAsScout();
+        ScoutBase(m_defensiveScv, gAPI->observer().StartingLocation());
     }
 }
 

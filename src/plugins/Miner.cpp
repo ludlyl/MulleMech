@@ -5,10 +5,10 @@
 #include "Miner.h"
 #include "Hub.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Order.h"
 #include "core/Timer.h"
+#include "Reasoner.h"
 
 #include <sc2api/sc2_typeenums.h>
 
@@ -36,7 +36,7 @@ int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
 
 Unit* GetMovableWorker(const Units& workers) {
     for (auto& worker : workers) {
-        if (worker->AsWorker()->GetJob() == GATHERING_MINERALS)
+        if (worker->AsWorker()->GetJob() == Worker::Job::gathering_minerals)
             return worker;
     }
     return nullptr;
@@ -80,9 +80,15 @@ void SecureMineralsIncome(Builder* builder_) {
     if (orders.empty())
         return;
 
-    // TODO: Might not always want scv production to be "urgent/prioritized".
-    //  Either make the logic behind this more advanced or add two levels of "urgency" to Builder::ScheduleOrder(s)
-    builder_->ScheduleTrainingOrders(orders, true);
+    switch (gReasoner->GetPlayStyle()) {
+        case PlayStyle::very_defensive:
+        case PlayStyle::defensive:
+        case PlayStyle::all_in:
+            builder_->ScheduleTrainingOrders(orders);
+            break;
+        default:
+            builder_->ScheduleTrainingOrders(orders, true);
+    }
 }
 
 
@@ -185,15 +191,14 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
 }
 
 void Miner::OnUnitIdle(Unit* unit_, Builder*) {
-    if (gBrain->planner().IsUnitReserved(unit_))
-        return;
-
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
             // Send idle worker back to its Home Base
-            unit_->AsWorker()->Mine();
+            if (unit_->AsWorker()->GetJob() == Worker::Job::unemployed) {
+                unit_->AsWorker()->Mine();
+            }
             break;
         }
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
@@ -236,7 +241,7 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool exp
     auto roundRobinItr = otherExpansions.begin();
     for (auto worker_itr = itr->second.begin(); worker_itr != itr->second.end();) {
         auto worker = (*worker_itr)->AsWorker();
-        if (!expansionDied &&  worker->GetJob() != GATHERING_MINERALS) {
+        if (!expansionDied &&  worker->GetJob() != Worker::Job::gathering_minerals) {
             ++worker_itr;
             continue;
         }

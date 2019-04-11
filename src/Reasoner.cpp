@@ -1,5 +1,4 @@
 #include "Reasoner.h"
-#include "core/Brain.h"
 #include "Hub.h"
 #include "IntelligenceHolder.h"
 

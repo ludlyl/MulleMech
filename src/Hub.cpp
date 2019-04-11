@@ -1,3 +1,5 @@
+#include <utility>
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
@@ -43,8 +45,8 @@ Unit* Construction::GetScv() const {
     return scv;
 }
 
-Hub::Hub(sc2::Race current_race_, const Expansions& expansions_):
-    m_current_race(current_race_), m_expansions(expansions_),
+Hub::Hub(sc2::Race current_race_, Expansions expansions_):
+    m_current_race(current_race_), m_expansions(std::move(expansions_)),
     m_current_worker_type(sc2::UNIT_TYPEID::INVALID) {
     std::sort(m_expansions.begin(), m_expansions.end(),
         SortByDistance(gAPI->observer().StartingLocation()));
@@ -200,15 +202,23 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
 }
 
 void Hub::OnUnitIdle(Unit* unit_) {
+    // TODO: Have to loop through all units and check Job (in miner OnStep and make all unemployed mine maybe?)
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            if (m_busy_workers.Swap(unit_->AsWorker(), m_free_workers))
-                gHistory.info() << "Our busy worker has finished task" << std::endl;
-            return;
+            // TODO: This shouldn't be handled by Hub
+            auto job = unit_->AsWorker()->GetJob();
+            if (job == Worker::Job::gathering_minerals ||
+                job == Worker::Job::gathering_vespene ||
+                job == Worker::Job::building) {
+                if (m_busy_workers.Swap(unit_->AsWorker(), m_free_workers)) {
+                    unit_->AsWorker()->SetAsUnemployed();
+                    gHistory.info() << "Our busy worker has finished task" << std::endl;
+                }
+            }
+            break;
         }
-
         default:
             break;
     }
@@ -252,6 +262,10 @@ Worker* Hub::GetClosestFreeWorker(const sc2::Point2D& location_) {
         return nullptr;
 
     return closest_worker;
+}
+
+bool Hub::MarkWorkerAsBusy(Worker* worker) {
+    return m_free_workers.Swap(worker, m_busy_workers);
 }
 
 bool Hub::FreeWorkerExists() {

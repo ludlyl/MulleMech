@@ -218,12 +218,12 @@ void Builder::ResolveMissingWorkers() {
     for (auto& construction : constructions) {
         auto building = construction.GetBuilding();
         if (!construction.GetScv() && building) {
-            // TODO: The worker needs to be set as busy too!
             auto worker = gHub->GetClosestFreeWorker(building->pos);
             if (worker) {
                 gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
                     "; other one died" << std::endl;
-                gAPI->action().Cast(worker, sc2::ABILITY_ID::SMART, building);
+                gHub->MarkWorkerAsBusy(worker);
+                worker->Build(building);
                 construction.scv = worker;
             }
         }

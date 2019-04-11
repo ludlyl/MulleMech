@@ -29,7 +29,7 @@ struct Cache {
 
     void PopBack();
 
-    bool IsCached(const T* obj_) const;
+    bool Contains(const T* obj_) const;
 
     bool Swap(const T* obj_, Cache<T>& dst_);
 
@@ -71,7 +71,7 @@ void Cache<T>::PopBack() {
 }
 
 template <typename T>
-bool Cache<T>::IsCached(const T* obj_) const {
+bool Cache<T>::Contains(const T* obj_) const {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     return m_objects.end() != it;
@@ -153,7 +153,7 @@ struct Construction {
 };
 
 struct Hub {
-    Hub(sc2::Race current_race_, const Expansions& expansions_);
+    Hub(sc2::Race current_race_, Expansions  expansions_);
 
     void OnStep();
 
@@ -174,6 +174,8 @@ struct Hub {
     sc2::Race GetCurrentRace() const;
 
     Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
+
+    bool MarkWorkerAsBusy(Worker* worker);
 
     bool FreeWorkerExists();
 

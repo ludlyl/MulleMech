@@ -8,7 +8,6 @@
 #include "Reasoner.h"
 #include "IntelligenceHolder.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Map.h"
 #include "core/Timer.h"
@@ -31,7 +30,6 @@ Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
     gReasoner = std::make_unique<Reasoner>();
     gIntelligenceHolder = std::make_unique<IntelligenceHolder>();
-    gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
