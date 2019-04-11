@@ -53,7 +53,7 @@ void Governor::OnStep(Builder* builder_) {
     float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
 
     PlayStyle playstyle = gReasoner->GetPlayStyle();
-    float playstyle_modifier;
+    float greed_modifier;
 
     //TODO, fill in the other ones aswell
     switch (playstyle) {
@@ -63,12 +63,12 @@ void Governor::OnStep(Builder* builder_) {
     case PlayStyle::offensive:
     case PlayStyle::scout:
     case PlayStyle::normal:
-        playstyle_modifier = 1.f;
+        greed_modifier = 1.f;
         break;
 
     case PlayStyle::greedy:
         // This modifier is right now highly questionable.
-        playstyle_modifier = 2.f;
+        greed_modifier = 2.f;
         // resort the list
         PrioritizeCommandCenter();
         break;
@@ -135,6 +135,7 @@ void Governor::OnStep(Builder* builder_) {
     auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
+    // Variable used for messuring when we want to expand or not.
     int optimal_workers = 0;
 
 
@@ -154,8 +155,10 @@ void Governor::OnStep(Builder* builder_) {
         for (auto& refinery : refineries)
             optimal_workers += refinery->ideal_harvesters;
 
-        optimal_workers = optimal_workers / playstyle_modifier;
+        //If we greed, we want to increase the rate at which we expand by a multiple of 2.
+        optimal_workers = static_cast<int>(std::ceil(optimal_workers / greed_modifier));
 
+        //If we have more workers than the optimal amount we want to expand in order to place them at new commandcenters
         if (num_workers >= optimal_workers) {
             if(playstyle == PlayStyle::greedy)
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
