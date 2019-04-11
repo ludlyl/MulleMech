@@ -22,12 +22,16 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
     // it's good that this function is valid for all races if we want to calculate our opponents supply
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
+            return sum + 15;
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            return sum + 15.0f;
+            if(unit_->build_progress > 0.65f) // We use this number because if it's smaller it will be faster to build a new
+                return sum + 15.0f;           // supply depot than to wait for the command center to finish. (The real number is 0.7 but
+                                              // we use a 0.05 timer to add the time it takes to go from mineral line to placing the building)
+            return sum;
 
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
         case sc2::UNIT_TYPEID::ZERG_HIVE:

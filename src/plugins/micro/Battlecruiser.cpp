@@ -46,7 +46,7 @@ void Battlecruiser::OnCombatStep(const Units& enemies) {
                 Units copy = enemies;
                 //Finally, check if there is anything else worth bombing (We never want to waste a shot on a single marine or similar, but there might be some larger mech units or similar that we can shoot without completely overkilling it)
                 auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit* u) {
-                    return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_LIBERATOR || u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_LIBERATORAG || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_COLOSSUS || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_MOTHERSHIP || u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_ULTRALISK;
+                    return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_LIBERATOR || u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_LIBERATORAG || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_COLOSSUS || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_MOTHERSHIP || u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_ULTRALISK);
                 });copy.erase(itr, copy.end());
                 if(!copy.empty()){
                     Cast(sc2::ABILITY_ID::EFFECT_YAMATOGUN, copy.GetClosestUnit(m_self->pos));
