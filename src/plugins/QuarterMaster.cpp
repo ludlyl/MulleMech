@@ -28,9 +28,12 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            if(unit_->build_progress > 0.65f) // We use this number because if it's smaller it will be faster to build a new
-                return sum + 15.0f;           // supply depot than to wait for the command center to finish. (The real number is 0.7 but
-                                              // we use a 0.05 timer to add the time it takes to go from mineral line to placing the building)
+            float CC_to_SB_ratio = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time /
+                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time;
+
+            if(unit_->build_progress > CC_to_SB_ratio) // We use this number because if it's smaller it will be faster to build a new
+                return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
+                                             
             return sum;
 
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
