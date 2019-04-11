@@ -7,6 +7,7 @@
 #include "core/Converter.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "Reasoner.h"
 
 #include <sc2api/sc2_agent.h>
 
@@ -50,6 +51,28 @@ void Governor::OnStep(Builder* builder_) {
     int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
     int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
     float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
+
+    PlayStyle playstyle = gReasoner->GetPlayStyle();
+    float greed_modifier;
+
+    //TODO, fill in the other ones aswell
+    switch (playstyle) {
+    case PlayStyle::all_in:
+    case PlayStyle::defensive:
+    case PlayStyle::very_defensive:
+    case PlayStyle::offensive:
+    case PlayStyle::scout:
+    case PlayStyle::normal:
+        greed_modifier = 1.f;
+        break;
+
+    case PlayStyle::greedy:
+        // This modifier is right now highly questionable.
+        greed_modifier = 2.f;
+        // resort the list
+        PrioritizeCommandCenter();
+        break;
+    }
 
     if (minerals < 50)
        return;
@@ -108,6 +131,55 @@ void Governor::OnStep(Builder* builder_) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
     }
     //TODO expand our base based on enum from higher-order plugin.
+
+    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
+    // Variable used for messuring when we want to expand or not.
+    int optimal_workers = 0;
+
+
+    //Counting plans of expansion
+    int scheduled_cc = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
+
+    for (const auto i : m_planner_queue) {
+        if (i == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
+            scheduled_cc++;
+    }
+
+    if (scheduled_cc == 0) {
+
+        // Calculate Optimal Workers
+        for (auto& cc : command_centers)
+            optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
+        for (auto& refinery : refineries)
+            optimal_workers += refinery->ideal_harvesters;
+
+        //If we greed, we want to increase the rate at which we expand by a multiple of 2.
+        optimal_workers = static_cast<int>(std::ceil(optimal_workers / greed_modifier));
+
+        //If we have more workers than the optimal amount we want to expand in order to place them at new commandcenters
+        if (num_workers >= optimal_workers) {
+            if(playstyle == PlayStyle::greedy)
+                m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            else
+                m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            //TODO add orbital command?
+        }
+    }
+}
+
+void Governor::PrioritizeCommandCenter() {
+    int start_to_sort = 0;
+    for (auto it = m_planner_queue.begin(); it != m_planner_queue.end(); ++it) {
+        if (!start_to_sort && *it != sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
+            start_to_sort = 1;
+
+        if (*it == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER && start_to_sort) {
+            m_planner_queue.splice(m_planner_queue.begin(), m_planner_queue, it);
+            break;
+        }
+    }
 }
 
 int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {
