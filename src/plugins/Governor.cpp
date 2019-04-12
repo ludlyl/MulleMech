@@ -34,6 +34,8 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
