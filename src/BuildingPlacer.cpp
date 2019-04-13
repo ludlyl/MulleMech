@@ -7,7 +7,7 @@
 
 sc2::Point3D BuildingPlacer::GetCenterBehindMinerals(const sc2::Point3D& baseLocation) {
     // TODO: Reuse Map's Clusters?
-    auto mineralPatches = GetVisibleMineralPatchesAtBase(baseLocation);
+    auto mineralPatches = GetMineralPatchesAtBase(baseLocation);
 
     if (mineralPatches.empty())
         return baseLocation;
@@ -167,6 +167,11 @@ float BuildingPlacer::GetBaseKValue(const sc2::Point3D& baseLocation) {
 Units BuildingPlacer::GetVisibleMineralPatchesAtBase(const sc2::Point3D& baseLocation) {
     return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
                                                  {IsVisibleMineralPatch(), IsWithinDist(baseLocation, 15.0f)}));
+}
+
+Units BuildingPlacer::GetMineralPatchesAtBase(const sc2::Point3D& baseLocation) {
+    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                {IsMineralPatch(), IsWithinDist(baseLocation, 15.0f)}));
 }
 
 Units BuildingPlacer::GetVisibleGeysersAtBase(const sc2::Point3D& baseLocation) {

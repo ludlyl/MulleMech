@@ -27,6 +27,8 @@ private:
 
     static Units GetVisibleMineralPatchesAtBase(const sc2::Point3D& baseLocation);
 
+    static Units GetMineralPatchesAtBase(const sc2::Point3D& baseLocation);
+
     static Units GetVisibleGeysersAtBase(const sc2::Point3D& baseLocation);
 
     static sc2::Point2D GetPointInLine(const sc2::Point2D& p1, float kValue, float dist);
