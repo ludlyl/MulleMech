@@ -210,7 +210,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
             }
         }
 
-        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && sc2::GetRandomInteger(0, 4) != 0) // 20% chance of using hellion for harass
+        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && sc2::GetRandomFraction() < HellionHarassChance)
             add = false;
 
         if (add) {
@@ -224,7 +224,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Assign to main squad or reinforce squad
-    if (m_mainSquad->IsTaskFinished()) {
+    if (m_mainSquad->IsTaskFinished() && sc2::Distance2D(unit_->pos, m_mainSquad->GetCenter()) >= ReinforceSquadDist) {
         m_mainSquad->AddUnit(unit_);
         gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition(), true);
     } else {

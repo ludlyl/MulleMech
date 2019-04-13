@@ -23,4 +23,7 @@ protected:
 private:
     std::shared_ptr<Squad> m_targetSquad;
     bool m_sent;
+
+    static constexpr float MaxAttackRadius = 16.0f;
+    static constexpr float AggroRadius = 8.0f;
 };
