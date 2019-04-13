@@ -99,15 +99,13 @@ void QuarterMaster::OnStep(Builder* builder_) {
 
     float expected_consumption =
         gAPI->observer().GetFoodUsed()
-        + 8.0f  // NOTE (alkurbatov): Plan ahead.
         + std::accumulate(
             training_orders.begin(),
             training_orders.end(),
             0.0f,
             CalcConsumption());
 
-    float expected_supply =
-        std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies())
+    float expected_supply =(std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies())
         + std::accumulate(
             nonseq_construction_orders.begin(),
             nonseq_construction_orders.end(),
@@ -122,7 +120,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
             training_orders.begin(),
             training_orders.end(),
             0.0f,
-            CalcSupplies());
+            CalcSupplies()))*m_expected_supply_margin_quotient;
 
     if (expected_supply > expected_consumption || expected_supply >= 200.0f)
         return;
