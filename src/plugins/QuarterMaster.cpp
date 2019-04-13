@@ -78,7 +78,7 @@ float CalcConsumption::operator()(float sum, const Order& order_) const {
 }  // namespace
 
 QuarterMaster::QuarterMaster():
-    Plugin(), m_skip_turn(false), m_expected_supply_marginal(1.2f) {
+    Plugin(), m_skip_turn(false) {
 }
 
 void QuarterMaster::OnStep(Builder* builder_) {
@@ -113,7 +113,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
             training_orders.begin(),
             training_orders.end(),
             0.0f,
-            CalcSupplies()))*m_expected_supply_marginal;
+            CalcSupplies()))*m_expected_supply_margin_quotient;
 
     if (expected_supply > expected_consumption || expected_supply >= 200.0f)
         return;
