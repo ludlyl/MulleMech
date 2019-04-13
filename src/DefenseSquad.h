@@ -4,13 +4,15 @@
 
 class DefenseSquad : public Squad {
 public:
-    DefenseSquad(Units units, Units enemies);
+    DefenseSquad(Units units, Units enemies, Units allies);
 
     bool IsTaskFinished() const override;
 
     // Update enemies if we currently are defending against at least one enemy in `enemies`,
     // returns false otherwise
     bool UpdateEnemies(const Units& enemies);
+
+    bool UpdateAllies(const Units& allies);
 
 protected:
     void Update() override;

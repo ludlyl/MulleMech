@@ -7,7 +7,7 @@ Cyclone::Cyclone(Unit* unit)
 {
 }
 
-void Cyclone::OnCombatStep(const Units& enemies) {
+void Cyclone::OnCombatStep(const Units& enemies, const Units& allies) {
     const Unit* closestEnemy = enemies.GetClosestUnit(m_self->pos);
     float closestEnemyDistance = Distance2D(m_self->pos, closestEnemy->pos);
 

@@ -7,5 +7,5 @@ class Reaper : public DefaultUnit {
 public:
     Reaper(Unit* unit);
 
-    void OnCombatStep(const Units& enemies) override;
+    void OnCombatStep(const Units& enemies, const Units& allies) override;
 };

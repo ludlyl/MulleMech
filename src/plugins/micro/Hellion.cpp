@@ -7,7 +7,7 @@ Hellion::Hellion(Unit* unit)
 {
 }
 
-void Hellion::OnCombatStep(const Units& enemies) {
+void Hellion::OnCombatStep(const Units& enemies, const Units& allies) {
 
     if (m_self->weapon_cooldown == 0) {
         Units copy = enemies;

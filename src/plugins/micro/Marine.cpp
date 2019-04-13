@@ -6,7 +6,7 @@ Marine::Marine(Unit* unit)
 {
 }
 
-void Marine::OnCombatStep(const Units& enemies) {
+void Marine::OnCombatStep(const Units& enemies, const Units& allies) {
     DefaultUnit::OnCombatStep(enemies);
 
     // Stim pack

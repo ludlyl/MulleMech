@@ -58,6 +58,17 @@ void Squad::RemoveEnemey(Unit* unit) {
     m_enemies.remove(unit);
 }
 
+void Squad::AddAlly(Unit* unit) {
+    assert(!m_units.contains(unit) && "Tried adding enemy to squad targets twice");
+    gHistory.debug(LogChannel::combat) << SquadName() << " got new ally: " <<
+                                       UnitTypeToName(unit->unit_type) << std::endl;
+    m_allies.push_back(unit);
+}
+
+void Squad::RemoveAlly(Unit* unit) {
+    m_allies.remove(unit);
+}
+
 void Squad::RegroupAt(const sc2::Point2D& position) {
     gHistory.debug(LogChannel::combat) << SquadName() << " regrouping" << std::endl;
     m_regroupPos = position;

@@ -7,7 +7,7 @@ SiegeTank::SiegeTank(Unit* unit)
 {
 }
 
-void SiegeTank::OnCombatStep(const Units& enemies) {
+void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
     DefaultUnit::OnCombatStep(enemies);
 
     float closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);

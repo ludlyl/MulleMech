@@ -7,7 +7,7 @@ Thor::Thor(Unit* unit)
 {
 }
 
-void Thor::OnCombatStep(const Units& enemies) {
+void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     Units copy = enemies;
     //Remove cannon fodder from potential targets
     auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit* u) {

@@ -36,9 +36,9 @@ MicroPlugin::MicroPlugin(Unit* unit) :
 {
 }
 
-void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies) {
+void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies, const Units& allies) {
     m_self = self;
-    OnCombatStep(enemies);
+    OnCombatStep(enemies, allies);
 }
 
 void MicroPlugin::OnCombatOver(Unit* self) {

@@ -6,7 +6,7 @@ class SiegeTank : public DefaultUnit {
 public:
     SiegeTank(Unit* unit);
 
-    void OnCombatStep(const Units& enemies) override;
+    void OnCombatStep(const Units& enemies, const Units& allies) override;
 
     void OnCombatEnded() override;
 

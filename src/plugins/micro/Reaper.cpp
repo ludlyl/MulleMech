@@ -6,7 +6,7 @@ Reaper::Reaper(Unit* unit)
 {
 }
 
-void Reaper::OnCombatStep(const Units& enemies) {
+void Reaper::OnCombatStep(const Units& enemies, const Units& allies) {
     DefaultUnit::OnCombatStep(enemies);
 
     const Unit* target = enemies.GetClosestUnit(m_self->pos);
