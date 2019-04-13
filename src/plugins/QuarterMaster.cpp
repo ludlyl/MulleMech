@@ -42,7 +42,7 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
             return sum + 6.0f;
 
         case sc2::UNIT_TYPEID::ZERG_EGG:
-            if (unit_->orders.front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD)
+            if (unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD)
                 return sum + 8.0f;
 
             return sum;

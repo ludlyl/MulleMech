@@ -9,7 +9,14 @@
 
 class Worker;
 
+namespace API {
+    struct Action;
+};
+
 class Unit : public sc2::Unit {
+    friend API::Action; // Needed to set m_order_queued_in_current_step
+    //friend Unit* API::Interface::WrapUnit(const sc2::Unit*); // Needed to be able to create objects of Unit
+
 public:
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);
@@ -17,7 +24,18 @@ public:
     virtual ~Unit() = default;
     bool operator==(const Unit& other) const;
 
-    void UpdateAPIData(const sc2::Unit& unit);
+    // This needs to be called at the start of every step
+    void Update();
+    // Updates the API data (sc2::Unit) too
+    void Update(const sc2::Unit& unit);
+
+    // I.e. is sc2::Unit::orders empty and m_order_queued_in_current_step = false
+    bool IsIdle() const;
+
+    // Might want a better name for this (OrdersSize?)
+    int NumberOfOrders() const;
+
+    const std::vector<sc2::UnitOrder>& GetPreviousStepOrders() const;
 
     // Micro plugin for this unit
     MicroPlugin* Micro();
@@ -32,11 +50,12 @@ public:
 private:
     // Makes sc2::Unit::orders private, this isn't a very pretty solution but as sc2::Unit::orders
     // should never be used outside of this class it might be good to pick up on some bugs
+    using sc2::Unit::orders;
 
-    // TODO: Fix orders
-//    using sc2::Unit::orders;
-//
-//    UnitOrder
+    // This is set to true if an order (attack, move, stop etc.) has been given to the unit.
+    // This variable should be reset at the start of every step (by calling the Update function).
+    // (An alternative to having an update function would be to save the step number instead)
+    bool m_order_queued_in_current_step = false;
 
     std::unique_ptr<MicroPlugin> m_micro;
 };

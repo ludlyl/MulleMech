@@ -67,8 +67,7 @@ void SecureMineralsIncome(Builder* builder_) {
         if (cc->build_progress != 1.0f)
             continue;
 
-        // TODO: This should include orders scheduled this step; add functionality to Unit
-        if (!cc->orders.empty())
+        if (!cc->IsIdle())
             continue;
 
         if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
@@ -102,7 +101,7 @@ void SecureVespeneIncome() {
        // Makes sure that we never have more than 3 workers on gas.
        else if (i->assigned_harvesters > i->ideal_harvesters) { 
            for (auto& j : workers) {
-               if (i->tag == j->orders.front().target_unit_tag) {
+               if (i->tag == j->GetPreviousStepOrders().front().target_unit_tag) {
                    j->AsWorker()->Mine();
                    break;
                }

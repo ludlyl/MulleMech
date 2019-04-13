@@ -30,9 +30,30 @@ std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit) {
     }
 }
 
-void Unit::UpdateAPIData(const sc2::Unit& unit) {
+void Unit::Update() {
+    m_order_queued_in_current_step = false;
+}
+
+void Unit::Update(const sc2::Unit& unit) {
     assert(tag == unit.tag);
     sc2::Unit::operator=(unit);
+    m_order_queued_in_current_step = false;
+}
+
+bool Unit::IsIdle() const {
+    return orders.empty() && !m_order_queued_in_current_step;
+}
+
+int Unit::NumberOfOrders() const {
+    if (m_order_queued_in_current_step) {
+        return static_cast<int>(orders.size() + 1);
+    } else {
+        return static_cast<int>(orders.size());
+    }
+}
+
+const std::vector<sc2::UnitOrder>& Unit::GetPreviousStepOrders() const {
+    return orders;
 }
 
 Worker* Unit::AsWorker() {

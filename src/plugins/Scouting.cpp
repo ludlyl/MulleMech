@@ -79,7 +79,7 @@ void Scouting::ScvOffensiveScout() {
         return;
 
     // APPROACHING ENEMY BASE
-    if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->orders.empty()) {
+    if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->IsIdle()) {
         // If we found main base of enemy; go into exploring mode
         if (gIntelligenceHolder->EnemyHasBase(0)) {
             m_scoutPhase = ScvScoutPhase::explore_enemy_base;
@@ -103,7 +103,7 @@ void Scouting::ScvOffensiveScout() {
         }
     }
     // EXPLORING ENEMY BASE
-    else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->orders.empty()) {
+    else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->IsIdle()) {
         auto mainBase = gIntelligenceHolder->GetEnemyBase(0);
 
         // Scout the main base of the enemy
@@ -116,7 +116,7 @@ void Scouting::ScvOffensiveScout() {
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL
-    else if (m_scoutPhase == ScvScoutPhase::check_for_natural && m_offensiveScv->orders.empty()) {
+    else if (m_scoutPhase == ScvScoutPhase::check_for_natural && m_offensiveScv->IsIdle()) {
         auto likelyExpansions = gReasoner->GetLikelyEnemyExpansions();
         assert(!likelyExpansions.empty());
         gAPI->action().MoveTo(m_offensiveScv, likelyExpansions[0]->town_hall_location);
@@ -127,7 +127,7 @@ void Scouting::ScvOffensiveScout() {
     }
 }
 
-void Scouting::ScoutBase(const Unit* unit, sc2::Point2D base) {
+void Scouting::ScoutBase(Unit* unit, sc2::Point2D base) {
     // TODO(?): This only works if main base is at a different elevation (i.e. has a ramp)
     auto baseHeight = gAPI->observer().TerrainHeight(base);
     auto points = PointsInCircle(18.0f, base, baseHeight);

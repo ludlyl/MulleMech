@@ -43,7 +43,7 @@ public:
 
     void SetAsFighter();
 
-    // Will always return idle for enemy workers
+    // Will always return unemployed for enemy workers
     Job GetJob() const { return m_job; }
 
 private:

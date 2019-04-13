@@ -39,7 +39,7 @@ private:
     void ExpansionScout();
 
     // Attempt to scout around a main base; queues all movement commands at once
-    void ScoutBase(const Unit* unit, sc2::Point2D base);
+    void ScoutBase(Unit* unit, sc2::Point2D base);
 
     // DATA
 
