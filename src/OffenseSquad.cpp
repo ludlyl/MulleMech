@@ -1,5 +1,4 @@
 #include "OffenseSquad.h"
-
 #include "Historican.h"
 #include "core/API.h"
 #include "core/Helpers.h"
@@ -12,7 +11,7 @@ void OffenseSquad::TakeOver(sc2::Point2D position) {
     gHistory.info(LogChannel::combat) << SquadName() << " taking over new position" << std::endl;
     m_finished = false;
     m_defending = false;
-    m_attackPosition = std::move(position);
+    m_attackPosition = position;
 }
 
 void OffenseSquad::Update() {
