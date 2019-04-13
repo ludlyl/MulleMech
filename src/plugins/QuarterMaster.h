@@ -16,4 +16,5 @@ struct QuarterMaster : Plugin {
 
  private:
     bool m_skip_turn;
+    float m_expected_supply_marginal;
 };
