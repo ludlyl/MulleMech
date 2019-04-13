@@ -139,6 +139,12 @@ void CallDownMULE() {
 }  // namespace
 
 void Miner::OnStep(Builder* builder_) {
+    // Make all unemployed workers mine
+    Units unemployed_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::unemployed), sc2::Unit::Alliance::Self);
+    for (auto& unit : unemployed_workers) {
+        unit->AsWorker()->Mine();
+    }
+
     if (gAPI->observer().GetGameLoop() % steps_between_balance == 0)
         BalanceWorkers();
     SecureMineralsIncome(builder_);
@@ -191,15 +197,6 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
 
 void Miner::OnUnitIdle(Unit* unit_, Builder*) {
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            // Send idle worker back to its Home Base
-            if (unit_->AsWorker()->GetJob() == Worker::Job::unemployed) {
-                unit_->AsWorker()->Mine();
-            }
-            break;
-        }
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
             // Send MULE to closest mineral patch of our Starting Location on idle
             // TODO: Maybe send it to nearest mineral patch of a base belonging to us?

@@ -54,12 +54,11 @@ void Scouting::ScvOffensiveScout() {
     if (m_scoutPhase == ScvScoutPhase::not_started && gAPI->observer().GetFoodUsed() >= 15) {
         auto outermostExpansion = gHub->GetOurExpansions().back();
         if (outermostExpansion) {
-            m_offensiveScv = gHub->GetClosestFreeWorker(outermostExpansion->town_hall_location);
+            m_offensiveScv = GetClosestFreeWorker(outermostExpansion->town_hall_location);
         } else {
-            m_offensiveScv = gHub->GetClosestFreeWorker(gAPI->observer().StartingLocation());
+            m_offensiveScv = GetClosestFreeWorker(gAPI->observer().StartingLocation());
         }
         if (m_offensiveScv) {
-            gHub->MarkWorkerAsBusy(m_offensiveScv);
             m_offensiveScv->SetAsScout();
 
             gAPI->action().Stop(m_offensiveScv); // Why is this needed?
@@ -144,11 +143,10 @@ void Scouting::ConsiderDefensiveScouting() {
     if (gAPI->observer().GetGameLoop() != 1680) // 1:15
         return;
 
-    auto scv = gHub->GetClosestFreeWorker(gAPI->observer().StartingLocation());
+    auto scv = GetClosestFreeWorker(gAPI->observer().StartingLocation());
     if (scv) {
         gHistory.debug(LogChannel::scouting) << "Scouting our base for proxy enemy buildings" << std::endl;
         m_defensiveScv = scv;
-        gHub->MarkWorkerAsBusy(m_defensiveScv);
         m_defensiveScv->SetAsScout();
         ScoutBase(m_defensiveScv, gAPI->observer().StartingLocation());
     }

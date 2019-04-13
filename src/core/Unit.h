@@ -11,11 +11,10 @@ class Worker;
 
 namespace API {
     struct Action;
-};
+}
 
 class Unit : public sc2::Unit {
     friend API::Action; // Needed to set m_order_queued_in_current_step
-    //friend Unit* API::Interface::WrapUnit(const sc2::Unit*); // Needed to be able to create objects of Unit
 
 public:
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);

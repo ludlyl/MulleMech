@@ -155,8 +155,6 @@ struct Construction {
 struct Hub {
     Hub(sc2::Race current_race_, Expansions  expansions_);
 
-    void OnStep();
-
     void OnUnitCreated(Unit* unit_);
 
     void OnUnitDestroyed(Unit* unit_);
@@ -173,14 +171,6 @@ struct Hub {
 
     sc2::Race GetCurrentRace() const;
 
-    Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
-
-    bool MarkWorkerAsBusy(Worker* worker);
-
-    bool FreeWorkerExists();
-
-    int GetNumberOfFreeWorkers();
-
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
     bool AssignRefineryConstruction(Order* order_, Unit* geyser_);
@@ -189,7 +179,7 @@ struct Hub {
 
     void AssignVespeneHarvester(const Unit* refinery_);
 
-    // Returns nullptr if no building to produce Units/Upgrades/Addons/Mutations from/on is avaliable
+    // Returns nullptr if no building to produce Units/Upgrades/Addons/Mutations from/on is available
     Unit* GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);
 
     // If INVALID is sent in as a addon_requirement (and no assignee is provided) the order is assigned to a unit with no add-on
@@ -221,10 +211,6 @@ struct Hub {
 
     Cache<Unit> m_captured_geysers;
 
-    Cache<Worker> m_busy_workers;
-    Cache<Worker> m_free_workers;
-
-    std::unordered_set<sc2::Tag> m_assignedBuildings;
     std::vector<Construction> m_constructions;
 };
 

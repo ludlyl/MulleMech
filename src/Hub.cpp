@@ -69,10 +69,6 @@ Hub::Hub(sc2::Race current_race_, Expansions expansions_):
     }
 }
 
-void Hub::OnStep() {
-    m_assignedBuildings.clear();
-}
-
 void Hub::OnUnitCreated(Unit* unit_) {
     // Record newly started constructions, noting which SCV is constructing it
     if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
@@ -98,12 +94,6 @@ void Hub::OnUnitCreated(Unit* unit_) {
     }
 
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE:
-            m_free_workers.Add(unit_->AsWorker());
-            return;
-
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
@@ -154,18 +144,6 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
     }
 
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            if (m_busy_workers.Remove(unit_->AsWorker())) {
-                gHistory.info() << "Our busy worker was destroyed" << std::endl;
-                return;
-            }
-
-            m_free_workers.Remove(unit_->AsWorker());
-            return;
-        }
-
         case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
         case sc2::UNIT_TYPEID::TERRAN_REFINERY:
         case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
@@ -212,10 +190,8 @@ void Hub::OnUnitIdle(Unit* unit_) {
             if (job == Worker::Job::gathering_minerals ||
                 job == Worker::Job::gathering_vespene ||
                 job == Worker::Job::building) {
-                if (m_busy_workers.Swap(unit_->AsWorker(), m_free_workers)) {
-                    unit_->AsWorker()->SetAsUnemployed();
-                    gHistory.info() << "Our busy worker has finished task" << std::endl;
-                }
+                unit_->AsWorker()->SetAsUnemployed();
+                gHistory.info() << "Our busy worker has finished task" << std::endl;
             }
             break;
         }
@@ -256,26 +232,6 @@ sc2::Race Hub::GetCurrentRace() const {
     return m_current_race;
 }
 
-Worker* Hub::GetClosestFreeWorker(const sc2::Point2D& location_) {
-    Worker* closest_worker = m_free_workers.GetClosestTo(location_);
-    if (!closest_worker)
-        return nullptr;
-
-    return closest_worker;
-}
-
-bool Hub::MarkWorkerAsBusy(Worker* worker) {
-    return m_free_workers.Swap(worker, m_busy_workers);
-}
-
-bool Hub::FreeWorkerExists() {
-    return !m_free_workers.Empty();
-}
-
-int Hub::GetNumberOfFreeWorkers() {
-    return static_cast<int>(m_free_workers.Count());
-}
-
 sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
     return m_current_worker_type;
 }
@@ -285,9 +241,7 @@ bool Hub::AssignRefineryConstruction(Order* order_, Unit* geyser_) {
     if (!worker)
         return false;
 
-    m_free_workers.Swap(worker, m_busy_workers);
-
-    m_busy_workers.Back()->BuildRefinery(order_, geyser_);
+    worker->BuildRefinery(order_, geyser_);
     ClaimObject(geyser_);
     return true;
 }
@@ -297,9 +251,7 @@ bool Hub::AssignBuildTask(Order* order_, const sc2::Point2D& point_) {
     if (!worker)
         return false;
 
-    m_free_workers.Swap(worker, m_busy_workers);
-
-    m_busy_workers.Back()->Build(order_, point_);
+    worker->Build(order_, point_);
     return true;
 }
 
@@ -308,22 +260,18 @@ void Hub::AssignVespeneHarvester(const Unit* refinery_) {
     if (!worker)
         return;
 
-    m_free_workers.Swap(worker, m_busy_workers);
-
-    m_busy_workers.Back()->GatherVespene(refinery_);
+    worker->GatherVespene(refinery_);
 }
 
 Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
-        if (m_assignedBuildings.find(order_->assignee->tag) == m_assignedBuildings.end()
-            && IsIdleUnit(order_->assignee->unit_type)(*order_->assignee)) {
+        if (IsIdleUnit(order_->assignee->unit_type)(*order_->assignee)) {
             return order_->assignee;
         }
     } else {
-        for (const auto& unit : gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self)) {
-            if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
-                return unit;
-            }
+        auto units = gAPI->observer().GetUnits(IsIdleUnit(building_), sc2::Unit::Alliance::Self);
+        if (!units.empty()) {
+            return units.front();
         }
     }
     return nullptr;
@@ -335,20 +283,17 @@ Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPE
         return GetFreeBuildingProductionAssignee(order_);
     }
 
-    for (const auto& unit : gAPI->observer().GetUnits(
+    auto units = gAPI->observer().GetUnits(
             MultiFilter(MultiFilter::Selector::And, {IsIdleUnit(building_), HasAddon(addon_requirement_)}),
-            sc2::Unit::Alliance::Self)) {
-        if (m_assignedBuildings.find(unit->tag) == m_assignedBuildings.end()) {
-            return unit;
-        }
+            sc2::Unit::Alliance::Self);
+    if (!units.empty()) {
+        return units.front();
     }
     return nullptr;
 }
 
 bool Hub::AssignBuildingProduction(Order* order_, Unit* assignee) {
-    if (assignee && m_assignedBuildings.find(assignee->tag) == m_assignedBuildings.end()
-        && IsIdleUnit(assignee->unit_type)(*assignee)) {
-        m_assignedBuildings.insert(assignee->tag);
+    if (assignee && IsIdleUnit(assignee->unit_type)(*assignee)) {
         order_->assignee = assignee;
         return true;
     }

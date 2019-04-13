@@ -13,6 +13,7 @@
 #include <functional>
 #include <initializer_list>
 #include <vector>
+#include <objects/Worker.h>
 
 constexpr float F_PI = 3.1415927f;
 constexpr float F_2PI = 2.0f * 3.1415927f;
@@ -93,6 +94,15 @@ struct IsIdleUnit {
 
 struct IsWorker {
     bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsWorkerWithJob {
+    explicit IsWorkerWithJob(Worker::Job job_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    Worker::Job m_job;
 };
 
 struct IsGasWorker {
@@ -198,3 +208,10 @@ std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_);
 std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData& data_);
 
 std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+
+// I.e. get mining and unemployed workers
+Units GetFreeWorkers();
+
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
+
+bool FreeWorkerExists();

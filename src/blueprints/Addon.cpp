@@ -36,14 +36,11 @@ sc2::UNIT_TYPEID bp::Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abil
     }
 }
 
-Unit *bp::Addon::GetValidAssignee(const Order *order_) {
-    // TODO: This logic should be re-done in a nicer way when the whole "occupied logic" has been moved Hub to Unit
-
+Unit* bp::Addon::GetValidAssignee(const Order* order_) {
     Unit* assignee = nullptr;
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
     Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
     auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
-    bool preSelected = order_->assignee != nullptr;
 
     if (!order_->assignee) {
         // Get all idle parent buildings that doesn't already have an add-on
@@ -72,10 +69,6 @@ Unit *bp::Addon::GetValidAssignee(const Order *order_) {
         if (!gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(order_->assignee))) {
             return nullptr;
         }
-    }
-
-    if (!gHub->GetFreeBuildingProductionAssignee(order_, buildingType)) {
-        return nullptr;
     }
 
     return assignee;
