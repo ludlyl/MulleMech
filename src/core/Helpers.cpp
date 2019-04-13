@@ -235,10 +235,11 @@ IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_id
 
 bool IsIdleUnit::operator()(const sc2::Unit& unit_) const {
     if (IsUnit(m_type)(unit_)) {
+        Unit* wrappedUnit = gAPI->WrapUnit(&unit_);
         if (m_count_non_full_reactor_as_idle && HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
-            return unit_.orders.size() < 2;
+            return wrappedUnit->NumberOfOrders() < 2;
         } else {
-            return unit_.orders.empty();
+            return wrappedUnit->IsIdle();
         }
     }
     return false;
