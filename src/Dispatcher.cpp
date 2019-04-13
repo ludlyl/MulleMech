@@ -21,7 +21,6 @@
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
 #include "plugins/micro/Reaper.h"
-#include "plugins/ReaperHarass.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -56,8 +55,6 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new CombatCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
-    //m_plugins.emplace_back(new ReaperHarass());
-    //m_plugins.emplace_back(new Reaper());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
