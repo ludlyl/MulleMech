@@ -20,6 +20,9 @@ struct CalcSupplies {
 float CalcSupplies::operator()(float sum, const Unit* unit_) const {
     // Even though MulleMech is only able to play terran,
     // it's good that this function is valid for all races if we want to calculate our opponents supply
+    float CC_to_SB_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
+        gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
+
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
             return sum + 15;
@@ -28,8 +31,6 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            float CC_to_SB_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
-                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
 
             if(unit_->build_progress > CC_to_SB_ratio) // We use this number because if it's smaller it will be faster to build a new
                 return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
