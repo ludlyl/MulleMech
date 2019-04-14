@@ -221,6 +221,10 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             anti_air = true;
     }
 
+    int num_of_hellbats = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_HELLIONTANK) +
+        CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_HELLION);
+    int num_of_medivacs = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_MEDIVAC);
+
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
             break;
@@ -230,9 +234,14 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
-                //We dont want to be susceptible to our enemy building air.
-                if (((num_of_thors + num_of_tanks) / num_of_thors) < tanks_to_thor_ratio ||
-                    anti_air) {
+                if (num_of_tanks < 1 / thors_to_tank_ratio) {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
+                    gHistory.info() << "Schedule Siegetank training" << std::endl;
+                    return;
+                }
+                //Build anti-air if army ratio is not fullfilled
+                if (num_of_thors == 0 || anti_air ||
+                   (( num_of_thors + num_of_tanks) / num_of_thors) < thors_to_tank_ratio ) {
 
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
@@ -255,11 +264,12 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 gHistory.info() << "Schedule double Hellion training" << std::endl;
                 return;
             } else {
+                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                gHistory.info() << "Schedule Hellion training" << std::endl;
                 // Naked
             }
             break;
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
-            //TODO decide how we want to manage reactor production
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
                  if (num_of_ravens > optimal_num_of_ravens) // We want to use ravens for spotting stealth units.
@@ -268,9 +278,26 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  gHistory.info() << "Schedule Raven training" << std::endl;
              }
              else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
+                 if (num_of_medivacs == 0 ||
+                     num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
+                     gHistory.info() << "Schedule double Medivac training" << std::endl;
+                     return;
+                 }
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
                  gHistory.info() << "Schedule double Hellion training" << std::endl;
+             }
+             else { //case of no addon
+                 if (num_of_medivacs == 0 ||
+                     num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
+                     gHistory.info() << "Schedule Medivac training" << std::endl;
+                     return;
+                 }
+                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                 gHistory.info() << "Schedule Hellion training" << std::endl;
              }
 
 
@@ -317,13 +344,13 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
         2.f * hellion_mineral / hellion_build_time;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        tank_mineral / tank_build_time * (1 - tanks_to_thor_ratio) +
+        tank_mineral / tank_build_time * (1 - thors_to_tank_ratio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_mineral / thor_build_time * tanks_to_thor_ratio;
+        thor_mineral / thor_build_time * thors_to_tank_ratio;
     vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        (tank_vespene / tank_build_time) * (1 - tanks_to_thor_ratio) +
+        (tank_vespene / tank_build_time) * (1 - thors_to_tank_ratio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_vespene / thor_build_time * tanks_to_thor_ratio;
+        thor_vespene / thor_build_time * thors_to_tank_ratio;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) *
         2.f * viking_mineral / viking_build_time;

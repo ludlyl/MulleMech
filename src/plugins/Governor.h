@@ -33,8 +33,8 @@ struct Governor : Plugin {
 
         std::list<sc2::UNIT_TYPEID> m_planner_queue;
 
-        float tanks_to_thor_ratio = 0.3f;
-
+        float thors_to_tank_ratio = 0.3f;
         int optimal_num_of_ravens = 2;
+        float medivacs_to_hellbat_ratio = 1 / 8;
     
 };
