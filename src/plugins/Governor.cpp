@@ -273,8 +273,18 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
-                 if (num_of_ravens > optimal_num_of_ravens) // We want to use ravens for spotting stealth units.
+                 if (num_of_ravens > optimal_num_of_ravens) { // If we have enough ravens, build other units
+                     if (num_of_medivacs == 0 ||
+                         num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                         builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
+                         gHistory.info() << "Schedule Medivac training" << std::endl;
+                         return;
+                     }
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                     gHistory.info() << "Schedule Hellion training" << std::endl;
                      return;
+                 }
+                     // We want to use ravens for spotting stealth units.
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_RAVEN, false, unit_);
                  gHistory.info() << "Schedule Raven training" << std::endl;
              }
