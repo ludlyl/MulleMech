@@ -258,6 +258,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     gHistory.info() << "Schedule double Widowmine training" << std::endl;
+                    return;
                 }
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
