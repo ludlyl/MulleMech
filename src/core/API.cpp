@@ -407,6 +407,7 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
         return m_unitObjects[unit_->tag].get();
     }
 
+    itr->second->UpdateAPIData(*unit_);
     return itr->second.get();
 }
 
