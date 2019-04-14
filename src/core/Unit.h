@@ -11,22 +11,20 @@ class Worker;
 
 namespace API {
     struct Action;
+    struct Interface;
 }
 
 class Unit : public sc2::Unit {
     friend API::Action; // Needed to set m_order_queued_in_current_step
+    friend API::Interface;
 
 public:
+    // TODO: Make "Make" function and constructor private (and same for worker) so only API can create new Unit objects
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);
     Unit(const Unit&) = delete;
     virtual ~Unit() = default;
     bool operator==(const Unit& other) const;
-
-    // This needs to be called at the start of every step
-    void Update();
-    // Updates the API data (sc2::Unit) too
-    void Update(const sc2::Unit& unit);
 
     // I.e. is sc2::Unit::orders empty and m_order_queued_in_current_step = false
     bool IsIdle() const;
@@ -50,6 +48,9 @@ private:
     // Makes sc2::Unit::orders private, this isn't a very pretty solution but as sc2::Unit::orders
     // should never be used outside of this class it might be good to pick up on some bugs
     using sc2::Unit::orders;
+
+    // Updates the API data (sc2::Unit) too
+    void UpdateAPIData(const sc2::Unit& unit);
 
     // This is set to true if an order (attack, move, stop etc.) has been given to the unit.
     // This variable should be reset at the start of every step (by calling the Update function).

@@ -30,14 +30,9 @@ std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit) {
     }
 }
 
-void Unit::Update() {
-    m_order_queued_in_current_step = false;
-}
-
-void Unit::Update(const sc2::Unit& unit) {
+void Unit::UpdateAPIData(const sc2::Unit& unit) {
     assert(tag == unit.tag);
     sc2::Unit::operator=(unit);
-    m_order_queued_in_current_step = false;
 }
 
 bool Unit::IsIdle() const {

@@ -445,7 +445,8 @@ void Interface::OnStep() {
             m_unitObjects[unit->tag] = Unit::Make(*unit);
         } else {
             itr->second->IsInVision = true;
-            itr->second->Update(*unit);
+            itr->second->m_order_queued_in_current_step = false;
+            itr->second->UpdateAPIData(*unit);
         }
     }
 }

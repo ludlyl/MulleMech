@@ -14,7 +14,6 @@
 #include <functional>
 #include <list>
 #include <memory>
-#include <unordered_set>
 #include <optional>
 
 template <typename T>

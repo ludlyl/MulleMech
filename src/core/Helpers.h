@@ -6,6 +6,7 @@
 
 #include "Order.h"
 #include "core/Unit.h"
+#include "objects/Worker.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -13,7 +14,6 @@
 #include <functional>
 #include <initializer_list>
 #include <vector>
-#include <objects/Worker.h>
 
 constexpr float F_PI = 3.1415927f;
 constexpr float F_2PI = 2.0f * 3.1415927f;
