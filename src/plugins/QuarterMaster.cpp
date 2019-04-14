@@ -28,8 +28,8 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            float CC_to_SB_ratio = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time /
-                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time;
+            float CC_to_SB_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
+                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
 
             if(unit_->build_progress > CC_to_SB_ratio) // We use this number because if it's smaller it will be faster to build a new
                 return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
@@ -99,15 +99,13 @@ void QuarterMaster::OnStep(Builder* builder_) {
 
     float expected_consumption =
         gAPI->observer().GetFoodUsed()
-        + 8.0f  // NOTE (alkurbatov): Plan ahead.
         + std::accumulate(
             training_orders.begin(),
             training_orders.end(),
             0.0f,
             CalcConsumption());
 
-    float expected_supply =
-        std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies())
+    float expected_supply =(std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies())
         + std::accumulate(
             nonseq_construction_orders.begin(),
             nonseq_construction_orders.end(),
@@ -122,7 +120,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
             training_orders.begin(),
             training_orders.end(),
             0.0f,
-            CalcSupplies());
+            CalcSupplies()))*m_expected_supply_margin_quotient;
 
     if (expected_supply > expected_consumption || expected_supply >= 200.0f)
         return;

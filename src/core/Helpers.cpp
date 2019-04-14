@@ -161,6 +161,27 @@ bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
     return unit_.mineral_contents > 0;
 }
 
+bool IsMineralPatch::operator()(const sc2::Unit& unit_) const {
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
     switch (unit_.unit_type.ToType()) {
         // Mineral types.

@@ -55,6 +55,10 @@ struct IsVisibleMineralPatch {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsMineralPatch {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsFoggyResource {
     bool operator()(const sc2::Unit& unit_) const;
 };

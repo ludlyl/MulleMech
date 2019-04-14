@@ -19,6 +19,12 @@ void OffenseSquad::Update() {
     if (m_finished && !m_defending)
         return;
 
+    if (GetUnits().empty()) {
+        AbortTakeOver();
+        gHistory.info(LogChannel::combat) << SquadName() << " lost its army fighting" << std::endl;
+        return; // Our attempts are over...
+    }
+
     // Drop enemies that have gone too far away
     auto itr = std::remove_if(GetEnemies().begin(), GetEnemies().end(), [this](auto* u) {
         return Distance2D(GetCenter(), u->pos) >= MaxAttackRadius;

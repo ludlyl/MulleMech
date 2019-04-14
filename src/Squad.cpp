@@ -8,18 +8,17 @@ Squad::Squad() {
 }
 
 void Squad::OnStep() {
-    // Remove dead squad units
-    auto itr = std::remove_if(m_units.begin(), m_units.end(), [](auto* u) { return !u->is_alive; });
+    // Remove dead & lost vision of squad units (NOTE: units that despawn instantly, such as hellion, do not get marked dead)
+    auto itr = std::remove_if(m_units.begin(), m_units.end(),
+        [](auto* u) {
+        return !u->is_alive || !u->IsInVision;
+    });
     m_units.erase(itr, m_units.end());
 
     // Remove dead enemies or enemies that went back into fog of war
     auto jitr = std::remove_if(m_enemies.begin(), m_enemies.end(),
         [](const Unit* u) {
-            if (!u->is_alive)
-                return true;
-            if (!u->IsInVision)
-                return true;
-            return false;
+            return !u->is_alive || !u->IsInVision;
         });
     m_enemies.erase(jitr, m_enemies.end());
 

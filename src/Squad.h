@@ -55,6 +55,8 @@ public:
 
     int GetId() const { return m_id; }
 
+    const sc2::Point2D& GetApproachPoint() const { return m_approachPos; }
+
 protected:
     virtual void Update() = 0;
 
