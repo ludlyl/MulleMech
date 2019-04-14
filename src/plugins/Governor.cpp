@@ -214,7 +214,12 @@ int Governor::CountTotalUnits(Builder* builder_, sc2::UNIT_TYPEID type) {
 }
 
 void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
-
+    auto unit_classes = gReasoner->GetNeededUnitClasses();
+    bool anti_air = false;
+    for (auto i : unit_classes) {
+        if (i == UnitClass::anti_air)
+            anti_air = true;
+    }
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
@@ -226,7 +231,8 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
                 //We dont want to be susceptible to our enemy building air.
-                if (((num_of_thors + num_of_tanks) / num_of_thors) < tanks_to_thor_ratio) {
+                if (((num_of_thors + num_of_tanks) / num_of_thors) < tanks_to_thor_ratio ||
+                    anti_air) {
 
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
@@ -239,6 +245,11 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             }
             else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
                 //TODO We don't always want to schedule 2 units here...
+                if (anti_air) {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
+                    gHistory.info() << "Schedule double Widowmine training" << std::endl;
+                }
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
                 gHistory.info() << "Schedule double Hellion training" << std::endl;
@@ -251,7 +262,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             //TODO decide how we want to manage reactor production
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
-                 if (num_of_ravens > 2) // We want to use ravens for spotting stealth units.
+                 if (num_of_ravens > optimal_num_of_ravens) // We want to use ravens for spotting stealth units.
                      return;
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_RAVEN, false, unit_);
                  gHistory.info() << "Schedule Raven training" << std::endl;

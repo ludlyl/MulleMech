@@ -34,5 +34,7 @@ struct Governor : Plugin {
         std::list<sc2::UNIT_TYPEID> m_planner_queue;
 
         float tanks_to_thor_ratio = 0.3f;
+
+        int optimal_num_of_ravens = 2;
     
 };
