@@ -234,7 +234,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
-                if (num_of_tanks < 1 / thors_to_tank_ratio) {
+                if (num_of_tanks < 1 / thors_to_tank_ratio && !anti_air) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                     gHistory.info() << "Schedule Siegetank training" << std::endl;
                     return;
