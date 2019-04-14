@@ -1,9 +1,9 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
 
-class Reaper : public DefaultUnit {
+class Reaper : public MicroPlugin {
 public:
     Reaper(Unit* unit);
 

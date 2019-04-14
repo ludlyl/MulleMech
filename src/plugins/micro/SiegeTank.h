@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
-class SiegeTank : public DefaultUnit {
+class SiegeTank : public MicroPlugin {
 public:
     SiegeTank(Unit* unit);
 

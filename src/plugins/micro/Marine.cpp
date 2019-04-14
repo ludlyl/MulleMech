@@ -7,7 +7,7 @@ Marine::Marine(Unit* unit)
 }
 
 void Marine::OnCombatStep(const Units& enemies, const Units& allies) {
-    DefaultUnit::OnCombatStep(enemies);
+    DefaultUnit::OnCombatStep(enemies, allies);
 
     // Stim pack
     if (m_self->health / m_self->health_max > StimHpPct) {

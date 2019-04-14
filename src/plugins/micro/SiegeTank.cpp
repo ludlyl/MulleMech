@@ -3,12 +3,11 @@
 #include "core/API.h"
 
 SiegeTank::SiegeTank(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 
 void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
-    DefaultUnit::OnCombatStep(enemies);
 
     float closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);
     Units copy = enemies;
