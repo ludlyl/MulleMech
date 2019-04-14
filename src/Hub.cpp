@@ -180,7 +180,6 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
 }
 
 void Hub::OnUnitIdle(Unit* unit_) {
-    // TODO: Have to loop through all units and check Job (in miner OnStep and make all unemployed mine maybe?)
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
