@@ -34,6 +34,8 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
@@ -196,6 +198,21 @@ int Governor::CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type) {
     return total_structures;
 }
 
+int Governor::CountTotalUnits(Builder* builder_, sc2::UNIT_TYPEID type) {
+    int total_units = static_cast<int>(builder_->CountScheduledTrainings(type));
+
+    for (const auto i : m_planner_queue) {
+        if (i == type)
+            total_units++;
+    }
+
+    total_units += static_cast<int>(gAPI->observer().GetUnits(IsUnit(type, true),
+        sc2::Unit::Alliance::Self).size());
+
+    return total_units;
+
+}
+
 void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
@@ -218,7 +235,14 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             }
             break;
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
-            //TODO decide how we want to manage to production here
+            //TODO decide how we want to manage reactor production
+             if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
+                 int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
+                 if (num_of_ravens > 2) // We want to use ravens for spotting stealth units.
+                     return;
+                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_RAVEN, false, unit_);
+                 gHistory.info() << "Schedule Raven training" << std::endl;
+             }
             break;
         default:
             break;

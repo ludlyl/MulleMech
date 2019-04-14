@@ -23,6 +23,8 @@ struct Governor : Plugin {
     // Counts the total structres of "type" in ALL building queues and on the map
     int CountTotalStructures(Builder* builder_, sc2::UNIT_TYPEID type);
 
+    // Same as above but with units (Units in this case does not include structures aka buildings)
+    int CountTotalUnits(Builder* builder_, sc2::UNIT_TYPEID type);
     
 
     private:
