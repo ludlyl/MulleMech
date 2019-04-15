@@ -4,6 +4,7 @@
 #include "Historican.h"
 #include "core/API.h"
 #include "core/Timer.h"
+#include "core/Helpers.h"
 
 bool bp::SupplyDepot::CanBeBuilt(const Order *order_) {
     Timer timer;
@@ -12,7 +13,7 @@ bool bp::SupplyDepot::CanBeBuilt(const Order *order_) {
     auto ms = timer.Finish();
     gHistory.debug() << "Trying to calculate placement for supply depot took " << ms << " ms" << std::endl;
     if (pos.has_value())
-        return gHub->GetClosestFreeWorker(pos.value()) != nullptr;
+        return GetClosestFreeWorker(pos.value()) != nullptr;
     return false;
 }
 

@@ -27,26 +27,26 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
-        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
+        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
             float CC_to_SB_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
-                gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
+                                   gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
 
             if(unit_->build_progress > CC_to_SB_ratio) // We use this number because if it's smaller it will be faster to build a new
                 return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
-                                             
-            return sum;
 
+            return sum;
+        }
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
         case sc2::UNIT_TYPEID::ZERG_HIVE:
         case sc2::UNIT_TYPEID::ZERG_LAIR:
             return sum + 6.0f;
 
-        case sc2::UNIT_TYPEID::ZERG_EGG:
-            if (unit_->orders.front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD)
+        case sc2::UNIT_TYPEID::ZERG_EGG: {
+            if (unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD)
                 return sum + 8.0f;
 
             return sum;
-
+        }
         case sc2::UNIT_TYPEID::PROTOSS_PYLON:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED:

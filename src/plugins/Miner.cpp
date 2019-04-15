@@ -5,10 +5,10 @@
 #include "Miner.h"
 #include "Hub.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Order.h"
 #include "core/Timer.h"
+#include "Reasoner.h"
 
 #include <sc2api/sc2_typeenums.h>
 
@@ -36,7 +36,7 @@ int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
 
 Unit* GetMovableWorker(const Units& workers) {
     for (auto& worker : workers) {
-        if (worker->AsWorker()->GetJob() == GATHERING_MINERALS)
+        if (worker->AsWorker()->GetJob() == Worker::Job::gathering_minerals)
             return worker;
     }
     return nullptr;
@@ -67,8 +67,7 @@ void SecureMineralsIncome(Builder* builder_) {
         if (cc->build_progress != 1.0f)
             continue;
 
-        // TODO: This should include orders scheduled this step; add functionality to Unit
-        if (!cc->orders.empty())
+        if (!cc->IsIdle())
             continue;
 
         if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
@@ -80,9 +79,15 @@ void SecureMineralsIncome(Builder* builder_) {
     if (orders.empty())
         return;
 
-    // TODO: Might not always want scv production to be "urgent/prioritized".
-    //  Either make the logic behind this more advanced or add two levels of "urgency" to Builder::ScheduleOrder(s)
-    builder_->ScheduleTrainingOrders(orders, true);
+    switch (gReasoner->GetPlayStyle()) {
+        case PlayStyle::very_defensive:
+        case PlayStyle::defensive:
+        case PlayStyle::all_in:
+            builder_->ScheduleTrainingOrders(orders);
+            break;
+        default:
+            builder_->ScheduleTrainingOrders(orders, true);
+    }
 }
 
 
@@ -96,7 +101,7 @@ void SecureVespeneIncome() {
        // Makes sure that we never have more than 3 workers on gas.
        else if (i->assigned_harvesters > i->ideal_harvesters) { 
            for (auto& j : workers) {
-               if (i->tag == j->orders.front().target_unit_tag) {
+               if (i->tag == j->GetPreviousStepOrders().front().target_unit_tag) {
                    j->AsWorker()->Mine();
                    break;
                }
@@ -134,6 +139,12 @@ void CallDownMULE() {
 }  // namespace
 
 void Miner::OnStep(Builder* builder_) {
+    // Make all unemployed workers mine
+    Units unemployed_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::unemployed), sc2::Unit::Alliance::Self);
+    for (auto& unit : unemployed_workers) {
+        unit->AsWorker()->Mine();
+    }
+
     if (gAPI->observer().GetGameLoop() % steps_between_balance == 0)
         BalanceWorkers();
     SecureMineralsIncome(builder_);
@@ -185,17 +196,7 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
 }
 
 void Miner::OnUnitIdle(Unit* unit_, Builder*) {
-    if (gBrain->planner().IsUnitReserved(unit_))
-        return;
-
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            // Send idle worker back to its Home Base
-            unit_->AsWorker()->Mine();
-            break;
-        }
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
             // Send MULE to closest mineral patch of our Starting Location on idle
             // TODO: Maybe send it to nearest mineral patch of a base belonging to us?
@@ -236,7 +237,7 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool exp
     auto roundRobinItr = otherExpansions.begin();
     for (auto worker_itr = itr->second.begin(); worker_itr != itr->second.end();) {
         auto worker = (*worker_itr)->AsWorker();
-        if (!expansionDied &&  worker->GetJob() != GATHERING_MINERALS) {
+        if (!expansionDied &&  worker->GetJob() != Worker::Job::gathering_minerals) {
             ++worker_itr;
             continue;
         }

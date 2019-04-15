@@ -3,9 +3,9 @@
 #include "DefaultUnit.h"
 
 
-class Reaper : public DefaultUnit {
+class Reaper : public MicroPlugin {
 public:
-    Reaper(Unit* unit);
+    explicit Reaper(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 };

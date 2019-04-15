@@ -2,9 +2,9 @@
 
 #include "DefaultUnit.h"
 
-class SiegeTank : public DefaultUnit {
+class SiegeTank : public MicroPlugin {
 public:
-    SiegeTank(Unit* unit);
+    explicit SiegeTank(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 
