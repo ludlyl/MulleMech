@@ -85,12 +85,8 @@ float CalcDemand::operator()(float sum, const Order& order_) const {
 
 }  // namespace
 
-QuarterMaster::QuarterMaster():
-    Plugin(), m_skip_turn(false) {
-}
-
 void QuarterMaster::OnStep(Builder* builder_) {
-    if (m_skip_turn)
+    if (gAPI->observer().GetFoodCap() >= 200.0f)
         return;
 
     float expected_demand = CalcEstimatedDemand(builder_);
@@ -102,16 +98,7 @@ void QuarterMaster::OnStep(Builder* builder_) {
     gHistory.info() << "Request additional supplies: " <<
         expected_demand << " >= " << expected_supply << std::endl;
 
-    m_skip_turn = true;
-
     builder_->ScheduleSequentialConstruction(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, true);
-}
-
-void QuarterMaster::OnUnitCreated(Unit* unit_) {
-    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT ||
-        unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-        m_skip_turn = false;
-    }
 }
 
 float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
@@ -122,9 +109,6 @@ float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
     // Assume buildings currently producing will produce the same unit again, and include that in demand
     auto units = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
     for (auto& unit : units) {
-        if (unit->GetPreviousStepOrders().empty())
-            continue;
-
         for (auto& order : unit->GetPreviousStepOrders()) {
             auto constructed_unit_type = gAPI->observer().GetUnitConstructedFromAbility(order.ability_id);
             if (constructed_unit_type == sc2::UNIT_TYPEID::INVALID)
