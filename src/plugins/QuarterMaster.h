@@ -14,7 +14,9 @@ struct QuarterMaster : Plugin {
 
     void OnUnitCreated(Unit* unit_) final;
 
- private:
+private:
+    float CalcEstimatedDemand(Builder* builder_);
+    float CalcEstimatedSupply(Builder* builder_);
+
     bool m_skip_turn;
-    static constexpr float m_expected_supply_margin_quotient = 1.2f;
 };

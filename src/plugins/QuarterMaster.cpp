@@ -6,6 +6,7 @@
 #include "Historican.h"
 #include "Hub.h"
 #include "core/API.h"
+#include "core/Helpers.h"
 
 #include <numeric>
 
@@ -74,11 +75,11 @@ float CalcSupplies::operator()(float sum, const Order& order_) const {
     }
 }
 
-struct CalcConsumption {
+struct CalcDemand {
     float operator()(float sum, const Order& order_) const;
 };
 
-float CalcConsumption::operator()(float sum, const Order& order_) const {
+float CalcDemand::operator()(float sum, const Order& order_) const {
     return sum + order_.food_required;
 }
 
@@ -92,41 +93,14 @@ void QuarterMaster::OnStep(Builder* builder_) {
     if (m_skip_turn)
         return;
 
-    auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self);
-    const std::list<Order>& nonseq_construction_orders = builder_->GetNonsequentialConstructionOrders();
-    const std::list<Order>& seq_construction_orders = builder_->GetSequentialConstructionOrders();
-    const std::list<Order>& training_orders = builder_->GetTrainingOrders();
+    float expected_demand = CalcEstimatedDemand(builder_);
+    float expected_supply = CalcEstimatedSupply(builder_);
 
-    float expected_consumption =
-        gAPI->observer().GetFoodUsed()
-        + std::accumulate(
-            training_orders.begin(),
-            training_orders.end(),
-            0.0f,
-            CalcConsumption());
-
-    float expected_supply =(std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies())
-        + std::accumulate(
-            nonseq_construction_orders.begin(),
-            nonseq_construction_orders.end(),
-            0.0f,
-            CalcSupplies())
-        + std::accumulate(
-            seq_construction_orders.begin(),
-            seq_construction_orders.end(),
-            0.0f,
-            CalcSupplies())
-        + std::accumulate(
-            training_orders.begin(),
-            training_orders.end(),
-            0.0f,
-            CalcSupplies()))*m_expected_supply_margin_quotient;
-
-    if (expected_supply > expected_consumption || expected_supply >= 200.0f)
+    if (expected_supply > expected_demand || expected_supply >= 200.0f)
         return;
 
     gHistory.info() << "Request additional supplies: " <<
-        expected_consumption << " >= " << expected_supply << std::endl;
+        expected_demand << " >= " << expected_supply << std::endl;
 
     m_skip_turn = true;
 
@@ -134,7 +108,65 @@ void QuarterMaster::OnStep(Builder* builder_) {
 }
 
 void QuarterMaster::OnUnitCreated(Unit* unit_) {
-    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT ||
+        unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
         m_skip_turn = false;
     }
+}
+
+float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
+    // Demand of currently scheduled training
+    const auto& training = builder_->GetTrainingOrders();
+    float demand = std::accumulate(training.begin(), training.end(), 0.0f, CalcDemand());
+
+    // Assume buildings currently producing will produce the same unit again, and include that in demand
+    auto units = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+    for (auto& unit : units) {
+        if (unit->GetPreviousStepOrders().empty())
+            continue;
+
+        for (auto& order : unit->GetPreviousStepOrders()) {
+            auto constructed_unit_type = gAPI->observer().GetUnitConstructedFromAbility(order.ability_id);
+            if (constructed_unit_type == sc2::UNIT_TYPEID::INVALID)
+                continue;
+
+            auto constructed_unit_data = gAPI->observer().GetUnitTypeData(constructed_unit_type);
+            if (constructed_unit_data.food_provided == 0)
+                demand += constructed_unit_data.food_required;
+        }
+    }
+
+    return gAPI->observer().GetFoodUsed() + demand;
+}
+
+float QuarterMaster::CalcEstimatedSupply(Builder* builder_) {
+    auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self);
+    const auto& non_seq = builder_->GetNonsequentialConstructionOrders();
+    const auto& seq = builder_->GetSequentialConstructionOrders();
+    const auto& training = builder_->GetTrainingOrders();
+    const auto& constructions = gHub->GetConstructions();
+
+    // We need to manually include supply depots that any SCV is on his way to build
+    float queued_supply = 0.0f;
+    auto scvs = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
+    for (auto& scv : scvs) {
+        // Only include supply depots (CC's take too long to build)
+        if (scv->GetPreviousStepOrders().empty() ||
+            scv->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::BUILD_SUPPLYDEPOT)
+            continue;
+
+        // Skip any SCV who's already started his building
+        auto itr = std::find_if(constructions.begin(), constructions.end(), [scv](auto& c) { return c.GetScv() == scv; });
+        if (itr != constructions.end())
+            continue;
+
+        queued_supply += 8.0f;
+    }
+
+    return
+        queued_supply +
+        std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies()) +
+        std::accumulate(non_seq.begin(), non_seq.end(), 0.0f, CalcSupplies()) +
+        std::accumulate(seq.begin(), seq.end(), 0.0f, CalcSupplies()) +
+        std::accumulate(training.begin(), training.end(), 0.0f, CalcSupplies());
 }
