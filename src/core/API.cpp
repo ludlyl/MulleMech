@@ -11,6 +11,8 @@
 
 namespace API {
 
+static std::unordered_map<sc2::ABILITY_ID, sc2::UNIT_TYPEID> AbilityToUnitMap;
+
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
 
@@ -341,6 +343,13 @@ sc2::AbilityData Observer::GetAbilityData(sc2::ABILITY_ID id_) const {
     return m_observer->GetAbilityData()[convert::ToAbilityID(id_)];
 }
 
+sc2::UNIT_TYPEID Observer::GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const {
+    auto itr = AbilityToUnitMap.find(id_);
+    if (itr == AbilityToUnitMap.end())
+        return sc2::UNIT_TYPEID::INVALID;
+    return itr->second;
+}
+
 sc2::Race Observer::GetCurrentRace() const {
     uint32_t id = m_observer->GetPlayerID();
     return m_observer->GetGameInfo().player_info[id - 1].race_actual;
@@ -400,6 +409,15 @@ Interface::Interface(sc2::ActionInterface* action_,
     const sc2::ObservationInterface* observer_, sc2::QueryInterface* query_):
     m_action(action_), m_control(control_), m_debug(debug_),
     m_observer(observer_), m_query(query_) {
+}
+
+void Interface::Init() {
+    // Make a mapping of ability -> unit, for abilities that construct units
+    auto typeDatas = m_observer->GetUnitTypeData();
+    for (auto& data : typeDatas) {
+        if (data.ability_id != sc2::ABILITY_ID::INVALID)
+            AbilityToUnitMap[data.ability_id] = data.unit_type_id;
+    }
 }
 
 Action Interface::action() const {

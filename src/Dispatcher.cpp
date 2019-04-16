@@ -42,6 +42,8 @@ void Dispatcher::OnGameStart() {
     m_plugins.clear();
     gHistory.info() << "New game started!" << std::endl;
 
+    gAPI->Init();
+
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
     gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
 

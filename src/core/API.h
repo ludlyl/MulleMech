@@ -134,6 +134,8 @@ struct Observer {
 
     sc2::AbilityData GetAbilityData(sc2::ABILITY_ID id_) const;
 
+    sc2::UNIT_TYPEID GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const;
+
     sc2::Race GetCurrentRace() const;
 
     const std::vector<sc2::ChatMessage>& GetChatMessages() const;
@@ -185,8 +187,9 @@ struct Interface {
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
     Unit* WrapUnit(const sc2::Unit* unit_);
 
-    void OnStep();
+    void Init();
 
+    void OnStep();
 
  private:
     sc2::ActionInterface* m_action;
