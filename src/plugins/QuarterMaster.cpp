@@ -28,7 +28,7 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
-            float CC_to_SB_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
+            float SB_to_CC_buildtime_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
                                    gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
 
             if(unit_->build_progress > SB_to_CC_buildtime_ratio) // We use this number because if it's smaller it will be faster to build a new
