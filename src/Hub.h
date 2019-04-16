@@ -14,7 +14,6 @@
 #include <functional>
 #include <list>
 #include <memory>
-#include <unordered_set>
 #include <optional>
 
 template <typename T>
@@ -29,7 +28,7 @@ struct Cache {
 
     void PopBack();
 
-    bool IsCached(const T* obj_) const;
+    bool Contains(const T* obj_) const;
 
     bool Swap(const T* obj_, Cache<T>& dst_);
 
@@ -71,7 +70,7 @@ void Cache<T>::PopBack() {
 }
 
 template <typename T>
-bool Cache<T>::IsCached(const T* obj_) const {
+bool Cache<T>::Contains(const T* obj_) const {
     auto it = std::find(m_objects.begin(), m_objects.end(), obj_);
 
     return m_objects.end() != it;
@@ -153,9 +152,7 @@ struct Construction {
 };
 
 struct Hub {
-    Hub(sc2::Race current_race_, const Expansions& expansions_);
-
-    void OnStep();
+    Hub(sc2::Race current_race_, Expansions  expansions_);
 
     void OnUnitCreated(Unit* unit_);
 
@@ -173,12 +170,6 @@ struct Hub {
 
     sc2::Race GetCurrentRace() const;
 
-    Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
-
-    bool FreeWorkerExists();
-
-    int GetNumberOfFreeWorkers();
-
     sc2::UNIT_TYPEID GetCurrentWorkerType() const;
 
     bool AssignRefineryConstruction(Order* order_, Unit* geyser_);
@@ -187,7 +178,7 @@ struct Hub {
 
     void AssignVespeneHarvester(const Unit* refinery_);
 
-    // Returns nullptr if no building to produce Units/Upgrades/Addons/Mutations from/on is avaliable
+    // Returns nullptr if no building to produce Units/Upgrades/Addons/Mutations from/on is available
     Unit* GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_ = sc2::UNIT_TYPEID::INVALID);
 
     // If INVALID is sent in as a addon_requirement (and no assignee is provided) the order is assigned to a unit with no add-on
@@ -219,10 +210,6 @@ struct Hub {
 
     Cache<Unit> m_captured_geysers;
 
-    Cache<Worker> m_busy_workers;
-    Cache<Worker> m_free_workers;
-
-    std::unordered_set<sc2::Tag> m_assignedBuildings;
     std::vector<Construction> m_constructions;
 };
 

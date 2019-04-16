@@ -33,6 +33,8 @@ public:
     Units GetEnemyUnits(unsigned int lastSeenByGameLoop) const;
 
 private:
+    void SaveEnemyBaseLocation(Unit* unit);
+
     std::vector<std::shared_ptr<Expansion>> m_enemyBases;
     Units m_enemyUnits;
 };

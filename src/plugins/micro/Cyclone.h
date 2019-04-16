@@ -4,7 +4,7 @@
 
 class Cyclone : public MicroPlugin {
 public:
-    Cyclone(Unit* unit);
+    explicit Cyclone(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 

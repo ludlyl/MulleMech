@@ -4,7 +4,7 @@
 
 class Thor : public MicroPlugin {
 public:
-    Thor(Unit* unit);
+    explicit Thor(Unit* unit);
 
     void OnCombatStep(const Units& enemies) override;
 

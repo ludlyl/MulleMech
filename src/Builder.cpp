@@ -161,7 +161,7 @@ bool Builder::AreNoneResourceRequirementsFulfilled(Order* order_, std::shared_pt
     // If the order is to construct a building, we want to make sure a free worker exists before we continue
     // This is needed to avoid continuously performing expensive operations such as calculating building placement (if no free worker exists)
     if (IsBuilding()(order_->unit_type_id) && !IsAddon()(order_->unit_type_id)) {
-        if (!gHub->FreeWorkerExists()) {
+        if (!FreeWorkerExists()) {
             return false;
         }
     }
@@ -218,12 +218,11 @@ void Builder::ResolveMissingWorkers() {
     for (auto& construction : constructions) {
         auto building = construction.GetBuilding();
         if (!construction.GetScv() && building) {
-            // TODO: The worker needs to be set as busy too!
-            auto worker = gHub->GetClosestFreeWorker(building->pos);
+            auto worker = GetClosestFreeWorker(building->pos);
             if (worker) {
                 gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
                     "; other one died" << std::endl;
-                gAPI->action().Cast(worker, sc2::ABILITY_ID::SMART, building);
+                worker->Build(building);
                 construction.scv = worker;
             }
         }

@@ -4,23 +4,12 @@
 
 #include "Building.h"
 #include "Hub.h"
+#include "core/Helpers.h"
 #include "core/API.h"
 
-bool bp::Building::CanBeBuilt(const Order* order_) {
-    // Find place to build the structure
-    sc2::Point3D base = gAPI->observer().StartingLocation();
-    sc2::Point2D point;
+bool bp::Building::CanBeBuilt(const Order*) {
 
-    unsigned attempt = 0;
-    do {
-        point.x = base.x + sc2::GetRandomScalar() * 15.0f;
-        point.y = base.y + sc2::GetRandomScalar() * 15.0f;
-
-        if (++attempt > 150)
-            return false;
-    } while (!gAPI->query().CanBePlaced(*order_, point));
-
-    return gHub->GetClosestFreeWorker(point) != nullptr;
+    return FreeWorkerExists();
 }
 
 bool bp::Building::Build(Order* order_) {
