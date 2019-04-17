@@ -57,3 +57,7 @@ void OffenseSquad::Update() {
             unit->Micro()->OnCombatFrame(unit, GetEnemies());
     }
 }
+
+float OffenseSquad::GetMaxAttackRadius(){
+    return MaxAttackRadius;
+}

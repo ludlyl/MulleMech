@@ -16,6 +16,7 @@ CombatCommander::CombatCommander() :
 }
 
 void CombatCommander::OnStep(Builder*){
+
     for (auto& squad : m_defenseSquads)
         squad.OnStep();
     
@@ -37,6 +38,10 @@ void CombatCommander::OnStep(Builder*){
                 itr->Send();
             ++itr;
         }
+    }
+
+    if(m_mainSquad->IsTaskFinished()){
+        UpdateAttackTarget();
     }
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
@@ -107,6 +112,42 @@ void CombatCommander::PlayGreedy(){ // TODO
 
 void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
+}
+
+void CombatCommander::UpdateAttackTarget(){
+    bool foundExpo = false;
+    for (auto& exp : gHub->GetExpansions()) {
+        if (exp->alliance == sc2::Unit::Alliance::Enemy) {
+            m_mainAttackTarget = exp->town_hall_location;
+            foundExpo = true;
+            break;
+        }
+    }
+    if(!foundExpo){
+        if(m_attackTargets.empty()){
+            m_attackTargets = GetListOfMapPoints();
+        } else {
+            m_attackTargets.erase(m_attackTargets.end()-1);
+        }
+        m_mainAttackTarget = m_attackTargets.back();
+    }
+}
+
+std::vector<sc2::Point2D> CombatCommander::GetListOfMapPoints(){
+    std::vector<sc2::Point2D> points;
+    float pointDistance = m_mainSquad->GetMaxAttackRadius();
+    float mapHeightLimit = gAPI->observer().GameInfo().height - pointDistance;
+    float mapWidthLimit = gAPI->observer().GameInfo().width - pointDistance;
+    float x = pointDistance;
+    float y = pointDistance;
+    while(x < mapWidthLimit){
+        while(y < mapHeightLimit){
+            points.push_back(sc2::Point2D(x,y));
+            y += pointDistance;
+        }
+        x += pointDistance;
+    }
+    return points;
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {

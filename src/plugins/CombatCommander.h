@@ -29,8 +29,9 @@ private:
 
     // TODO: Should be replaced by intelligent selecting of what units go to defend
     bool StealUnitFromMainSquad(Units& defenders);
-
     sc2::Point3D GetArmyIdlePosition() const;
+    std::vector<sc2::Point2D> GetListOfMapPoints();
+    void UpdateAttackTarget();
 
     // Returns true if it's unsafe to just run to the main squad
     bool ShouldReinforce(const Unit* unit) const;
@@ -40,6 +41,7 @@ private:
     std::shared_ptr<OffenseSquad> m_mainSquad;              // Shared with reinforce squads
     HarassSquad m_harassSquad;
     sc2::Point2D m_mainAttackTarget;
+    std::vector<sc2::Point2D> m_attackTargets;
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
