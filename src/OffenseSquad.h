@@ -13,6 +13,8 @@ public:
 
     void AbortTakeOver() { m_finished = true; m_defending = false; }
 
+    float GetMaxAttackRadius();
+
 protected:
 
     void Update() override;
