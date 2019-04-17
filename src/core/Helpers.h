@@ -32,10 +32,6 @@ struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsMechanical {
-    bool operator()(const sc2::Unit& unit_) const;
-};
-
 struct IsTemporaryUnit {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;

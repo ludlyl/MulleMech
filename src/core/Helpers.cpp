@@ -98,51 +98,6 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsMechanical::operator()(const sc2::Unit& unit_) const {
-    // TODO: Check hallucinations
-
-    switch (unit_.unit_type.ToType()) {
-
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
-        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
-        case sc2::UNIT_TYPEID::TERRAN_HELLION:
-        case sc2::UNIT_TYPEID::TERRAN_HELLIONTANK:
-        case sc2::UNIT_TYPEID::TERRAN_LIBERATOR:
-        case sc2::UNIT_TYPEID::TERRAN_LIBERATORAG:
-        case sc2::UNIT_TYPEID::TERRAN_MEDIVAC:
-        case sc2::UNIT_TYPEID::TERRAN_RAVEN:
-        case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
-        case sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED:
-        case sc2::UNIT_TYPEID::TERRAN_THOR:
-        case sc2::UNIT_TYPEID::TERRAN_THORAP:
-        case sc2::UNIT_TYPEID::TERRAN_VIKINGASSAULT:
-        case sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
-        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
-        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
-
-
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::PROTOSS_CARRIER:
-        case sc2::UNIT_TYPEID::PROTOSS_COLOSSUS:
-        case sc2::UNIT_TYPEID::PROTOSS_DISRUPTOR:
-        case sc2::UNIT_TYPEID::PROTOSS_DISRUPTORPHASED:
-        case sc2::UNIT_TYPEID::PROTOSS_IMMORTAL:
-        case sc2::UNIT_TYPEID::PROTOSS_MOTHERSHIP:
-        case sc2::UNIT_TYPEID::PROTOSS_MOTHERSHIPCORE:
-        case sc2::UNIT_TYPEID::PROTOSS_ORACLE:
-        case sc2::UNIT_TYPEID::PROTOSS_PHOENIX:
-        case sc2::UNIT_TYPEID::PROTOSS_SENTRY:
-        case sc2::UNIT_TYPEID::PROTOSS_STALKER:
-        case sc2::UNIT_TYPEID::PROTOSS_TEMPEST:
-        case sc2::UNIT_TYPEID::PROTOSS_VOIDRAY:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
 bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }
