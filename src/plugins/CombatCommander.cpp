@@ -210,7 +210,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
             }
         }
 
-        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && sc2::GetRandomFraction() < HellionHarassChance)
+        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && HellionHarassChance < sc2::GetRandomFraction())
             add = false;
 
         if (add) {
@@ -224,10 +224,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Assign to main squad or reinforce squad
-    if (m_mainSquad->IsTaskFinished() && sc2::Distance2D(unit_->pos, m_mainSquad->GetCenter()) >= ReinforceSquadDist) {
-        m_mainSquad->AddUnit(unit_);
-        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition(), true);
-    } else {
+    if (ShouldReinforce(unit_)) {
         // Add to a reinforce squad if main squad is out and about
         for (auto& squad : m_reinforceSquads) {
             if (!squad.IsSent()) {
@@ -237,6 +234,9 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         }
         m_reinforceSquads.emplace_back(m_mainSquad);
         m_reinforceSquads.back().AddUnit(unit_);
+    } else {
+        m_mainSquad->AddUnit(unit_);
+        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition(), true);
     }
 }
 
@@ -262,4 +262,16 @@ sc2::Point3D CombatCommander::GetArmyIdlePosition() const {
     sc2::Normalize3D(direction_vector);
 
     return town_hall + direction_vector * IdleDistance;
+}
+
+bool CombatCommander::ShouldReinforce(const Unit* unit) const {
+    if (!m_mainSquad->IsTaskFinished())
+        return true;
+
+    // Assumption: being close to one of our CCs means we're not offensive
+    auto ccs = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    if (auto cc = ccs.GetClosestUnit(unit->pos))
+        return sc2::Distance2D(unit->pos, cc->pos) >= ReinforceSquadDist;
+
+    return sc2::Distance2D(unit->pos, m_mainSquad->GetCenter()) >= ReinforceSquadDist;
 }

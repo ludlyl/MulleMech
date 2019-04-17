@@ -25,8 +25,8 @@ void IntelligenceHolder::Update() {
     }
 }
 
-std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBase(std::size_t index) const {
-    if (m_enemyBases.size() <= index)
+std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBase(int index) const {
+    if (!EnemyHasBase(index))
         return nullptr;
 
     return m_enemyBases[index];
@@ -39,8 +39,12 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetLatestEnemyBase() const {
     return m_enemyBases[m_enemyBases.size()-1];
 }
 
-bool IntelligenceHolder::EnemyHasBase(std::size_t index) const {
-    return m_enemyBases.size() > index;
+int IntelligenceHolder::GetEnemyBaseCount() const {
+    return static_cast<int>(m_enemyBases.size());
+}
+
+bool IntelligenceHolder::EnemyHasBase(int index) const {
+    return GetEnemyBaseCount() > index;
 }
 
 void IntelligenceHolder::MarkEnemyMainBase(const sc2::Point2D& point) {

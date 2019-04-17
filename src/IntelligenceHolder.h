@@ -13,11 +13,13 @@ public:
     void Update();
 
     // Get enemy base location if one has been made; index: 0=>main base, 1=>natural, etc
-    std::shared_ptr<Expansion> GetEnemyBase(std::size_t index) const;
+    std::shared_ptr<Expansion> GetEnemyBase(int index) const;
 
     std::shared_ptr<Expansion> GetLatestEnemyBase() const;
 
-    bool EnemyHasBase(std::size_t index) const;
+    int GetEnemyBaseCount() const;
+
+    bool EnemyHasBase(int index) const;
 
     // Note down where enemy main base is
     void MarkEnemyMainBase(const sc2::Point2D& point);
