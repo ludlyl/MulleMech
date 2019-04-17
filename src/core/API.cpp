@@ -91,8 +91,8 @@ void Action::Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
 }
 
 void Action::Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
-        const sc2::Point2D& point, bool queue_) {
-        m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), point, queue_);
+    const sc2::Point2D& point, bool queue_) {
+    m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), point, queue_);
     assignee_->m_order_queued_in_current_step = true;
 }
 

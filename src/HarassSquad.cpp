@@ -6,6 +6,7 @@
 #include "Reasoner.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "Hub.h"
 
 bool HarassSquad::IsTaskFinished() const {
     return GetUnits().empty(); // We harass 'til death!
@@ -60,15 +61,17 @@ sc2::Point2D HarassSquad::NextHarassTarget(bool first) const {
     }
     // Else: we go to a known base location
     else {
-        if (gIntelligenceHolder->GetEnemyBaseCount() == 0) {
-            auto start = gAPI->observer().GameInfo().enemy_start_locations.front();
-            base = sc2::Point3D(start.x, start.y, 0);
-        } else {
+        auto known_enemy_expansions = gHub->GetKnownEnemyExpansions();
+        if (!known_enemy_expansions.empty()) {
             // 50% chance to use latest base; otherwise pick random one
             if (sc2::GetRandomInteger(0, 1))
-                base = gIntelligenceHolder->GetLatestEnemyBase()->town_hall_location;
-            else
-                base = gIntelligenceHolder->GetEnemyBase(sc2::GetRandomInteger(0, gIntelligenceHolder->GetEnemyBaseCount() - 1))->town_hall_location;
+                base = known_enemy_expansions.back()->town_hall_location;
+            else {
+                base = known_enemy_expansions.at(
+                        static_cast<Expansions::size_type>(sc2::GetRandomInteger(0, static_cast<int>(known_enemy_expansions.size()) - 1)))->town_hall_location;
+            }
+        } else {
+            return GetCenter(); // Idle as failure outcome
         }
     }
     
