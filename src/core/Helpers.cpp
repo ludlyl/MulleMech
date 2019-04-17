@@ -235,10 +235,11 @@ IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_id
 
 bool IsIdleUnit::operator()(const sc2::Unit& unit_) const {
     if (IsUnit(m_type)(unit_)) {
+        Unit* wrappedUnit = gAPI->WrapUnit(&unit_);
         if (m_count_non_full_reactor_as_idle && HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
-            return unit_.orders.size() < 2;
+            return wrappedUnit->NumberOfOrders() < 2;
         } else {
-            return unit_.orders.empty();
+            return wrappedUnit->IsIdle();
         }
     }
     return false;
@@ -248,6 +249,19 @@ bool IsWorker::operator()(const sc2::Unit& unit_) const {
     return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_SCV ||
         unit_.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE ||
         unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_PROBE;
+}
+
+IsWorkerWithJob::IsWorkerWithJob(Worker::Job job_) : m_job(job_) {
+}
+
+bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetJob() == m_job) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool IsGasWorker::operator()(const sc2::Unit& unit_) const {
@@ -507,4 +521,23 @@ std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::Uni
             return {suppliedTechRequirement_};
         }
     }
+}
+
+Units GetFreeWorkers() {
+    // Might be a bit too ineffective to do it this way
+    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or,
+            {IsWorkerWithJob(Worker::Job::unemployed),
+             IsWorkerWithJob(Worker::Job::gathering_minerals)}), sc2::Unit::Alliance::Self);
+}
+
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_) {
+    Unit* closest_unit = GetFreeWorkers().GetClosestUnit(location_);
+    if (!closest_unit)
+        return nullptr;
+
+    return closest_unit->AsWorker();
+}
+
+bool FreeWorkerExists() {
+    return !GetFreeWorkers().empty();
 }

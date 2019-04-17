@@ -60,11 +60,15 @@ sc2::Point2D HarassSquad::NextHarassTarget(bool first) const {
     }
     // Else: we go to a known base location
     else {
-        if (auto expo = gIntelligenceHolder->GetLatestEnemyBase()) {
-            base = expo->town_hall_location;
-        } else {
+        if (gIntelligenceHolder->GetEnemyBaseCount() == 0) {
             auto start = gAPI->observer().GameInfo().enemy_start_locations.front();
             base = sc2::Point3D(start.x, start.y, 0);
+        } else {
+            // 50% chance to use latest base; otherwise pick random one
+            if (sc2::GetRandomInteger(0, 1))
+                base = gIntelligenceHolder->GetLatestEnemyBase()->town_hall_location;
+            else
+                base = gIntelligenceHolder->GetEnemyBase(sc2::GetRandomInteger(0, gIntelligenceHolder->GetEnemyBaseCount() - 1))->town_hall_location;
         }
     }
     

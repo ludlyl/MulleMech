@@ -3,6 +3,7 @@
 #include "core/Timer.h"
 #include "BuildingPlacer.h"
 #include "Hub.h"
+#include "core/Helpers.h"
 #include "Historican.h"
 
 bool bp::ProductionBuilding::CanBeBuilt(const Order* order_) {
@@ -12,7 +13,7 @@ bool bp::ProductionBuilding::CanBeBuilt(const Order* order_) {
     auto ms = timer.Finish();
     gHistory.debug() << "Trying to calculate placement for production building took " << ms << " ms" << std::endl;
     if (pos.has_value())
-        return gHub->GetClosestFreeWorker(pos.value()) != nullptr;
+        return GetClosestFreeWorker(pos.value()) != nullptr;
     return false;
 }
 

@@ -8,7 +8,6 @@
 #include "Reasoner.h"
 #include "IntelligenceHolder.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Map.h"
 #include "core/Timer.h"
@@ -20,7 +19,6 @@
 #include "plugins/RepairMan.h"
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
-#include "plugins/micro/Reaper.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -31,7 +29,6 @@ Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
     gReasoner = std::make_unique<Reasoner>();
     gIntelligenceHolder = std::make_unique<IntelligenceHolder>();
-    gBrain = std::make_unique<Brain>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
@@ -44,6 +41,8 @@ Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()
 void Dispatcher::OnGameStart() {
     m_plugins.clear();
     gHistory.info() << "New game started!" << std::endl;
+
+    gAPI->Init();
 
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
     gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
@@ -87,7 +86,6 @@ void Dispatcher::OnStep() {
     clock.Start();
 
     gAPI->OnStep();
-    gHub->OnStep();
     gIntelligenceHolder->Update();
     gReasoner->CalculatePlayStyle();
 

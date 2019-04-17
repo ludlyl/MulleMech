@@ -5,11 +5,12 @@
 #include "TownHall.h"
 #include "Hub.h"
 #include "core/API.h"
+#include "core/Helpers.h"
 
-bool bp::TownHall::CanBeBuilt(const Order *order_) {
+bool bp::TownHall::CanBeBuilt(const Order*) {
     for (auto& exp : gHub->GetExpansions()) {
         if (exp->alliance == sc2::Unit::Alliance::Neutral) {
-            return gHub->GetClosestFreeWorker(exp->town_hall_location) != nullptr;
+            return GetClosestFreeWorker(exp->town_hall_location) != nullptr;
         }
     }
 

@@ -10,12 +10,19 @@ Thor::Thor(Unit* unit)
 void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     Units copy = enemies;
     //Remove cannon fodder from potential targets
-    auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit* u) {
-        return (u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_MARINE || u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER || u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SCV || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_ZEALOT || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_SENTRY || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_PROBE || u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_ZERGLING || u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_DRONE);
+    auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit *u) {
+        return (u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_MARINE ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_REAPER ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_SCV ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_ZEALOT ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_SENTRY ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_PROBE ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_ZERGLING ||
+                u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_DRONE);
     });
     copy.erase(itr, copy.end());
 
-    const Unit* target;
+    const Unit* target = nullptr;
     if(!copy.empty()){
         target = copy.GetClosestUnit(m_self->pos);
     }
@@ -29,8 +36,12 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     }
 
     //Switch modes if there is a significant presence of Mutalisks, Banshees, ravens, pheonixes or Oracles
-    auto itr2 = std::remove_if(copy.begin(), copy.end(), [](const Unit* u) {
-        return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BANSHEE|| u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_RAVEN || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_ORACLE || u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_PHOENIX  || u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_MUTALISK);
+    auto itr2 = std::remove_if(copy.begin(), copy.end(), [](const Unit *u) {
+        return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BANSHEE ||
+                 u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_RAVEN ||
+                 u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_ORACLE ||
+                 u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_PHOENIX ||
+                 u->unit_type.ToType() == sc2::UNIT_TYPEID::ZERG_MUTALISK);
     });
     copy.erase(itr2, copy.end());
 

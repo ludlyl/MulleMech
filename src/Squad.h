@@ -86,5 +86,5 @@ private:
     bool m_wasApproaching = false;                  // true if we were approaching before regroup command
     int m_id;
 
-    static constexpr float RegroupRadius = 10.0f;   // while Approach()'ing, regroup if we achieve this much spread
+    static constexpr float RegroupRadius = 15.0f;   // while Approach()'ing, regroup if we achieve this much spread
 };

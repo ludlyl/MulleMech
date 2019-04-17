@@ -4,7 +4,7 @@
 
 class SiegeTank : public MicroPlugin {
 public:
-    SiegeTank(Unit* unit);
+    explicit SiegeTank(Unit* unit);
 
     void OnCombatStep(const Units& enemies, const Units& allies) override;
 

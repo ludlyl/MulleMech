@@ -26,30 +26,30 @@ namespace API {
 struct Action {
     explicit Action(sc2::ActionInterface* action_);
 
-    void Build(const Order& order_, bool queue_ = false);
-    void Build(const Order& order_, const Unit* unit_, bool queue_ = false);
-    void Build(const Order& order_, const sc2::Point2D& point_, bool queue_ = false);
+    void Build(Order& order_, bool queue_ = false);
+    void Build(Order& order_, const Unit* unit_, bool queue_ = false);
+    void Build(Order& order_, const sc2::Point2D& point_, bool queue_ = false);
 
-    void Attack(const Unit* unit_, const sc2::Point2D& point_, bool queue_ = false);
-    void Attack(const Units& units_, const sc2::Point2D& point_, bool queue_ = false);
-    void Attack(const Unit* unit_, const Unit* target_, bool queue_ = false);
-    void Attack(const Units& units_, const Unit* target_, bool queue_ = false);
+    void Attack(Unit* unit_, const sc2::Point2D& point_, bool queue_ = false);
+    void Attack(Units& units_, const sc2::Point2D& point_, bool queue_ = false);
+    void Attack(Unit* unit_, const Unit* target_, bool queue_ = false);
+    void Attack(Units& units_, const Unit* target_, bool queue_ = false);
 
-    void MoveTo(const Unit* unit_, const sc2::Point2D& point_, bool queue_ = false);
-    void MoveTo(const Units& units_, const sc2::Point2D& point_, bool queue_ = false);
+    void MoveTo(Unit* unit_, const sc2::Point2D& point_, bool queue_ = false);
+    void MoveTo(Units& units_, const sc2::Point2D& point_, bool queue_ = false);
 
-    void Stop(const Unit* unit_, bool queue_ = false);
-    void Stop(const Units& units_, bool queue_ = false);
+    void Stop(Unit* unit_, bool queue_ = false);
+    void Stop(Units& units_, bool queue_ = false);
 
-    void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_ = false);
-    void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+    void Cast(Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_ = false);
+    void Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
         const Unit* target_, bool queue_ = false);
-    void Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+    void Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
               const sc2::Point2D& point, bool queue_ = false);
 
-    void LowerDepot(const Unit* assignee_);
-    void RaiseDepot(const Unit* assignee_);
-    void OpenGate(const Unit* assignee_);
+    void LowerDepot(Unit* assignee_);
+    void RaiseDepot(Unit* assignee_);
+    void OpenGate(Unit* assignee_);
 
     void SendMessage(const std::string& text_);
 
@@ -134,6 +134,8 @@ struct Observer {
 
     sc2::AbilityData GetAbilityData(sc2::ABILITY_ID id_) const;
 
+    sc2::UNIT_TYPEID GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const;
+
     sc2::Race GetCurrentRace() const;
 
     const std::vector<sc2::ChatMessage>& GetChatMessages() const;
@@ -185,8 +187,9 @@ struct Interface {
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
     Unit* WrapUnit(const sc2::Unit* unit_);
 
-    void OnStep();
+    void Init();
 
+    void OnStep();
 
  private:
     sc2::ActionInterface* m_action;

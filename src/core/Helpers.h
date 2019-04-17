@@ -6,6 +6,7 @@
 
 #include "Order.h"
 #include "core/Unit.h"
+#include "objects/Worker.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -93,6 +94,15 @@ struct IsIdleUnit {
 
 struct IsWorker {
     bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsWorkerWithJob {
+    explicit IsWorkerWithJob(Worker::Job job_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    Worker::Job m_job;
 };
 
 struct IsGasWorker {
@@ -198,3 +208,10 @@ std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_);
 std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData& data_);
 
 std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+
+// I.e. get mining and unemployed workers
+Units GetFreeWorkers();
+
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
+
+bool FreeWorkerExists();

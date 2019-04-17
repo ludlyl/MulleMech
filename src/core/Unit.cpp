@@ -35,6 +35,22 @@ void Unit::UpdateAPIData(const sc2::Unit& unit) {
     sc2::Unit::operator=(unit);
 }
 
+bool Unit::IsIdle() const {
+    return orders.empty() && !m_order_queued_in_current_step;
+}
+
+int Unit::NumberOfOrders() const {
+    if (m_order_queued_in_current_step) {
+        return static_cast<int>(orders.size() + 1);
+    } else {
+        return static_cast<int>(orders.size());
+    }
+}
+
+const std::vector<sc2::UnitOrder>& Unit::GetPreviousStepOrders() const {
+    return orders;
+}
+
 Worker* Unit::AsWorker() {
     return const_cast<Worker*>(const_cast<const Unit*>(this)->AsWorker());
 }

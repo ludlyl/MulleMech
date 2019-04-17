@@ -4,7 +4,7 @@
 
 class Battlecruiser : public MicroPlugin {
 public:
-    Battlecruiser(Unit* unit);
+    explicit Battlecruiser(Unit* unit);
 
     void OnCombatStep(const Units& enemies, const Units& allies) override;
 

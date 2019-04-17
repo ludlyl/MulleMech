@@ -1,5 +1,4 @@
 #include "OffenseSquad.h"
-
 #include "Historican.h"
 #include "core/API.h"
 #include "core/Helpers.h"
@@ -12,7 +11,7 @@ void OffenseSquad::TakeOver(sc2::Point2D position) {
     gHistory.info(LogChannel::combat) << SquadName() << " taking over new position" << std::endl;
     m_finished = false;
     m_defending = false;
-    m_attackPosition = std::move(position);
+    m_attackPosition = position;
 }
 
 void OffenseSquad::Update() {
@@ -27,12 +26,12 @@ void OffenseSquad::Update() {
 
     // Drop enemies that have gone too far away
     auto itr = std::remove_if(GetEnemies().begin(), GetEnemies().end(), [this](auto* u) {
-        return Distance2D(GetCenter(), u->pos) >= MaxAttackRadius;
+        return Distance2D(GetCenter(), u->pos) >= (GetSpreadRadius() + MaxAttackRadius);
     });
     GetEnemies().erase(itr, GetEnemies().end());
 
     // Add enemies which are in combat range
-    auto potentialEnemies = gAPI->observer().GetUnits(IsWithinDist(GetCenter(), AggroRadius), sc2::Unit::Alliance::Enemy);
+    auto potentialEnemies = gAPI->observer().GetUnits(IsWithinDist(GetCenter(), GetSpreadRadius() + AggroRadius), sc2::Unit::Alliance::Enemy);
     for (auto& enemy : potentialEnemies) {
         if (!GetEnemies().contains(enemy))
             GetEnemies().push_back(enemy);

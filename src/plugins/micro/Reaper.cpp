@@ -32,6 +32,5 @@ void Reaper::OnCombatStep(const Units& enemies, const Units& allies) {
             MoveTo(sc2::Point2D(gAPI->observer().StartingLocation().x,
                                 gAPI->observer().StartingLocation().y));
         }
-
     }
 }
