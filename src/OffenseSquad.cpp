@@ -26,12 +26,12 @@ void OffenseSquad::Update() {
 
     // Drop enemies that have gone too far away
     auto itr = std::remove_if(GetEnemies().begin(), GetEnemies().end(), [this](auto* u) {
-        return Distance2D(GetCenter(), u->pos) >= MaxAttackRadius;
+        return Distance2D(GetCenter(), u->pos) >= (GetSpreadRadius() + MaxAttackRadius);
     });
     GetEnemies().erase(itr, GetEnemies().end());
 
     // Add enemies which are in combat range
-    auto potentialEnemies = gAPI->observer().GetUnits(IsWithinDist(GetCenter(), AggroRadius), sc2::Unit::Alliance::Enemy);
+    auto potentialEnemies = gAPI->observer().GetUnits(IsWithinDist(GetCenter(), GetSpreadRadius() + AggroRadius), sc2::Unit::Alliance::Enemy);
     for (auto& enemy : potentialEnemies) {
         if (!GetEnemies().contains(enemy))
             GetEnemies().push_back(enemy);

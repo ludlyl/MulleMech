@@ -41,6 +41,7 @@ void Squad::RemoveUnit(Unit* unit) {
 }
 
 void Squad::Absorb(Squad& other) {
+    gAPI->action().MoveTo(other.GetUnits(), GetCenter(), true); // send them to us
     for (auto& unit : other.GetUnits())
         AddUnit(unit);
     other.GetUnits().clear();
