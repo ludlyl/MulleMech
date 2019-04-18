@@ -379,6 +379,10 @@ sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) 
     return pos;
 }
 
+bool CloakState::operator()(const sc2::Unit& unit_) const {
+    return unit_.cloak == m_state;
+}
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
     std::vector<sc2::Point2D> points;
     points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));

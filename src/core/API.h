@@ -144,6 +144,8 @@ struct Observer {
 
     float TerrainHeight(const sc2::Point2D& pos_) const;
 
+    sc2::Visibility GetVisibility(const sc2::Point2D& pos_) const;
+
  private:
      friend struct Interface;
     const sc2::ObservationInterface* m_observer;

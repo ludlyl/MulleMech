@@ -68,12 +68,17 @@ struct Hub {
 
     int GetOurExpansionCount() const;
 
+    // Request scan from Orbital Command
+    void RequestScan(const sc2::Point2D& pos);
+
  private:
     sc2::Race m_current_race;
     Expansions m_expansions;
     sc2::UNIT_TYPEID m_current_worker_type;
 
     std::vector<Construction> m_constructions;
+
+    uint32_t m_lastStepScan;
 
     // This is a very arbitrary number used for checking if an scv is currently constructing a specific refinery
     // (by taking the refinery's position + its radius + this value and seeing if the scv is inside that distance)

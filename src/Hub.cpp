@@ -44,7 +44,7 @@ Unit* Construction::GetScvIfAlive() const {
 
 Hub::Hub(sc2::Race current_race_, Expansions expansions_):
     m_current_race(current_race_), m_expansions(std::move(expansions_)),
-    m_current_worker_type(sc2::UNIT_TYPEID::INVALID) {
+    m_current_worker_type(sc2::UNIT_TYPEID::INVALID), m_lastStepScan(0) {
     std::sort(m_expansions.begin(), m_expansions.end(),
         SortByDistance(gAPI->observer().StartingLocation()));
 
@@ -290,6 +290,33 @@ int Hub::GetOurExpansionCount() const {
         }
     }
     return count;
+}
+
+void Hub::RequestScan(const sc2::Point2D& pos) {
+    constexpr float ScanRadius = 12.3f;
+    constexpr float ScanCost = 50.0f;
+
+    if (gAPI->observer().GetGameLoop() == m_lastStepScan)
+        return;
+
+    // We're allowed to scan:
+    // a) any point that is not visible
+    // b) if a does not apply, any scan circle that contains cloaked units
+    if (gAPI->observer().GetVisibility(pos) == sc2::Visibility::Visible) {
+        auto size = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+            {IsWithinDist(pos, ScanRadius), CloakState(sc2::Unit::Cloaked)}), sc2::Unit::Alliance::Enemy).size();
+        if (size == 0)
+            return; // Cloaked and CloakedDetected are different states, so this also works to protect against double scans
+    }
+
+    auto orbitals = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
+    for (auto& orbital : orbitals) {
+        if (orbital->energy >= ScanCost) {
+            gAPI->action().Cast(orbital, sc2::ABILITY_ID::EFFECT_SCAN, pos);
+            m_lastStepScan = gAPI->observer().GetGameLoop();
+            break;
+        }
+    }
 }
 
 std::unique_ptr<Hub> gHub;

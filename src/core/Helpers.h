@@ -200,6 +200,14 @@ private:
     sc2::Point2D m_point;
 };
 
+struct CloakState {
+    explicit CloakState(sc2::Unit::CloakState state_) : m_state(state_) { }
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::Unit::CloakState m_state;
+};
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints = 12);
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints = 12);
