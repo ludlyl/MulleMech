@@ -17,6 +17,7 @@
 
 namespace {
 constexpr int mule_energy_cost = 50;
+constexpr int scan_energy_cost = 50;
 constexpr float maximum_resource_distance = 10.0f;  // Resources further than this => doesn't belong to this base
 constexpr int steps_between_balance = 20;           // How often we recalculate SCV balance
 constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance we must have before transferring any
@@ -117,25 +118,53 @@ void SecureVespeneIncome() {
     }
 }
 
+float SaveEnergy()
+{
+    // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
+    constexpr int minutes_per_scan_increase = 4;
+    float passed_minutes = gAPI->observer().GetGameLoop() / (steps_per_second * 60.0f);
+    return scan_energy_cost * (static_cast<int>(passed_minutes) / minutes_per_scan_increase);
+}
+
 void CallDownMULE() {
     auto orbitals = gAPI->observer().GetUnits(
         IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
+    std::vector<float> usable_energy; // orbitals[i]'s usable energy is in usable_energy[i]
 
     if (orbitals.empty())
         return;
 
-    auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+    // It is important that orbitals are always in the same order, so we end up actually saving
+    // (sorting by memory address is okay, as a Unit's memory does not get moved around)
+    std::sort(orbitals.begin(), orbitals.end());
+
+    // Calculate the usable energy for each orbital
+    usable_energy.resize(orbitals.size());
+    for (std::size_t i = 0; i < orbitals.size(); ++i)
+        usable_energy[i] = orbitals[i]->energy;
+
+    // Distribute the reserved energy uniformly
+    float save_energy = SaveEnergy();
+    while (save_energy > 0.0f) {
+        for (std::size_t i = 0; i < orbitals.size() && save_energy > 0.0f; ++i) {
+            usable_energy[i] -= scan_energy_cost;
+            save_energy -= scan_energy_cost;
+        }
+    }
+
+    // Call down mules
+    auto mineral_patches = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
         sc2::Unit::Alliance::Neutral);
 
-    for (const auto& i : orbitals) {
-        if (i->energy < mule_energy_cost)
+    for (std::size_t i = 0; i < orbitals.size(); ++i) {
+        if (usable_energy[i] < mule_energy_cost && orbitals[i]->energy < 200.0f)
             continue;
 
-        auto mineral_target = units.GetClosestUnit(i->pos);
+        auto mineral_target = mineral_patches.GetClosestUnit(orbitals[i]->pos);
         if (!mineral_target)
             continue;
 
-        gAPI->action().Cast(i, sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
+        gAPI->action().Cast(orbitals[i], sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
     }
 }
 
