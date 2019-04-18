@@ -45,6 +45,7 @@ private:
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
+    static constexpr float PointDistance = 10.0f;           // Supposed to approximately match units' vision radius
     static constexpr float SearchEnemyRadiusPadding = 8.0f;
     static constexpr float EnemyGroupingDistance = 15.0f;   // Enemies this far apart => different groups
     static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal

@@ -130,17 +130,16 @@ void CombatCommander::UpdateAttackTarget(){
 
 std::vector<sc2::Point2D> CombatCommander::GetListOfMapPoints(){
     std::vector<sc2::Point2D> points;
-    float pointDistance = m_mainSquad->GetMaxAttackRadius();
-    float mapHeightLimit = gAPI->observer().GameInfo().height - pointDistance;
-    float mapWidthLimit = gAPI->observer().GameInfo().width - pointDistance;
-    float x = pointDistance;
-    float y = pointDistance;
+    float mapHeightLimit = gAPI->observer().GameInfo().height - PointDistance;
+    float mapWidthLimit = gAPI->observer().GameInfo().width - PointDistance;
+    float x = PointDistance;
+    float y = PointDistance;
     while(x < mapWidthLimit){
         while(y < mapHeightLimit){
             points.push_back(sc2::Point2D(x,y));
-            y += pointDistance;
+            y += PointDistance;
         }
-        x += pointDistance;
+        x += PointDistance;
     }
     return points;
 }
