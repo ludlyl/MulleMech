@@ -115,19 +115,14 @@ void CombatCommander::PlayScout(){ // TODO
 }
 
 void CombatCommander::UpdateAttackTarget(){
-    bool foundExpo = false;
-    for (auto& exp : gHub->GetExpansions()) {
-        if (exp->alliance == sc2::Unit::Alliance::Enemy) {
-            m_mainAttackTarget = exp->town_hall_location;
-            foundExpo = true;
-            break;
-        }
-    }
-    if(!foundExpo){
+    Expansions expos = gHub->GetKnownEnemyExpansions();
+    if(!expos.empty()){
+        m_mainAttackTarget = expos.front()->town_hall_location;
+    }else{
         if(m_attackTargets.empty()){
             m_attackTargets = GetListOfMapPoints();
         } else {
-            m_attackTargets.erase(m_attackTargets.end()-1);
+            m_attackTargets.pop_back(); 
         }
         m_mainAttackTarget = m_attackTargets.back();
     }
