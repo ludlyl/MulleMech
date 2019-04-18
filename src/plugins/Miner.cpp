@@ -231,7 +231,7 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool exp
     otherExpansions.reserve(m_expansionWorkers.size());
     for (auto& pair : m_expansionWorkers) {
         // Ignore mined out bases unless we have to reshuffle (i.e. expansion died)
-        if (pair.first != expansion && (expansionDied || pair.first->command_center->ideal_harvesters != 0))
+        if (pair.first != expansion && (expansionDied || pair.first->town_hall->ideal_harvesters != 0))
             otherExpansions.push_back(pair.first);
     }
 
@@ -274,7 +274,7 @@ void Miner::BalanceWorkers() {
     std::multimap<int, std::shared_ptr<Expansion>> sortedExpansions; // note: maps are ordered by key
 
     for (auto& pair : m_expansionWorkers) {
-        if (pair.first->command_center->ideal_harvesters == 0)
+        if (pair.first->town_hall->ideal_harvesters == 0)
             continue; // Skip mined out command centers
         int over = static_cast<int>(pair.second.size()) - IdealWorkerCount(pair.first);
         sortedExpansions.emplace(std::make_pair(std::max(0, over), pair.first));
@@ -316,7 +316,7 @@ void Miner::AbandonMinedOutBases() {
 
     // Abandon empty bases: mine somewhere else
     for (auto& pair : m_expansionWorkers) {
-        if (pair.first->command_center->ideal_harvesters == 0)
+        if (pair.first->town_hall->ideal_harvesters == 0)
             SplitWorkersOf(pair.first, false);
     }
 }

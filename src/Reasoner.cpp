@@ -15,9 +15,9 @@ std::vector<UnitClass> Reasoner::GetNeededUnitClasses() {
 }
 
 std::vector<std::shared_ptr<Expansion>> Reasoner::GetLikelyEnemyExpansions() {
-    auto main = gIntelligenceHolder->GetEnemyBase(0);
+    auto main = gIntelligenceHolder->GetEnemyMainBase();
     if (!main)
-        return std::vector<std::shared_ptr<Expansion>>();
+        return {};
 
     // Assumption: All neutral expansion locations are possible targets
     std::vector<std::shared_ptr<Expansion>> locations;

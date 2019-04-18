@@ -7,6 +7,7 @@
 #include "Hub.h"
 #include "Historican.h"
 #include "core/Helpers.h"
+#include "IntelligenceHolder.h"
 
 #include <algorithm>
 #include <cmath>
@@ -116,7 +117,7 @@ void Hub::OnUnitCreated(Unit* unit_) {
                     continue;
 
                 i->alliance = sc2::Unit::Alliance::Self;
-                i->command_center = unit_;
+                i->town_hall = unit_;
 
                 if (i->alliance != sc2::Unit::Alliance::Self) {
                     gHistory.info() << "Captured region: (" <<
@@ -166,7 +167,7 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
                     continue;
 
                 i->alliance = sc2::Unit::Alliance::Neutral;
-                i->command_center = nullptr;
+                i->town_hall = nullptr;
                 gHistory.info() << "Lost region: (" <<
                     unit_->pos.x << ", " << unit_->pos.y <<
                     ")" << std::endl;
@@ -333,7 +334,8 @@ Expansions Hub::GetOurExpansions() const {
             expos.push_back(expo);
     }
 
-    // Use starting location as comparison
+    // Sort bases by how far they are (walkable distance) from the main, with the assumption
+    // that such a sorting will tell us which base is the natural, and so forth
     auto starting = GetClosestExpansion(gAPI->observer().StartingLocation());
     std::sort(expos.begin(), expos.end(), [&starting](auto& e1, auto& e2) {
         return starting->distanceTo(e1) < starting->distanceTo(e2);

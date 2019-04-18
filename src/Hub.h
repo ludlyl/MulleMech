@@ -201,6 +201,7 @@ struct Hub {
     std::vector<Construction>& GetConstructions() { return m_constructions; }
 
     // Returns a list of our expansions sorted with walking distance to starting location
+    // index: 0=>main base, 1=>natural, etc
     Expansions GetOurExpansions() const;
 
  private:
