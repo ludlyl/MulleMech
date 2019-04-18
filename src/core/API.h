@@ -18,7 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr float steps_per_second = 22.4f;
+constexpr float StepsPerSecond = 22.4f;
 
 namespace API {
 
