@@ -156,7 +156,12 @@ void Miner::OnStep(Builder* builder_) {
 
 void Miner::OnUnitCreated(Unit* unit_) {
     if (IsTownHall()(*unit_)) {
-        // Put our CommandCenter's rally point
+        // Add TownHall to our map of expansion workers
+        auto expo = gHub->GetClosestExpansion(unit_->pos);
+        if (m_expansionWorkers.find(expo) == m_expansionWorkers.end())
+            m_expansionWorkers.emplace(std::move(expo), Units()); // no workers yet
+
+        // Put our TownHall's rally point
         auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
             sc2::Unit::Alliance::Neutral);
 
