@@ -107,20 +107,20 @@ void Governor::OnStep(Builder* builder_) {
     float vespene_consumption = consumption.second;
 
     //Converting from Mineral/frames to Mineral/min
-    mineral_consumption = mineral_consumption * Steps_per_second * 60.f;
-    vespene_consumption = vespene_consumption * Steps_per_second * 60.f;
+    mineral_consumption = mineral_consumption * StepsPerSecond * 60.f;
+    vespene_consumption = vespene_consumption * StepsPerSecond * 60.f;
 
     //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
 
-    if (mineral_overproduction > (Steps_per_second * 60.f * tank_mineral / tank_build_time) &&
-        vespene_overproduction > (Steps_per_second * 60.f * tank_vespene / tank_build_time)) {
+    if (mineral_overproduction > (StepsPerSecond * 60.f * tank_mineral / tank_build_time) &&
+        vespene_overproduction > (StepsPerSecond * 60.f * tank_vespene / tank_build_time)) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
     //TODO Confirm this value (2)
     //We never want more than 2 factories producing hellions
-    } else if (mineral_overproduction > (Steps_per_second * 60.f * 2.f * hellion_mineral / hellion_build_time) &&
+    } else if (mineral_overproduction > (StepsPerSecond * 60.f * 2.f * hellion_mineral / hellion_build_time) &&
                CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) < 2) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
@@ -228,14 +228,14 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
-                if (num_of_tanks < 1 / Thors_to_tank_ratio && !anti_air) {
+                if (num_of_tanks < 1 / ThorsToTanksRatio && !anti_air) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                     gHistory.info() << "Schedule Siegetank training" << std::endl;
                     return;
                 }
                 //Build anti-air if army ratio is not fullfilled
                 if (num_of_thors == 0 || anti_air ||
-                   (( num_of_thors + num_of_tanks) / static_cast<float>(num_of_thors)) < Thors_to_tank_ratio ) {
+                   (( num_of_thors + num_of_tanks) / static_cast<float>(num_of_thors)) < ThorsToTanksRatio ) {
 
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
@@ -267,9 +267,9 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
-                 if (num_of_ravens > Optimal_num_of_ravens) { // If we have enough ravens, build other units
+                 if (num_of_ravens > OptimalNumOfRavens) { // If we have enough ravens, build other units
                      if (num_of_medivacs == 0 ||
-                         (num_of_medivacs / static_cast<float>(num_of_hellbats)) < Medivacs_to_hellbat_ratio) {
+                         (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                          builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                          gHistory.info() << "Schedule Medivac training" << std::endl;
                          return;
@@ -284,7 +284,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
              }
              else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
                  if (num_of_medivacs == 0 ||
-                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < Medivacs_to_hellbat_ratio) {
+                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule double Medivac training" << std::endl;
@@ -296,7 +296,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
              }
              else { //case of no addon
                  if (num_of_medivacs == 0 ||
-                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < Medivacs_to_hellbat_ratio) {
+                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule Medivac training" << std::endl;
                      return;
@@ -349,13 +349,13 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
         2.f * hellion_mineral / hellion_build_time;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        tank_mineral / tank_build_time * (1 - Thors_to_tank_ratio) +
+        tank_mineral / tank_build_time * (1 - ThorsToTanksRatio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_mineral / thor_build_time * Thors_to_tank_ratio;
+        thor_mineral / thor_build_time * ThorsToTanksRatio;
     vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        (tank_vespene / tank_build_time) * (1 - Thors_to_tank_ratio) +
+        (tank_vespene / tank_build_time) * (1 - ThorsToTanksRatio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_vespene / thor_build_time * Thors_to_tank_ratio;
+        thor_vespene / thor_build_time * ThorsToTanksRatio;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) *
         2.f * viking_mineral / viking_build_time;

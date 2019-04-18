@@ -33,8 +33,8 @@ private:
 
     std::list<sc2::UNIT_TYPEID> m_planner_queue;
 
-    static constexpr float Thors_to_tank_ratio = 1.f / 3.f;
-    static constexpr int Optimal_num_of_ravens = 2.f;
-    static constexpr float Medivacs_to_hellbat_ratio = 1.f / 8.f;
+    static constexpr float ThorsToTanksRatio = 1.f / 3.f;
+    static constexpr int OptimalNumOfRavens = 2;
+    static constexpr float MedivacsToHellbatsRatio = 1.f / 8.f;
     
 };
