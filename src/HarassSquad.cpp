@@ -61,7 +61,7 @@ sc2::Point2D HarassSquad::NextHarassTarget(bool first) const {
     }
     // Else: we go to a known base location
     else {
-        auto known_enemy_expansions = gHub->GetKnownEnemyExpansions();
+        auto known_enemy_expansions = gIntelligenceHolder->GetKnownEnemyExpansions();
         if (!known_enemy_expansions.empty()) {
             // 50% chance to use latest base; otherwise pick random one
             if (sc2::GetRandomInteger(0, 1))

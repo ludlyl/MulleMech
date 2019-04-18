@@ -15,6 +15,10 @@ public:
     // Returns nullptr if the enemy main-base location is unknown
     std::shared_ptr<Expansion> GetEnemyMainBase();
 
+    // Returns a list of our expansions sorted with walking distance to starting location;
+    // index: 0=>main base, 1=>natural, etc
+    Expansions GetKnownEnemyExpansions() const;
+
     std::shared_ptr<Expansion> GetLatestKnownEnemyExpansion() const;
 
     int GetEnemyExpansionCount() const;

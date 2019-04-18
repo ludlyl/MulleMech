@@ -344,26 +344,4 @@ Expansions Hub::GetOurExpansions() const {
     return expos;
 }
 
-Expansions Hub::GetKnownEnemyExpansions() const {
-    if (!gIntelligenceHolder->GetEnemyMainBase()) {
-        return {};
-    }
-
-    Expansions expos;
-
-    for (auto& expo : m_expansions) {
-        if (expo->alliance == sc2::Unit::Alliance::Enemy)
-            expos.push_back(expo);
-    }
-
-    // Sort bases by how far they are (walkable distance) from the main, with the assumption
-    // that such a sorting will tell us which base is the natural, and so forth
-    auto starting = GetClosestExpansion(gIntelligenceHolder->GetEnemyMainBase()->town_hall_location);
-    std::sort(expos.begin(), expos.end(), [&starting](auto& e1, auto& e2) {
-        return starting->distanceTo(e1) < starting->distanceTo(e2);
-    });
-
-    return expos;
-}
-
 std::unique_ptr<Hub> gHub;

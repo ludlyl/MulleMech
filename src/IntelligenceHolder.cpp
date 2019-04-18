@@ -41,8 +41,30 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyMainBase() {
     return m_enemy_main_base;
 }
 
+Expansions IntelligenceHolder::GetKnownEnemyExpansions() const {
+    if (!gIntelligenceHolder->GetEnemyMainBase()) {
+        return {};
+    }
+
+    Expansions expos;
+
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Enemy)
+            expos.push_back(expo);
+    }
+
+    // Sort bases by how far they are (walkable distance) from the main, with the assumption
+    // that such a sorting will tell us which base is the natural, and so forth
+    auto starting = gIntelligenceHolder->GetEnemyMainBase();
+    std::sort(expos.begin(), expos.end(), [&starting](auto& e1, auto& e2) {
+        return starting->distanceTo(e1) < starting->distanceTo(e2);
+    });
+
+    return expos;
+}
+
 std::shared_ptr<Expansion> IntelligenceHolder::GetLatestKnownEnemyExpansion() const {
-    auto expansions = gHub->GetKnownEnemyExpansions();
+    auto expansions = GetKnownEnemyExpansions();
     if (expansions.empty())
         return nullptr;
 
@@ -50,7 +72,13 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetLatestKnownEnemyExpansion() co
 }
 
 int IntelligenceHolder::GetEnemyExpansionCount() const {
-    return static_cast<int>(gHub->GetKnownEnemyExpansions().size());
+    int count = 0;
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Enemy) {
+            count++;
+        }
+    }
+    return count;
 }
 
 void IntelligenceHolder::MarkEnemyExpansion(const sc2::Point2D& pos) {
