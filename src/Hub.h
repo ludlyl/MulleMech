@@ -204,6 +204,8 @@ struct Hub {
     // index: 0=>main base, 1=>natural, etc
     Expansions GetOurExpansions() const;
 
+    int GetOurExpansionCount() const;
+
  private:
     sc2::Race m_current_race;
     Expansions m_expansions;

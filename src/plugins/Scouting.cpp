@@ -111,7 +111,7 @@ void Scouting::ScvOffensiveScout() {
 
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
-        if (gIntelligenceHolder->GetEnemyExpansionCount() < 2)
+        if (gIntelligenceHolder->GetKnownEnemyExpansionCount() < 2)
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL

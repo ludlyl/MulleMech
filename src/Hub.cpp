@@ -344,4 +344,14 @@ Expansions Hub::GetOurExpansions() const {
     return expos;
 }
 
+int Hub::GetOurExpansionCount() const {
+    int count = 0;
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Self) {
+            count++;
+        }
+    }
+    return count;
+}
+
 std::unique_ptr<Hub> gHub;

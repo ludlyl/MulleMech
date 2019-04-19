@@ -21,7 +21,7 @@ public:
 
     std::shared_ptr<Expansion> GetLatestKnownEnemyExpansion() const;
 
-    int GetEnemyExpansionCount() const;
+    int GetKnownEnemyExpansionCount() const;
 
     void MarkEnemyExpansion(const sc2::Point2D& pos);
     void MarkEnemyExpansion(Unit* unit);

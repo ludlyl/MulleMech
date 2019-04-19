@@ -37,6 +37,11 @@ struct IsTemporaryUnit {
     bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
+// Anti air = Can the unit attack air at all
+struct IsAntiAirUnit {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;
