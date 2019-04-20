@@ -71,7 +71,7 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetLatestKnownEnemyExpansion() co
     return expansions.back();
 }
 
-int IntelligenceHolder::GetEnemyExpansionCount() const {
+int IntelligenceHolder::GetKnownEnemyExpansionCount() const {
     int count = 0;
     for (auto& expo : gHub->GetExpansions()) {
         if (expo->alliance == sc2::Unit::Alliance::Enemy) {

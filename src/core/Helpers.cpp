@@ -120,6 +120,23 @@ bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
     }
 }
 
+bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
+    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    for (const auto& weapon : data.weapons) {
+        if (weapon.type == sc2::Weapon::TargetType::Air || weapon.type == sc2::Weapon::TargetType::Any) {
+            return true;
+        }
+    }
+    // Special cases. TODO: Put in more units here (raven? ht?)
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }

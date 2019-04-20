@@ -161,6 +161,8 @@ void Governor::OnStep(Builder* builder_) {
                 m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
                 m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
             }
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
         }
     }
 }
@@ -304,7 +306,6 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
                  gHistory.info() << "Schedule Hellion training" << std::endl;
              }
-
 
             break;
         default:
