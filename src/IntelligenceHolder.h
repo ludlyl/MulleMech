@@ -12,21 +12,19 @@ public:
     // Updates the internal list(s) of enemy units
     void Update();
 
-    // Get enemy base location if one has been made; index: 0=>main base, 1=>natural, etc
-    std::shared_ptr<Expansion> GetEnemyBase(int index) const;
+    // Returns nullptr if the enemy main-base location is unknown
+    std::shared_ptr<Expansion> GetEnemyMainBase();
 
-    std::shared_ptr<Expansion> GetLatestEnemyBase() const;
+    // Returns a list of our expansions sorted with walking distance to starting location;
+    // index: 0=>main base, 1=>natural, etc
+    Expansions GetKnownEnemyExpansions() const;
 
-    int GetEnemyBaseCount() const;
+    std::shared_ptr<Expansion> GetLatestKnownEnemyExpansion() const;
 
-    bool EnemyHasBase(int index) const;
+    int GetKnownEnemyExpansionCount() const;
 
-    // Note down where enemy main base is
-    void MarkEnemyMainBase(const sc2::Point2D& point);
-
-    // Note down where to find an enemy base
-    // Note: The enemies main base has to be marked before any expansion can be marked
-    void MarkEnemyExpansion(const sc2::Point2D& point);
+    void MarkEnemyExpansion(const sc2::Point2D& pos);
+    void MarkEnemyExpansion(Unit* unit);
 
     // Get all enemy units that we currently have intel on (dead units are cleared in the Update function)
     const Units& GetEnemyUnits() const;
@@ -35,9 +33,7 @@ public:
     Units GetEnemyUnits(unsigned int lastSeenByGameLoop) const;
 
 private:
-    void SaveEnemyBaseLocation(Unit* unit);
-
-    std::vector<std::shared_ptr<Expansion>> m_enemyBases;
+    std::shared_ptr<Expansion> m_enemy_main_base = nullptr;
     Units m_enemyUnits;
 };
 

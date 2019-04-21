@@ -80,7 +80,7 @@ void Scouting::ScvOffensiveScout() {
     // APPROACHING ENEMY BASE
     if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->IsIdle()) {
         // If we found main base of enemy; go into exploring mode
-        if (gIntelligenceHolder->EnemyHasBase(0)) {
+        if (gIntelligenceHolder->GetEnemyMainBase()) {
             m_scoutPhase = ScvScoutPhase::explore_enemy_base;
             gHistory.debug(LogChannel::scouting) << "Found enemy main base!" << std::endl;
         }
@@ -92,7 +92,7 @@ void Scouting::ScvOffensiveScout() {
 
             // Note down base location if we only have one left
             if (m_unscoutedBases.size() == 1) {
-                gIntelligenceHolder->MarkEnemyMainBase(m_unscoutedBases.front());
+                gIntelligenceHolder->MarkEnemyExpansion(m_unscoutedBases.front());
                 gHistory.debug(LogChannel::scouting) << "Approaching inferred enemy location" << std::endl;
             } else {
                 gHistory.debug(LogChannel::scouting) << "Approaching possible enemy location" << std::endl;
@@ -103,7 +103,7 @@ void Scouting::ScvOffensiveScout() {
     }
     // EXPLORING ENEMY BASE
     else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->IsIdle()) {
-        auto mainBase = gIntelligenceHolder->GetEnemyBase(0);
+        auto mainBase = gIntelligenceHolder->GetEnemyMainBase();
 
         // Scout the main base of the enemy
         gHistory.debug(LogChannel::scouting) << "Exploring main base" << std::endl;
@@ -111,7 +111,7 @@ void Scouting::ScvOffensiveScout() {
 
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
-        if (!gIntelligenceHolder->EnemyHasBase(1))
+        if (gIntelligenceHolder->GetKnownEnemyExpansionCount() < 2)
             m_scoutPhase = ScvScoutPhase::check_for_natural;
     }
     // CHECKING FOR NATURAL

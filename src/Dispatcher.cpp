@@ -88,6 +88,7 @@ void Dispatcher::OnStep() {
     gAPI->OnStep();
     gIntelligenceHolder->Update();
     gReasoner->CalculatePlayStyle();
+    gReasoner->CalculateNeededUnitClasses();
 
     for (const auto& i : m_plugins)
         i->OnStep(m_builder.get());

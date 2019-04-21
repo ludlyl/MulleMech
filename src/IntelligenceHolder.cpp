@@ -4,12 +4,18 @@
 #include "core/Helpers.h"
 #include "Historican.h"
 
+#include <sc2api/sc2_common.h>
+
+#include <limits>
+
 void IntelligenceHolder::Update() {
     // Add new units
     for (auto& unit : gAPI->observer().GetUnits(Inverse(IsTemporaryUnit{}), sc2::Unit::Alliance::Enemy)) {
         if (!m_enemyUnits.contains(unit)) {
             m_enemyUnits.push_back(unit);
-            SaveEnemyBaseLocation(unit);
+            if (IsTownHall()(*unit)) {
+                MarkEnemyExpansion(unit);
+            }
         }
     }
 
@@ -25,48 +31,79 @@ void IntelligenceHolder::Update() {
     }
 }
 
-std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBase(int index) const {
-    if (!EnemyHasBase(index))
-        return nullptr;
+std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyMainBase() {
+    // If the main base isn't already set and there is only one enemy starting location, set the main base to that location
+    if (!m_enemy_main_base && gAPI->observer().GameInfo().enemy_start_locations.size() == 1) {
+        m_enemy_main_base = gHub->GetClosestExpansion(gAPI->observer().GameInfo().enemy_start_locations.front());
+        m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
+    }
 
-    return m_enemyBases[index];
+    return m_enemy_main_base;
 }
 
-std::shared_ptr<Expansion> IntelligenceHolder::GetLatestEnemyBase() const {
-    if (m_enemyBases.empty())
-        return nullptr;
+Expansions IntelligenceHolder::GetKnownEnemyExpansions() const {
+    if (!gIntelligenceHolder->GetEnemyMainBase()) {
+        return {};
+    }
 
-    return m_enemyBases[m_enemyBases.size()-1];
-}
+    Expansions expos;
 
-int IntelligenceHolder::GetEnemyBaseCount() const {
-    return static_cast<int>(m_enemyBases.size());
-}
-
-bool IntelligenceHolder::EnemyHasBase(int index) const {
-    return GetEnemyBaseCount() > index;
-}
-
-void IntelligenceHolder::MarkEnemyMainBase(const sc2::Point2D& point) {
-    assert(m_enemyBases.empty() && "MarkEnemyMainBase called twice");
-
-    std::shared_ptr<Expansion> exp = gHub->GetClosestExpansion(point);
-    exp->alliance = sc2::Unit::Alliance::Enemy;
-    m_enemyBases.emplace_back(std::move(exp));
-}
-
-void IntelligenceHolder::MarkEnemyExpansion(const sc2::Point2D& point) {
-    assert(!m_enemyBases.empty() && "MarkEnemyExpansion called before main base found");
-
-    std::shared_ptr<Expansion> exp = gHub->GetClosestExpansion(point);
-    exp->alliance = sc2::Unit::Alliance::Enemy;
-    m_enemyBases.emplace_back(std::move(exp));
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Enemy)
+            expos.push_back(expo);
+    }
 
     // Sort bases by how far they are (walkable distance) from the main, with the assumption
     // that such a sorting will tell us which base is the natural, and so forth
-    std::sort(m_enemyBases.begin() + 1, m_enemyBases.end(), [this](auto& a, auto& b) {
-        return m_enemyBases[0]->distanceTo(a) < m_enemyBases[0]->distanceTo(b);
+    auto starting = gIntelligenceHolder->GetEnemyMainBase();
+    std::sort(expos.begin(), expos.end(), [&starting](auto& e1, auto& e2) {
+        return starting->distanceTo(e1) < starting->distanceTo(e2);
     });
+
+    return expos;
+}
+
+std::shared_ptr<Expansion> IntelligenceHolder::GetLatestKnownEnemyExpansion() const {
+    auto expansions = GetKnownEnemyExpansions();
+    if (expansions.empty())
+        return nullptr;
+
+    return expansions.back();
+}
+
+int IntelligenceHolder::GetKnownEnemyExpansionCount() const {
+    int count = 0;
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Enemy) {
+            count++;
+        }
+    }
+    return count;
+}
+
+void IntelligenceHolder::MarkEnemyExpansion(const sc2::Point2D& pos) {
+    // If the main base isn't already set (and the main doesn't get set by calling GetEnemyMainBase()),
+    // calculate which starting location is closest to the found expansion (town hall) and set the enemy main to that base
+    if (!m_enemy_main_base && !GetEnemyMainBase()) {
+        float shortest_distance = std::numeric_limits<float>::max();
+        sc2::Point2D main_pos;
+        for (const auto& possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
+            float distance = sc2::Distance2D(pos, possible_start);
+            if (distance < shortest_distance) {
+                shortest_distance = distance;
+                main_pos = possible_start;
+            }
+        }
+        m_enemy_main_base = gHub->GetClosestExpansion(main_pos);
+        m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
+    }
+
+    std::shared_ptr<Expansion> exp = gHub->GetClosestExpansion(pos);
+    exp->alliance = sc2::Unit::Alliance::Enemy;
+}
+
+void IntelligenceHolder::MarkEnemyExpansion(Unit* unit) {
+    MarkEnemyExpansion(unit->pos);
 }
 
 const Units& IntelligenceHolder::GetEnemyUnits() const {
@@ -83,42 +120,6 @@ Units IntelligenceHolder::GetEnemyUnits(unsigned int lastSeenByGameLoop) const {
     }
 
     return Units();
-}
-
-void IntelligenceHolder::SaveEnemyBaseLocation(Unit* unit) {
-    if (IsTownHall()(*unit)) {
-        bool main_base = false;
-        sc2::Point2D pos = unit->pos;
-
-        // Is it a main base?
-        for (auto possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
-            if (sc2::Distance2D(unit->pos, possible_start) < 5.0f + unit->radius) {
-                main_base = true;
-                pos = possible_start;
-                break;
-            }
-        }
-
-        // Is it THE main base or an expansion at another spawn location?
-        if (main_base && gIntelligenceHolder->EnemyHasBase(0)) {
-            if (sc2::Distance2D(pos, GetEnemyBase(0)->town_hall_location) > 5.0f)
-                main_base = false;
-        }
-
-        // Save base location
-        if (main_base) {
-            if (!EnemyHasBase(0))
-                MarkEnemyMainBase(pos);
-        } else {
-            // NOTE: Currently we must know where the main base is before we save expansions
-            if (EnemyHasBase(0)) {
-                MarkEnemyExpansion(unit->pos);
-                gHistory.info(LogChannel::scouting) << "Found enemy expansion!" << std::endl;
-            } else {
-                return; // Do not remember the building until we've marked its location
-            }
-        }
-    }
 }
 
 std::unique_ptr<IntelligenceHolder> gIntelligenceHolder;
