@@ -7,6 +7,11 @@ SCV::SCV(Unit* unit)
 
 void SCV::OnCombatStep(const Units& enemies, const Units& allies) {
 
+
+    if (auto target = enemies.GetClosestUnit(m_self->tag)) {
+        Attack(target);
+    }
+
     Units damaged_mechanical_allies = allies;
 
     auto itr = std::remove_if(damaged_mechanical_allies.begin(), damaged_mechanical_allies.end(), [](const Unit* u) {
@@ -15,6 +20,10 @@ void SCV::OnCombatStep(const Units& enemies, const Units& allies) {
 
     damaged_mechanical_allies.erase(itr, damaged_mechanical_allies.end());
 
+    int repairChance = rand() % 10 + 1;
 
+    if(repairChance == 1){
+        Cast(sc2::ABILITY_ID::SMART, damaged_mechanical_allies.GetClosestUnit(m_self->pos)->pos);
+}
 
 }
