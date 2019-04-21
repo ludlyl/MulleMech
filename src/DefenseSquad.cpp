@@ -1,10 +1,9 @@
 #include "DefenseSquad.h"
 #include "Historican.h"
 
-DefenseSquad::DefenseSquad(Units units, Units enemies, Units allies) : m_engaged(false) {
+DefenseSquad::DefenseSquad(Units units, Units enemies) : m_engaged(false) {
     SetUnits(std::move(units));
     SetEnemies(std::move(enemies));
-    SetAllies(std::move(allies));
     gHistory.info(LogChannel::combat) << "New Squad: " << SquadName() << " formed (#units: " << GetUnits().size() <<
         ", #enemies: " << GetEnemies().size() << ")" << std::endl;
 }
@@ -17,17 +16,6 @@ bool DefenseSquad::UpdateEnemies(const Units& enemies) {
     for (auto& enemy : enemies) {
         if (GetEnemies().contains(enemy)) {
             SetEnemies(enemies);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool DefenseSquad::UpdateAllies(const Units& allies) {
-    for (auto& ally : allies) {
-        if (GetAllies().contains(ally)) {
-            SetAllies(allies);
             return true;
         }
     }
@@ -50,7 +38,7 @@ void DefenseSquad::Update() {
 
         // Let micro plugin dispose of enemy if we're engaged
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetAllies());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
     } else {
         // Approach enemy if we've not engaged yet
         auto enemyCircle = GetEnemies().CalculateCircle();

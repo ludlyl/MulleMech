@@ -29,8 +29,6 @@ public:
     const Units& GetEnemies() const { return m_enemies; }
     void SetEnemies(Units enemies) { m_enemies = std::move(enemies); }
 
-    void AddAlly(Unit* ally);
-    void RemoveAlly(Unit* ally);
     Units& GetAllies() { return m_allies; }
     const Units& GetAllies() const { return m_allies; }
     void SetAllies(Units allies) { m_allies = std::move(allies); }
