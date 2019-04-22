@@ -17,7 +17,9 @@
 struct Expansion {
     explicit Expansion(const sc2::Point3D& town_hall_location_);
 
+    // TODO: Some of these values should be const (it's bad if other parts of the code can change all of these)
     sc2::Point3D town_hall_location;
+    sc2::Point3D center_behind_minerals;
     sc2::Unit::Alliance alliance;
     std::unordered_map<std::shared_ptr<Expansion>, float> ground_distances;
     Unit* town_hall; // nullptr if we do not control the base

@@ -258,7 +258,7 @@ sc2::Point3D CombatCommander::GetArmyIdlePosition() const {
         return gAPI->observer().StartingLocation();
 
     auto town_hall = expansions.back()->town_hall_location;
-    auto direction_vector = town_hall - BuildingPlacer::GetCenterBehindMinerals(town_hall);
+    auto direction_vector = town_hall - expansions.back()->center_behind_minerals;
     sc2::Normalize3D(direction_vector);
 
     return town_hall + direction_vector * IdleDistance;
