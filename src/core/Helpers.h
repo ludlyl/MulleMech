@@ -47,6 +47,12 @@ struct IsBuilding {
     bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
+// I.e. is it a barracks, factory or starport
+struct IsBuildingWithSupportForAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
 struct IsAddon {
     bool operator()(const sc2::Unit& type_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;

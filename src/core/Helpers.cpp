@@ -106,6 +106,8 @@ bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
     // TODO: Check hallucinations
 
     switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_MULE:
+
         case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
         case sc2::UNIT_TYPEID::ZERG_BROODLING:
         case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
@@ -151,6 +153,25 @@ bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
            type_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
            type_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
            type_ != sc2::UNIT_TYPEID::ZERG_EGG;
+}
+
+bool IsBuildingWithSupportForAddon::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsBuildingWithSupportForAddon::operator()(sc2::UNIT_TYPEID type_) const {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSFLYING:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORY:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYFLYING:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORT:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTFLYING:
+            return true;
+
+        default:
+            return false;
+    }
 }
 
 bool IsAddon::operator()(const sc2::Unit& unit_) const {

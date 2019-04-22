@@ -19,6 +19,7 @@
 #include "plugins/RepairMan.h"
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
+#include "BuildingPlacer.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -29,6 +30,7 @@ Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
     gReasoner = std::make_unique<Reasoner>();
     gIntelligenceHolder = std::make_unique<IntelligenceHolder>();
+    gBuildingPlacer = std::make_unique<BuildingPlacer>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
@@ -46,6 +48,16 @@ void Dispatcher::OnGameStart() {
 
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
     gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
+    gOverseerMap = std::make_unique<Overseer::MapImpl>();
+
+    Timer clock;
+    clock.Start();
+    gOverseerMap->setBot(this);
+    gOverseerMap->initialize();
+    gBuildingPlacer->OnGameStart();
+    auto duration = clock.Finish();
+    gHistory.info() << "Map calculations took: " << duration << " ms" << std::endl;
+    gHistory.info() << "Tiles in start region: " << gOverseerMap->getNearestRegion(gAPI->observer().StartingLocation())->getTilePositions().size() << std::endl;
 
     m_plugins.emplace_back(new Governor());
     m_plugins.emplace_back(new Miner());
@@ -115,6 +127,7 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitCreated(unit);
+    gBuildingPlacer->OnUnitCreated(unit);
 
     for (const auto& i : m_plugins)
         i->OnUnitCreated(unit);
@@ -137,6 +150,7 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitDestroyed(unit);
+    gBuildingPlacer->OnUnitDestroyed(unit);
 
     for (const auto& i : m_plugins)
         i->OnUnitDestroyed(unit, m_builder.get());
@@ -152,6 +166,7 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
 
 void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit_) {
     auto unit = gAPI->WrapUnit(unit_);
+    gBuildingPlacer->OnUnitEnterVision(unit);
     for (const auto& i : m_plugins)
         i->OnUnitEnterVision(unit);
 }

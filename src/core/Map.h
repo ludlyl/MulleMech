@@ -7,6 +7,7 @@
 #include "Unit.h"
 
 #include <sc2api/sc2_unit.h>
+#include <overseer/MapImpl.h>
 
 #include <list>
 #include <memory>
@@ -37,3 +38,6 @@ typedef std::vector<std::shared_ptr<Expansion>> Expansions;
 
 // NOTE (alkurbatov): Slightly optimised version of the builtin function.
 Expansions CalculateExpansionLocations();
+
+extern std::unique_ptr<Overseer::MapImpl> gOverseerMap;
+

@@ -250,3 +250,5 @@ Expansions CalculateExpansionLocations() {
 
     return expansions;
 }
+
+std::unique_ptr<Overseer::MapImpl> gOverseerMap;
