@@ -13,6 +13,7 @@
 #include "core/API.h"
 #include "core/Errors.h"
 #include "Addon.h"
+#include "UpgradeBuilding.h"
 
 #include <memory>
 
@@ -29,6 +30,9 @@ std::shared_ptr<bp::Blueprint> bp::Blueprint::Plot(sc2::ABILITY_ID ability_) {
         case sc2::ABILITY_ID::BUILD_FACTORY:
         case sc2::ABILITY_ID::BUILD_STARPORT:
             return std::make_shared<ProductionBuilding>();
+        case sc2::ABILITY_ID::BUILD_ARMORY:
+        case sc2::ABILITY_ID::BUILD_ENGINEERINGBAY:
+            return std::make_shared<UpgradeBuilding>();
 
         // Add-ons
         case sc2::ABILITY_ID::BUILD_TECHLAB_BARRACKS:
