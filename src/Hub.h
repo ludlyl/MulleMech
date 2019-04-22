@@ -194,6 +194,7 @@ struct Hub {
     // If INVALID is sent in as a addon_requirement (and no assignee is provided) the order is assigned to a unit with no add-on
     bool AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_);
 
+    // Sorted by distance from our starting location
     const Expansions& GetExpansions() const;
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
