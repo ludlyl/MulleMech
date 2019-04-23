@@ -42,6 +42,9 @@ public:
 
     sc2::UnitTypeData GetTypeData() const;
 
+    enum class Attackable { True, False, NeedScan };
+    Attackable CanAttack(const Unit* other) const;
+
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
 private:

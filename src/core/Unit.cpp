@@ -68,3 +68,28 @@ const Worker* Unit::AsWorker() const {
 sc2::UnitTypeData Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
 }
+
+Unit::Attackable Unit::CanAttack(const Unit* other) const {
+    auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
+
+    bool has_wep_type = false;
+    for (auto& weapon : our_data.weapons) {
+        if (weapon.type == sc2::Weapon::TargetType::Any)
+            has_wep_type = true;
+        else if (weapon.type == sc2::Weapon::TargetType::Ground && !other->is_flying)
+            has_wep_type = true;
+        else if (weapon.type == sc2::Weapon::TargetType::Air && other->is_flying)
+            has_wep_type = true;
+
+        if (has_wep_type)
+            break;
+    }
+
+    if (!has_wep_type)
+        return Attackable::False;
+
+    if (other->cloak == sc2::Unit::Cloaked)
+        return Attackable::NeedScan;
+
+    return Attackable::True;
+}
