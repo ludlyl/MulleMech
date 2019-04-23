@@ -220,43 +220,31 @@ bool IsMineralPatch::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
+bool IsGeyser::operator()(const sc2::Unit& unit_) const {
     switch (unit_.unit_type.ToType()) {
-        // Mineral types.
-        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD:
-
-        // Geyser types.
         case sc2::UNIT_TYPEID::NEUTRAL_VESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERVESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_SHAKURASVESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER:
-            return unit_.display_type != sc2::Unit::DisplayType::Visible;
-
+            return true;
         default:
             return false;
     }
 }
 
-bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
+bool IsVisibleUndepletedGeyser::operator()(const sc2::Unit& unit_) const {
     return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
 
-bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
-    return IsVisibleGeyser()(unit_) && !gHub->IsOccupied(gAPI->WrapUnit(&unit_));
+bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
+    if (IsMineralPatch()(unit_) || IsGeyser()(unit_)) {
+        return unit_.display_type != sc2::Unit::DisplayType::Visible;
+    }
+    return false;
 }
+
 
 bool IsRefinery::operator()(const sc2::Unit& unit_) const {
     if (unit_.build_progress != 1.0f)
@@ -299,28 +287,6 @@ bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
             return true;
         }
     }
-    return false;
-}
-
-bool IsGasWorker::operator()(const sc2::Unit& unit_) const {
-    if (!IsWorker()(unit_))
-        return false;
-
-    if (unit_.orders.empty())
-        return false;
-
-    if (unit_.orders.front().ability_id == sc2::ABILITY_ID::HARVEST_RETURN) {
-        if (unit_.buffs.empty())
-            return false;
-
-        return unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGAS ||
-            unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGASZERG ||
-            unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGASPROTOSS;
-    }
-
-    if (unit_.orders.front().ability_id == sc2::ABILITY_ID::HARVEST_GATHER)
-        return gHub->IsTargetOccupied(unit_.orders.front());
-
     return false;
 }
 

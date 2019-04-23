@@ -11,6 +11,10 @@ void Worker::BuildRefinery(Order* order_, const Unit* geyser_) {
     assert(alliance == sc2::Unit::Alliance::Self);
     order_->assignee = this;
     gAPI->action().Build(*order_, geyser_);
+    // As the worker will go over to collecting gas as fast as the building is completed,
+    // settings it's job to "building" here is a bit problematic. The way we currently fix
+    // this is by calling SetAsUnemployed on workers that finishes refineries in Hub::OnBuildingConstructionComplete
+    // We should find a better way to solve this!
     m_job = Job::building;
 }
 

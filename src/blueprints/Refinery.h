@@ -8,6 +8,7 @@
 
 namespace bp {
 
+// Could take an expansion as a parameter to support only (trying) to build refinery at a certain expansion
 struct Refinery : Blueprint {
     bool CanBeBuilt(const Order* order_) final;
 

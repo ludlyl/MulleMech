@@ -118,14 +118,14 @@ void Dispatcher::OnStep() {
 }
 
 void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
+    auto unit = gAPI->WrapUnit(unit_);
     // NOTE (alkurbatov): Could be just a worker exiting a refinery.
-    if (unit_->alliance != sc2::Unit::Alliance::Self || IsGasWorker()(*unit_))
+    if (unit_->alliance != sc2::Unit::Alliance::Self || IsWorkerWithJob(Worker::Job::gathering_vespene)(*unit))
         return;
 
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was created" << std::endl;
 
-    auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitCreated(unit);
     gBuildingPlacer->OnUnitCreated(unit);
 

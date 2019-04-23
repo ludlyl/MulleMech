@@ -36,6 +36,12 @@ public:
     // Note: This doesn't support refineries
     std::optional<sc2::Point3D> ReserveBuildingSpace(const Order& order_, bool include_addon_space_ = false);
 
+    // Needed to support "CanBeBuilt" in the blueprints
+    bool IsGeyserUnoccupied(const Unit* geyser_) const;
+
+    // Returns true if reservation was successful
+    bool ReserveGeyser(const Unit* geyser_);
+
 private:
     struct Point2DIHasher {
         std::size_t operator()(const sc2::Point2DI& k) const {
@@ -75,7 +81,7 @@ private:
     // Region could be calculated from the bottom_left_tile but that would be a bit unnecessary
     // Would it be better to pass in a RegionWrapper reference (or just id?)
     bool IsBuildSpaceFree(const sc2::Point2DI& bottom_left_tile_, int width_, int height_,
-                          const std::unordered_map<sc2::Point2DI, std::shared_ptr<Overseer::Tile>, Point2DIHasher>& buildable_tiles_);
+                          const std::unordered_map<sc2::Point2DI, std::shared_ptr<Overseer::Tile>, Point2DIHasher>& buildable_tiles_) const;
 
     // IsBuildSpaceFree should always be called before this is called (or the tiles should be checked at least)
     // This will assert/throw an error if the any of the tiles are already marked as occupied

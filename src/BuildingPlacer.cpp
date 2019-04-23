@@ -162,6 +162,43 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
     return std::nullopt;
 }
 
+bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
+    assert(IsGeyser()(*geyser_));
+
+    auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    int width = static_cast<int>(radius * 2);
+    int height = width;
+    sc2::Point2DI bottom_left_tile;
+    bottom_left_tile.x = static_cast<int>(geyser_->pos.x - radius);
+    bottom_left_tile.y = static_cast<int>(geyser_->pos.y - radius);
+    sc2::Point2DI point; // Used to reuse the point object
+    for (int x = bottom_left_tile.x; x < (bottom_left_tile.x + width); x++) {
+        for (int y = bottom_left_tile.y; y < (bottom_left_tile.y + height); y++) {
+            point.x = x;
+            point.y = y;
+            if (occupied_tiles.count(point) > 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool BuildingPlacer::ReserveGeyser(const Unit* geyser_) {
+    if (IsGeyserUnoccupied(geyser_)) {
+        auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+        int width = static_cast<int>(radius * 2);
+        int height = width;
+        sc2::Point2DI bottom_left_tile;
+        bottom_left_tile.x = static_cast<int>(geyser_->pos.x - radius);
+        bottom_left_tile.y = static_cast<int>(geyser_->pos.y - radius);
+        MarkTilesAsReserved(bottom_left_tile, width, height);
+        return true;
+    }
+
+    return false;
+}
+
 void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupationStatus tile_occupation_status_) {
     bool is_building = IsBuilding()(*unit_);
     assert(is_building);
@@ -209,7 +246,7 @@ void BuildingPlacer::RemoveBuildingFromOccupiedTiles(const Unit* unit_) {
 }
 
 bool BuildingPlacer::IsBuildSpaceFree(const sc2::Point2DI& bottom_left_tile_, const int width_, const int height_,
-                                      const std::unordered_map<sc2::Point2DI, std::shared_ptr<Overseer::Tile>, Point2DIHasher>& buildable_tiles_) {
+                                      const std::unordered_map<sc2::Point2DI, std::shared_ptr<Overseer::Tile>, Point2DIHasher>& buildable_tiles_) const {
     sc2::Point2DI point; // Used to reuse the point object
     for (int x = bottom_left_tile_.x; x < (bottom_left_tile_.x + width_); x++) {
         for (int y = bottom_left_tile_.y; y < (bottom_left_tile_.y + height_); y++) {
