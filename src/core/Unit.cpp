@@ -74,6 +74,9 @@ Unit::Attackable Unit::CanAttack(const Unit* other) const {
 
     bool has_wep_type = false;
     for (auto& weapon : our_data.weapons) {
+        if (sc2::Distance3D(pos, other->pos) < weapon.range)
+            continue;
+
         if (weapon.type == sc2::Weapon::TargetType::Any)
             has_wep_type = true;
         else if (weapon.type == sc2::Weapon::TargetType::Ground && !other->is_flying)
