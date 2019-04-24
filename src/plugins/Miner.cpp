@@ -90,27 +90,30 @@ void SecureMineralsIncome(Builder* builder_) {
     }
 }
 
-
+// TODO: Workers should use the "home base system" for gas gathering too
+//  (currently they'll mine even if the cc at a base gets destroyed)
 void SecureVespeneIncome() {
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
-    Units workers = gAPI->observer().GetUnits(IsGasWorker(), sc2::Unit::Alliance::Self);
+    Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
 
-    for (const auto& i : refineries) {
-       if (i->assigned_harvesters == i->ideal_harvesters)
-            continue;
-       // Makes sure that we never have more than 3 workers on gas.
-       else if (i->assigned_harvesters > i->ideal_harvesters) { 
-           for (auto& j : workers) {
-               if (i->tag == j->GetPreviousStepOrders().front().target_unit_tag) {
-                   j->AsWorker()->Mine();
-                   break;
-               }
-           }
-           continue;
-       }
-
-       // NOTE: Home base is updated in Worker::GatherVespene()
-       gHub->AssignVespeneHarvester(i);
+    // We move max one for each refinery in each call to this function
+    for (const auto& refinery : refineries) {
+        if (refinery->assigned_harvesters < refinery->ideal_harvesters) {
+            // NOTE: Home base is updated in Worker::GatherVespene()
+            auto worker = GetClosestFreeWorker(refinery->pos);
+            if (worker) {
+                worker->GatherVespene(refinery);
+            }
+        // Makes sure that we never have more than 3 workers on gas.
+        } else if (refinery->assigned_harvesters > refinery->ideal_harvesters) {
+            for (auto& gas_worker : gas_workers) {
+                if (refinery->tag == gas_worker->GetPreviousStepOrders().front().target_unit_tag) {
+                    gas_worker->AsWorker()->Mine();
+                    gas_workers.remove(gas_worker);
+                    break;
+                }
+            }
+        }
     }
 }
 

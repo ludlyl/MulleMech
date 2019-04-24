@@ -47,6 +47,12 @@ struct IsBuilding {
     bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
+// I.e. is it a barracks, factory or starport
+struct IsBuildingWithSupportForAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
 struct IsAddon {
     bool operator()(const sc2::Unit& type_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;
@@ -65,11 +71,11 @@ struct IsMineralPatch {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsFoggyResource {
+struct IsGeyser {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsVisibleGeyser {
+struct IsVisibleUndepletedGeyser {
     // NOTE (alkurbatov): All the geysers has non-zero vespene contents while
     // the geysers covered by the fog of war don't have such parameter
     // (it is always zero) and can't be selected/targeted.
@@ -78,11 +84,11 @@ struct IsVisibleGeyser {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-// Check that the provided unit is not occupied and not depleted geyser
-struct IsFreeGeyser {
+struct IsFoggyResource {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+// I.e. IsFinishedRefinery
 struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -108,10 +114,6 @@ struct IsWorkerWithJob {
 
 private:
     Worker::Job m_job;
-};
-
-struct IsGasWorker {
-    bool operator()(const sc2::Unit& unit_) const;
 };
 
 struct IsTownHall {
