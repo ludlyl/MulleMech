@@ -88,6 +88,7 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
     int height = width;
     int margin;
     sc2::Point2DI point; // Used to reuse the point object
+    sc2::Point2DI addon_bottom_left_tile; // Only used when include_addon_space_ is true
     // TODO: We want some kind of "search origin" that is different for different kinds of buildings.
     //  I.e. we want depots, production buildings, ebays/armories in different places
 
@@ -128,13 +129,6 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
         margin = DefaultBuildingMargin;
     }
 
-    // Special case for when we want to include space for addon. For now we just increase width with the addon width
-    // This isn't optimal as it leaves unnecessarily much margin around the building (but it is not like we are space efficient anyway)
-    if (include_addon_space_) {
-        // The building is guaranteed to be a barracks, factory or starport as we've asserted otherwise
-        width += AddonSize;
-    }
-
     for (const auto& expansion : gHub->GetExpansions()) {
         const auto& closest_region = gOverseerMap->getNearestRegion(expansion->town_hall_location); // Is this costly?
         auto& wrapped_region = regions[closest_region->getId() - 1]; // Might be bad to assume that the regions remain unchanged
@@ -145,6 +139,17 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
                 point.y = y;
                 // We need to multiple the margin by 2 as we want margin on all sides
                 if (IsBuildSpaceFree(point, width + margin * 2, height + margin * 2, wrapped_region.buildable_tiles)) {
+                    if (include_addon_space_) {
+                        addon_bottom_left_tile = point;
+                        addon_bottom_left_tile.x += width;
+                        if (IsBuildSpaceFree(addon_bottom_left_tile, AddonSize + margin * 2, AddonSize + margin * 2, wrapped_region.buildable_tiles)) {
+                            // When we actually place the addon we don't want to check with the margin anymore
+                            addon_bottom_left_tile.x += margin;
+                            addon_bottom_left_tile.y += margin;
+                        } else {
+                            continue;
+                        }
+                    }
                     // When we actually place the building we don't want to check with the margin anymore
                     point.x += margin;
                     point.y += margin;
@@ -152,6 +157,9 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
                     // Do we want to do "CanBePlaced" for the addon too? Doing it has both pros and cons
                     if (gAPI->query().CanBePlaced(order_, pos)) {
                         MarkTilesAsReserved(point, width, height);
+                        if (include_addon_space_) {
+                            MarkTilesAsReserved(addon_bottom_left_tile, AddonSize, AddonSize);
+                        }
                         return pos;
                     }
                 }
