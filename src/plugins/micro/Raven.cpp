@@ -12,7 +12,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
     
     if(m_self->energy>=50){
         Units copy = enemies;
-        //Find priority targets (Valuable targets, usually big units)
+        //Find priority targets to disable (Casters and big units)
         auto itr = std::remove_if(copy.begin(), copy.end(), [](const Unit *u) {
             return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_ORACLE ||
                      u->unit_type.ToType() == sc2::UNIT_TYPEID::PROTOSS_HIGHTEMPLAR ||
@@ -34,16 +34,22 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
             const Unit* target = enemies.GetClosestUnit(m_self->pos);
             //TODO Find ID for interference Matrix
             //Cast(sc2::ABILITY_ID::INTERFERENCE_MATRIX, target->pos);
-
-
-
-
         }
 
     }
 
+    Units allyCopy = allies;
+    //See if we have units with us with fast attacks, since we play mech this only needs to check for Battlecruisers.
+    auto itr = std::remove_if(allyCopy.begin(), allyCopy.end(), [](const Unit *u) {
+        return !(u->unit_type.ToType() == sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER);
+    });
+    allyCopy.erase(itr, allyCopy.end());
 
-
+    if(!allyCopy.empty()){
+        const Unit* target = enemies.GetClosestUnit(m_self->pos);
+        //TODO Find ID for anti-Armor missile
+        //Cast(sc2::ABILITY_ID::EFFECT_ANTI_ARMOR_MISSILE, target->pos);
+    }
 
     if(enemies.size()>4 && m_self->energy >= 100){
         const Unit* target = enemies.GetClosestUnit(m_self->pos);
