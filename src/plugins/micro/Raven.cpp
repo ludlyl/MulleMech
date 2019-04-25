@@ -4,7 +4,7 @@
 Raven::Raven(Unit* unit)
         : MicroPlugin(unit) {}
 
-void Raven::OnCombatStep(const Units& enemies) {
+void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
 
     //Use to find missing IDs, will be removed
     auto abilities = gAPI->query().GetAbilitiesForUnit(m_self).abilities;
@@ -32,7 +32,7 @@ void Raven::OnCombatStep(const Units& enemies) {
 
         if(!copy.empty()){
             const Unit* target = enemies.GetClosestUnit(m_self->pos);
-            //TODO Find ID for interfence Matrix
+            //TODO Find ID for interference Matrix
             //Cast(sc2::ABILITY_ID::INTERFERENCE_MATRIX, target->pos);
 
 

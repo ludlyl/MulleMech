@@ -6,5 +6,5 @@ class Raven : public MicroPlugin {
 public:
     explicit Raven(Unit* unit);
 
-    void OnCombatStep(const Units& enemies) override;
+    void OnCombatStep(const Units& enemies, const Units& allies) override;
 };
