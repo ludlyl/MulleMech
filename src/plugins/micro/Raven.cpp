@@ -32,8 +32,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
 
         if(!copy.empty()){
             const Unit* target = enemies.GetClosestUnit(m_self->pos);
-            //TODO Find ID for interference Matrix
-            //Cast(sc2::ABILITY_ID::INTERFERENCE_MATRIX, target->pos);
+            Cast(sc2::ABILITY_ID::EFFECT_INTERFERENCEMATRIX, target->pos);
         }
 
     }
@@ -47,8 +46,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
 
     if(!allyCopy.empty()){
         const Unit* target = enemies.GetClosestUnit(m_self->pos);
-        //TODO Find ID for anti-Armor missile
-        //Cast(sc2::ABILITY_ID::EFFECT_ANTI_ARMOR_MISSILE, target->pos);
+        Cast(sc2::ABILITY_ID::EFFECT_ANTIARMORMISSILE, target->pos);
     }
 
     if(enemies.size()>4 && m_self->energy >= 100){
