@@ -177,7 +177,7 @@ void CombatCommander::DefenseCheck() {
             while (--steal >= 0 && StealUnitFromMainSquad(defenders))
                 /* empty */;
             if (!defenders.empty())
-                m_defenseSquads.emplace_back(std::move(defenders), std::move(group));
+                m_defenseSquads.emplace_back(std::move(defenders), std::move(group), std::move(defenders));
         }
     }
 

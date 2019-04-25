@@ -38,7 +38,7 @@ void DefenseSquad::Update() {
 
         // Let micro plugin dispose of enemy if we're engaged
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
     } else {
         // Approach enemy if we've not engaged yet
         auto enemyCircle = GetEnemies().CalculateCircle();

@@ -7,7 +7,7 @@ Battlecruiser::Battlecruiser(Unit* unit)
 {
 }
 
-void Battlecruiser::OnCombatStep(const Units& enemies) {
+void Battlecruiser::OnCombatStep(const Units& enemies, const Units& allies) {
     if(m_self->health < retreatHealth){
         Cast(sc2::ABILITY_ID::EFFECT_TACTICALJUMP, sc2::Point2D(gAPI->observer().StartingLocation().x,
                                                                 gAPI->observer().StartingLocation().y));

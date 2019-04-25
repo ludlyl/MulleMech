@@ -29,6 +29,11 @@ public:
     const Units& GetEnemies() const { return m_enemies; }
     void SetEnemies(Units enemies) { m_enemies = std::move(enemies); }
 
+    Units& GetAllies() { return m_allies; }
+    const Units& GetAllies() const { return m_allies; }
+    void SetAllies(Units allies) { m_allies = std::move(allies); }
+
+
     // Approach a position as a group; units are kept from getting too spread out
     void Approach(const sc2::Point2D& position);
 
@@ -70,6 +75,7 @@ private:
 
     Units m_units;
     Units m_enemies;
+    Units m_allies;
     sc2::Point2D m_center;                          // center of our units
     sc2::Point2D m_regroupPos;
     sc2::Point2D m_approachPos;

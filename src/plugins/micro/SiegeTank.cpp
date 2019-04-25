@@ -1,12 +1,14 @@
 #include "SiegeTank.h"
 
 #include "core/API.h"
-
-SiegeTank::SiegeTank(Unit* unit) : MicroPlugin(unit)
+SiegeTank::SiegeTank(Unit* unit)
+        : MicroPlugin(unit)
 {
 }
 
-void SiegeTank::OnCombatStep(const Units& enemies) {
+void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
+
+    float closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);
     Units ground_enemies = enemies;
     //See if there are any ground units so we don't siege if we can't hit anything
     auto itr = std::remove_if(ground_enemies.begin(), ground_enemies.end(), [](const Unit* u) {

@@ -4,7 +4,7 @@
 DefaultUnit::DefaultUnit(Unit* unit)
     : MicroPlugin(unit) {}
 
-void DefaultUnit::OnCombatStep(const Units& enemies) {
+void DefaultUnit::OnCombatStep(const Units& enemies, const Units& allies) {
     if (m_self->health / m_self->health_max > FleeHpPct) {
         if (auto target = enemies.GetClosestUnit(m_self->tag)) {
             Attack(target);

@@ -15,7 +15,7 @@ public:
     explicit MicroPlugin(Unit* unit);
     virtual ~MicroPlugin() = default;
 
-    void OnCombatFrame(Unit* self, const Units& enemies);
+    void OnCombatFrame(Unit* self, const Units& enemies, const Units& allies);
 
     void OnCombatOver(Unit* self);
 
@@ -25,7 +25,7 @@ protected:
     // Combat step function for MicroPlugin, only processed during combat
     // enemies: List of all enemies we are currently fighting in our localized area (i.e. not irrelevant enemies far away)
     // TODO: Should probably have a list of all allies that are part of the fight
-    virtual void OnCombatStep(const Units& enemies) = 0;
+    virtual void OnCombatStep(const Units& enemies, const Units& allies) = 0;
 
     virtual void OnCombatEnded() { }
 

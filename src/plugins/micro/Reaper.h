@@ -1,11 +1,11 @@
 #pragma once
 
-#include "DefaultUnit.h"
+#include "MicroPlugin.h"
 
 
 class Reaper : public MicroPlugin {
 public:
     explicit Reaper(Unit* unit);
 
-    void OnCombatStep(const Units& enemies) override;
+    void OnCombatStep(const Units& enemies, const Units& allies) override;
 };
