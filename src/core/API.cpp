@@ -196,6 +196,19 @@ size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) c
     return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
 }
 
+const std::vector<sc2::UpgradeID> Observer::GetUpgrades() const {
+    return m_observer->GetUpgrades();
+}
+
+bool Observer::HasUpgrade(sc2::UPGRADE_ID upgrade_id_) const {
+    for (auto& upgrade : GetUpgrades()) {
+        if (upgrade == upgrade_id_) {
+            return true;
+        }
+    }
+    return false;
+}
+
 const sc2::GameInfo& Observer::GameInfo() const {
     return m_observer->GetGameInfo();
 }
@@ -376,7 +389,7 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
     return decodedHeight;
 }
 
-Query::Query(sc2::QueryInterface* query_): m_query(query_) {
+    Query::Query(sc2::QueryInterface* query_): m_query(query_) {
 }
 
 bool Query::CanBePlaced(const Order& order_, const sc2::Point2D& point_) {
