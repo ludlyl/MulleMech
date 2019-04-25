@@ -6,7 +6,7 @@ Reaper::Reaper(Unit* unit)
 {
 }
 
-void Reaper::OnCombatStep(const Units& enemies) {
+void Reaper::OnCombatStep(const Units& enemies, const Units& allies) {
     const Unit* target = enemies.GetClosestUnit(m_self->pos);
     //Retreat
     if ((m_self->health) < (35) && !((gAPI->observer().StartingLocation().x == m_self->pos.x) &&

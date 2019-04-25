@@ -158,18 +158,12 @@ bool Builder::AreNoneResourceRequirementsFulfilled(Order* order_, std::shared_pt
     if (order_->food_required > 0 && m_available_food < order_->food_required)
         return false;
 
-    // If the order is to construct a building, we want to make sure a free worker exists before we continue
-    // This is needed to avoid continuously performing expensive operations such as calculating building placement (if no free worker exists)
-    if (IsBuilding()(order_->unit_type_id) && !IsAddon()(order_->unit_type_id)) {
-        if (!FreeWorkerExists()) {
-            return false;
-        }
-    }
-
     if (!blueprint) {
         blueprint = bp::Blueprint::Plot(order_->ability_id);
     }
 
+    // This will/should check if a free worker exists if that is necessary to fulfill the order
+    // (so we don't need to check that separately)
     return blueprint->CanBeBuilt(order_);
 }
 
@@ -217,7 +211,7 @@ void Builder::ResolveMissingWorkers() {
 
     for (auto& construction : constructions) {
         auto building = construction.GetBuilding();
-        if (!construction.GetScv() && building) {
+        if (!construction.GetScvIfAlive() && building) {
             auto worker = GetClosestFreeWorker(building->pos);
             if (worker) {
                 gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<

@@ -140,7 +140,7 @@ float QuarterMaster::CalcEstimatedSupply(Builder* builder_) {
             continue;
 
         // Skip any SCV who's already started his building
-        auto itr = std::find_if(constructions.begin(), constructions.end(), [scv](auto& c) { return c.GetScv() == scv; });
+        auto itr = std::find_if(constructions.begin(), constructions.end(), [scv](auto& c) { return c.GetScvIfAlive() == scv; });
         if (itr != constructions.end())
             continue;
 

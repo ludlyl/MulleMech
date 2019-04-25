@@ -6,25 +6,26 @@
 #include "Hub.h"
 #include "core/Helpers.h"
 #include "core/API.h"
+#include "BuildingPlacer.h"
 
 bool bp::Building::CanBeBuilt(const Order*) {
-
     return FreeWorkerExists();
 }
 
 bool bp::Building::Build(Order* order_) {
-    // Find place to build the structure
-    sc2::Point3D base = gAPI->observer().StartingLocation();
-    sc2::Point2D point;
+    // Should "FreeWorkerExists" be checked here too? CanBeBuilt is always called before this so feels necessary,
+    // but it's really bad if ReserveBuildingSpace is called, succeeds and no free worker is found
 
-    unsigned attempt = 0;
-    do {
-        point.x = base.x + sc2::GetRandomScalar() * 15.0f;
-        point.y = base.y + sc2::GetRandomScalar() * 15.0f;
-
-        if (++attempt > 150)
-            return false;
-    } while (!gAPI->query().CanBePlaced(*order_, point));
-
-    return gHub->AssignBuildTask(order_, point);
+    auto optional_pos = gBuildingPlacer->ReserveBuildingSpace(*order_,
+                                                              IsBuildingWithSupportForAddon()(order_->unit_type_id));
+    if (optional_pos.has_value()) {
+        Worker* worker = GetClosestFreeWorker(optional_pos.value());
+        if (worker) {
+            worker->Build(order_, optional_pos.value());
+            return true;
+        } else {
+            assert(false && "Building space reserved but no free worker was found!");
+        }
+    }
+    return false;
 }

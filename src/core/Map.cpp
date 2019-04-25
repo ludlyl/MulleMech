@@ -135,10 +135,42 @@ void CalculateAirDistances(Expansions& expansions) {
     }
 }
 
+Units GetMineralPatchesAtBase(const sc2::Point3D& baseLocation) {
+    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                 {IsMineralPatch(), IsWithinDist(baseLocation, 15.0f)}));
+}
+
+sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D& baseLocation) {
+    // TODO: Reuse Map's Clusters?
+    auto mineralPatches = GetMineralPatchesAtBase(baseLocation);
+
+    if (mineralPatches.empty())
+        return baseLocation;
+
+    // Get center of resources around base
+    sc2::Point3D resourceCenter;
+    float maxDist = 0;
+    for (auto& mineralPatch : mineralPatches) {
+        resourceCenter += mineralPatch->pos;
+        float dist = sc2::Distance2D(mineralPatch->pos, baseLocation);
+        if (maxDist < dist)
+            maxDist = dist;
+    }
+    resourceCenter /= mineralPatches.size();
+    resourceCenter.z = baseLocation.z;
+
+    // Get direction vector
+    auto directionVector = resourceCenter - baseLocation;
+    sc2::Normalize3D(directionVector);
+
+    return baseLocation + directionVector * (maxDist + 1.5f);
+}
+
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
     town_hall_location(town_hall_location_), alliance(sc2::Unit::Alliance::Neutral), town_hall(nullptr) {
+    center_behind_minerals = GetCenterBehindMinerals(town_hall_location);
 }
 
 Expansions CalculateExpansionLocations() {
@@ -218,3 +250,5 @@ Expansions CalculateExpansionLocations() {
 
     return expansions;
 }
+
+std::unique_ptr<Overseer::MapImpl> gOverseerMap;

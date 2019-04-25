@@ -14,22 +14,18 @@
 
 namespace {
 struct SortByDistance {
-    explicit SortByDistance(const sc2::Point3D& point_);
+    explicit SortByDistance(const sc2::Point3D& point_):
+            m_point(point_) {
+    }
 
-    bool operator()(const std::shared_ptr<Expansion>& lhs_, const std::shared_ptr<Expansion>& rhs_) const;
+    bool operator()(const std::shared_ptr<Expansion>& lhs_, const std::shared_ptr<Expansion>& rhs_) const {
+        return sc2::DistanceSquared2D(lhs_->town_hall_location, m_point) <
+               sc2::DistanceSquared2D(rhs_->town_hall_location, m_point);
+    }
 
  private:
     sc2::Point3D m_point;
 };
-
-SortByDistance::SortByDistance(const sc2::Point3D& point_):
-    m_point(point_) {
-}
-
-bool SortByDistance::operator()(const std::shared_ptr<Expansion>& lhs_, const std::shared_ptr<Expansion>& rhs_) const {
-    return sc2::DistanceSquared2D(lhs_->town_hall_location, m_point) <
-        sc2::DistanceSquared2D(rhs_->town_hall_location, m_point);
-}
 
 }  // namespace
 
@@ -40,7 +36,7 @@ Unit* Construction::GetBuilding() const {
     return building;
 }
 
-Unit* Construction::GetScv() const {
+Unit* Construction::GetScvIfAlive() const {
     if (!scv->is_alive)
         return nullptr;
     return scv;
@@ -79,9 +75,15 @@ void Hub::OnUnitCreated(Unit* unit_) {
         auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
             [&unit_, &buildingData](const sc2::Unit& scv) {
                 for (auto& order : scv.orders) {
-                    if (order.ability_id == buildingData.ability_id && order.target_pos.x == unit_->pos.x &&
-                        order.target_pos.y == unit_->pos.y) {
-                        return true;
+                    if (order.ability_id == buildingData.ability_id) {
+                        // Special case ("hack") for refineries. This is really ugly and a better solution should probably be made
+                        auto pos = sc2::Distance2D(scv.pos, unit_->pos);
+                        if (order.target_unit_tag != sc2::NullTag &&
+                            sc2::Distance2D(scv.pos, unit_->pos) < unit_->radius + RefineryConstructionToScvExtraDistance) {
+                            return true;
+                        } else if (order.target_pos.x == unit_->pos.x && order.target_pos.y == unit_->pos.y) {
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -95,19 +97,6 @@ void Hub::OnUnitCreated(Unit* unit_) {
     }
 
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
-        case sc2::UNIT_TYPEID::TERRAN_REFINERY:
-        case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
-            // Remove claimed geyser
-            if (m_captured_geysers.RemoveOccupied(unit_))
-                gHistory.info() << "Release claimed geyser " << std::endl;
-
-            m_captured_geysers.Add(unit_);
-            gHistory.info() << "Capture object " <<
-                sc2::UnitTypeToName(unit_->unit_type) << std::endl;
-            return;
-        }
-
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
@@ -145,17 +134,6 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
     }
 
     switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
-        case sc2::UNIT_TYPEID::TERRAN_REFINERY:
-        case sc2::UNIT_TYPEID::ZERG_EXTRACTOR: {
-            if (m_captured_geysers.Remove(unit_)) {
-                gHistory.info() << "Release object " <<
-                    sc2::UnitTypeToName(unit_->unit_type) << std::endl;
-            }
-
-            return;
-        }
-
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
@@ -204,27 +182,14 @@ void Hub::OnBuildingConstructionComplete(Unit* building_) {
     // Remove finished building from our on-going constructions list
     for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
         if (itr->building == building_) {
+            // "Hack" to set the new job for scv:s finishing refinery construction
+            if (itr->building->unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY) {
+                itr->scv->AsWorker()->SetAsUnemployed();
+            }
+
             m_constructions.erase(itr);
             break;
         }
-    }
-}
-
-bool Hub::IsOccupied(const Unit* unit_) const {
-    return m_captured_geysers.IsOccupied(unit_);
-}
-
-bool Hub::IsTargetOccupied(const sc2::UnitOrder& order_) const {
-    if (auto unit = gAPI->observer().GetUnit(order_.target_unit_tag))
-        return IsOccupied(unit);
-    return false;
-}
-
-void Hub::ClaimObject(Unit* unit_) {
-    if (IsVisibleGeyser()(*unit_)) {
-        m_captured_geysers.Add(unit_);
-        gHistory.info() << "Claim object " <<
-            sc2::UnitTypeToName(unit_->unit_type) << std::endl;
     }
 }
 
@@ -234,33 +199,6 @@ sc2::Race Hub::GetCurrentRace() const {
 
 sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
     return m_current_worker_type;
-}
-
-bool Hub::AssignRefineryConstruction(Order* order_, Unit* geyser_) {
-    Worker* worker = GetClosestFreeWorker(geyser_->pos);
-    if (!worker)
-        return false;
-
-    worker->BuildRefinery(order_, geyser_);
-    ClaimObject(geyser_);
-    return true;
-}
-
-bool Hub::AssignBuildTask(Order* order_, const sc2::Point2D& point_) {
-    Worker* worker = GetClosestFreeWorker(point_);
-    if (!worker)
-        return false;
-
-    worker->Build(order_, point_);
-    return true;
-}
-
-void Hub::AssignVespeneHarvester(const Unit* refinery_) {
-    Worker* worker = GetClosestFreeWorker(refinery_->pos);
-    if (!worker)
-        return;
-
-    worker->GatherVespene(refinery_);
 }
 
 Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_) {
@@ -292,9 +230,9 @@ Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPE
     return nullptr;
 }
 
-bool Hub::AssignBuildingProduction(Order* order_, Unit* assignee) {
-    if (assignee && IsIdleUnit(assignee->unit_type)(*assignee)) {
-        order_->assignee = assignee;
+bool Hub::AssignBuildingProduction(Order* order_, Unit* assignee_) {
+    if (assignee_ && IsIdleUnit(assignee_->unit_type)(*assignee_)) {
+        order_->assignee = assignee_;
         return true;
     }
     return false;
@@ -304,7 +242,7 @@ bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_) {
     return AssignBuildingProduction(order_, GetFreeBuildingProductionAssignee(order_, building_));
 }
 
-bool Hub::AssignBuildingProduction(Order *order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
+bool Hub::AssignBuildingProduction(Order* order_, sc2::UNIT_TYPEID building_, sc2::UNIT_TYPEID addon_requirement_) {
     return AssignBuildingProduction(order_, GetFreeBuildingProductionAssignee(order_, building_, addon_requirement_));
 }
 

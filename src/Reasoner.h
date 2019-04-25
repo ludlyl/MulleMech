@@ -41,7 +41,7 @@ class Reasoner {
         //  anti-air and sometimes getting as much anti-air as possible might be crucial to survive)
         const std::vector<UnitClass>& GetNeededUnitClasses() const;
 
-        // Return: Vector of Expansions sorted by likelihood
+        // Return: Vector of Expansions sorted by likelihood (does not contain expansions we know our opponent has)
         std::vector<std::shared_ptr<Expansion>> GetLikelyEnemyExpansions();
 
     private:
