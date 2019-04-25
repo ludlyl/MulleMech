@@ -52,7 +52,7 @@ void Governor::OnGameStart(Builder* builder_) {
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3);
 
-            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1); TODO fix so that these work in
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1); TODO fix so that these work
             //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2);
             //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3);
 
@@ -63,8 +63,6 @@ void Governor::OnGameStart(Builder* builder_) {
             // Tech lab upgrades
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::DRILLCLAWS);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::SMARTSERVOS);
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::RAVENCORVIDREACTOR);
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::MEDIVACINCREASESPEEDBOOST);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HIGHCAPACITYBARRELS);
 
             // Fusion Core upgrades
@@ -72,9 +70,8 @@ void Governor::OnGameStart(Builder* builder_) {
 
             //Engineering Bay Upgrades (will ignore infantry upgrades since)
             //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANBUILDINGARMOR); //TODO fix so that this works
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HISECAUTOTRACKING); 
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HISECAUTOTRACKING);
 
-            //TODO add ghost acadamy if needed.
             break;
         default:
             break;

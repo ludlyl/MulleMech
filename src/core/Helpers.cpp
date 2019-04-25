@@ -451,15 +451,16 @@ sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
     return vector_prime;
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_) {
-    return GetAllTechRequirements(gAPI->observer().GetUnitTypeData(id_));
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::UnitTypeID id_) {
+    return GetAllStructureTechRequirements(gAPI->observer().GetUnitTypeData(id_));
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData &data_) {
-    return GetAllTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitTypeData& data_) {
+    return GetAllStructureTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_) {
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
+                                                             sc2::UnitTypeID suppliedTechRequirement_) {
     switch (id_.ToType()) {
         case sc2::ABILITY_ID::RESEARCH_COMBATSHIELD:
         case sc2::ABILITY_ID::RESEARCH_CONCUSSIVESHELLS:
@@ -537,6 +538,35 @@ std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::Uni
             }
             return {suppliedTechRequirement_};
         }
+    }
+}
+
+sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_) {
+    switch (id_.ToType()) {
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2:
+            return sc2::UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3:
+            return sc2::UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2;
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2:
+            return sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3:
+            return sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2;
+
+        default:
+            return sc2::UPGRADE_ID::INVALID;
     }
 }
 

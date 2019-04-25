@@ -194,19 +194,23 @@ bool Builder::Build(Order* order_) {
     return true;
 }
 
-void Builder::ScheduleRequiredStructures(const Order &order_, bool urgent) {
-    for (sc2::UnitTypeID unitTypeID : order_.tech_requirements) {
+void Builder::ScheduleRequiredStructures(const Order& order_, bool urgent) {
+    for (sc2::UnitTypeID unitTypeID : order_.structure_tech_requirements) {
         if (gAPI->observer().CountUnitType(unitTypeID, true) == 0 && CountScheduledStructures(unitTypeID) == 0) {
             ScheduleSequentialConstruction(unitTypeID, urgent);
         }
     }
 }
 
-bool Builder::HasTechRequirements(const Order *order_) const {
-    for (sc2::UnitTypeID unitTypeID : order_->tech_requirements) {
+bool Builder::HasTechRequirements(const Order* order_) const {
+    for (sc2::UnitTypeID unitTypeID : order_->structure_tech_requirements) {
         if (gAPI->observer().CountUnitType(unitTypeID) == 0) {
             return false;
         }
+    }
+    if (order_->upgrade_tech_requirement != sc2::UPGRADE_ID::INVALID &&
+        !gAPI->observer().HasUpgrade(order_->upgrade_tech_requirement)) {
+        return false;
     }
     return true;
 }
