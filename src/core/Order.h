@@ -19,7 +19,8 @@ struct Order {
     int vespene_cost;
 
     float food_required;
-    std::vector<sc2::UnitTypeID> tech_requirements;
+    std::vector<sc2::UnitTypeID> structure_tech_requirements;
+    sc2::UPGRADE_ID upgrade_tech_requirement = sc2::UPGRADE_ID::INVALID;
 
     sc2::UnitTypeID unit_type_id;
     sc2::AbilityID ability_id;

@@ -38,13 +38,40 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
+
+            // Armory Upgrades
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3);
+
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1); TODO fix so that these work
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2);
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3);
+
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3);
+
+            // Tech lab upgrades
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::DRILLCLAWS);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::SMARTSERVOS);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HIGHCAPACITYBARRELS);
+
+            // Fusion Core upgrades
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
+
+            //Engineering Bay Upgrades (will ignore infantry upgrades since)
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANBUILDINGARMOR); //TODO fix so that this works
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HISECAUTOTRACKING);
+
             break;
         default:
             break;
