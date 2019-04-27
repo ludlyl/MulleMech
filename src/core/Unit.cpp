@@ -69,6 +69,10 @@ sc2::UnitTypeData Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
 }
 
+Unit * Unit::GetAttachedAddon() const {
+    return gAPI->observer().GetUnit(this->add_on_tag);
+}
+
 Unit::Attackable Unit::CanAttack(const Unit* other) const {
     auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
 
