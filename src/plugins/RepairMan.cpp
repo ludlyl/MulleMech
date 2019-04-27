@@ -14,8 +14,14 @@ void RepairMan::OnStep(Builder*) {
 }
 
 void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
-    if (IsCombatUnit()(*unit_))
+    if (!IsBuilding()(*unit_))
         return;
+
+    // Add upgrades that was researched by the building (or it's addon) back into the queue
+    AddQueuedUpgradesBackIntoBuildingQueue(unit_, builder_);
+    if (auto addon = unit_->GetAttachedAddon()) {
+        AddQueuedUpgradesBackIntoBuildingQueue(addon, builder_);
+    }
 
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
@@ -26,38 +32,19 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
         case sc2::UNIT_TYPEID::PROTOSS_PYLON:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT:
         case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORD:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORDCOCOON:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT:
-        case sc2::UNIT_TYPEID::ZERG_OVERSEER:
             // NOTE (alkurbatov): QuarterMaster is responsible for supplies rebuild.
             return;
 
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE:
-        case sc2::UNIT_TYPEID::ZERG_DRONEBURROWED:
-            // NOTE (alkurbatov): Miner is responsible for workers rebuild.
-            return;
-
-        case sc2::UNIT_TYPEID::TERRAN_MULE:
-        case sc2::UNIT_TYPEID::TERRAN_POINTDEFENSEDRONE:
-        case sc2::UNIT_TYPEID::TERRAN_KD8CHARGE:
-        case sc2::UNIT_TYPEID::ZERG_BROODLING:
-        case sc2::UNIT_TYPEID::ZERG_EGG:
-        case sc2::UNIT_TYPEID::ZERG_LARVA:
-            return;
-
-        // Morphed buildings (TODO: Is there some generic way to find parent building of a morphed building)
+        // Morphed buildings
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            builder_->ScheduleSequentialConstruction(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, true);   // Parent
-            builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                   // Mutation
+            builder_->ScheduleSequentialConstruction(unit_->GetTypeData().tech_alias.front(), true);    // Parent
+            builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                     // Mutation
             return;
 
         default:
             // Schedule an addon if the building had one
-            if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {
+            if (auto addon = unit_->GetAttachedAddon()) {
                 // NOTE: The addon is not orphaned yet at this point, as such we can just reconstruct its type
                 builder_->ScheduleNonsequentialConstruction(addon->unit_type);
             }
@@ -65,5 +52,22 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
             // Schedule the building for reconstruction
             builder_->ScheduleConstructionInRecommendedQueue(unit_->unit_type.ToType(), true);
             return;
+    }
+}
+
+void RepairMan::AddQueuedUpgradesBackIntoBuildingQueue(const Unit* unit_, Builder* builder_) const {
+    for (const auto& order : unit_->GetPreviousStepOrders()) {
+        // Should add a IsMutation in Helpers or something like that to avoid hard-coding in values like this...
+        if (order.ability_id == sc2::ABILITY_ID::MORPH_ORBITALCOMMAND
+            || order.ability_id == sc2::ABILITY_ID::MORPH_PLANETARYFORTRESS) {
+            auto unit_id = gAPI->observer().GetUnitConstructedFromAbility(order.ability_id);
+            builder_->ScheduleConstructionInRecommendedQueue(unit_id);
+            return;
+        }
+
+        auto upgrade_id = gAPI->observer().GetUpgradeFromAbility(order.ability_id);
+        if (upgrade_id != sc2::UPGRADE_ID::INVALID) {
+            builder_->ScheduleUpgrade(upgrade_id);
+        }
     }
 }

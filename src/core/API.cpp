@@ -12,6 +12,7 @@
 namespace API {
 
 static std::unordered_map<sc2::ABILITY_ID, sc2::UNIT_TYPEID> AbilityToUnitMap;
+static std::unordered_map<sc2::ABILITY_ID, sc2::UPGRADE_ID> AbilityToUpgradeMap;
 
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
@@ -350,6 +351,13 @@ sc2::UNIT_TYPEID Observer::GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) co
     return itr->second;
 }
 
+sc2::UPGRADE_ID Observer::GetUpgradeFromAbility(sc2::ABILITY_ID id_) const {
+    auto itr = AbilityToUpgradeMap.find(id_);
+    if (itr == AbilityToUpgradeMap.end())
+        return sc2::UPGRADE_ID::INVALID;
+    return itr->second;
+}
+
 sc2::Race Observer::GetCurrentRace() const {
     uint32_t id = m_observer->GetPlayerID();
     return m_observer->GetGameInfo().player_info[id - 1].race_actual;
@@ -417,10 +425,16 @@ Interface::Interface(sc2::ActionInterface* action_,
 
 void Interface::Init() {
     // Make a mapping of ability -> unit, for abilities that construct units
-    auto typeDatas = m_observer->GetUnitTypeData();
-    for (auto& data : typeDatas) {
+    const auto& unit_datas = m_observer->GetUnitTypeData();
+    for (auto& data : unit_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUnitMap[data.ability_id] = data.unit_type_id;
+    }
+    // Make a mapping of ability -> upgrade
+    const auto& upgrade_datas = m_observer->GetUpgradeData();
+    for (auto& data : upgrade_datas) {
+        if (data.ability_id != sc2::ABILITY_ID::INVALID)
+            AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
 }
 

@@ -138,6 +138,8 @@ struct Observer {
 
     sc2::UNIT_TYPEID GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const;
 
+    sc2::UPGRADE_ID GetUpgradeFromAbility(sc2::ABILITY_ID id_) const;
+
     sc2::Race GetCurrentRace() const;
 
     const std::vector<sc2::ChatMessage>& GetChatMessages() const;
