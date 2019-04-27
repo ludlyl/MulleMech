@@ -17,6 +17,12 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
     if (IsCombatUnit()(*unit_))
         return;
 
+    // Add upgrades that was researched by the building (or it's addon) back into the queue
+    AddQueuedUpgradesBackIntoBuildingQueue(unit_, builder_);
+    if (auto addon = gAPI->observer().GetUnit(unit_->add_on_tag)) {
+        AddQueuedUpgradesBackIntoBuildingQueue(addon, builder_);
+    }
+
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
         case sc2::UNIT_TYPEID::TERRAN_REACTOR:
@@ -48,11 +54,11 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
         case sc2::UNIT_TYPEID::ZERG_LARVA:
             return;
 
-        // Morphed buildings (TODO: Is there some generic way to find parent building of a morphed building)
+        // Morphed buildings
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            builder_->ScheduleSequentialConstruction(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, true);   // Parent
-            builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                   // Mutation
+            builder_->ScheduleSequentialConstruction(unit_->GetTypeData().tech_alias.front(), true);    // Parent
+            builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                     // Mutation
             return;
 
         default:
@@ -65,5 +71,14 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
             // Schedule the building for reconstruction
             builder_->ScheduleConstructionInRecommendedQueue(unit_->unit_type.ToType(), true);
             return;
+    }
+}
+
+void RepairMan::AddQueuedUpgradesBackIntoBuildingQueue(const Unit* unit_, Builder* builder_) const {
+    for (const auto& order : unit_->GetPreviousStepOrders()) {
+        auto upgrade_id = gAPI->observer().GetUpgradeFromAbility(order.ability_id);
+        if (upgrade_id != sc2::UPGRADE_ID::INVALID) {
+            builder_->ScheduleUpgrade(upgrade_id);
+        }
     }
 }

@@ -11,4 +11,6 @@ struct RepairMan : Plugin {
     void OnStep(Builder* builder_) final;
 
     void OnUnitDestroyed(Unit* unit_, Builder* builder_) final;
+
+    void AddQueuedUpgradesBackIntoBuildingQueue(const Unit* unit_, Builder* builder_) const;
 };
