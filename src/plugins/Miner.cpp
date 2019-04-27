@@ -13,11 +13,10 @@
 #include <sc2api/sc2_typeenums.h>
 
 #include <map>
+#include <numeric>
 #include <vector>
 
 namespace {
-constexpr int mule_energy_cost = 50;
-constexpr int scan_energy_cost = 50;
 constexpr float maximum_resource_distance = 10.0f;  // Resources further than this => doesn't belong to this base
 constexpr int steps_between_balance = 20;           // How often we recalculate SCV balance
 constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance we must have before transferring any
@@ -118,12 +117,16 @@ void SecureVespeneIncome() {
     }
 }
 
-float SaveEnergy()
-{
+float SaveEnergy() {
+    // If Reasoner wants detection, save as much energy as possible
+    auto needed_unitclasses = gReasoner->GetNeededUnitClasses();
+    if (std::find(needed_unitclasses.begin(), needed_unitclasses.end(), UnitClass::detection) != needed_unitclasses.end())
+        return std::numeric_limits<float>::max();
+
     // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
     constexpr int minutes_per_scan_increase = 4;
-    float passed_minutes = gAPI->observer().GetGameLoop() / (steps_per_second * 60.0f);
-    return scan_energy_cost * (static_cast<int>(passed_minutes) / minutes_per_scan_increase);
+    float passed_minutes = gAPI->observer().GetGameLoop() / (API::StepsPerSecond * 60.0f);
+    return API::OrbitalScanCost * (static_cast<int>(passed_minutes) / minutes_per_scan_increase);
 }
 
 void CallDownMULE() {
@@ -144,11 +147,11 @@ void CallDownMULE() {
         usable_energy[i] = orbitals[i]->energy;
 
     // Distribute the reserved energy uniformly
-    float save_energy = SaveEnergy();
+    float save_energy = std::min(SaveEnergy(), orbitals.size() * 200.0f);
     while (save_energy > 0.0f) {
         for (std::size_t i = 0; i < orbitals.size() && save_energy > 0.0f; ++i) {
-            usable_energy[i] -= scan_energy_cost;
-            save_energy -= scan_energy_cost;
+            usable_energy[i] -= API::OrbitalScanCost;
+            save_energy -= API::OrbitalScanCost;
         }
     }
 
@@ -157,7 +160,7 @@ void CallDownMULE() {
         sc2::Unit::Alliance::Neutral);
 
     for (std::size_t i = 0; i < orbitals.size(); ++i) {
-        if (usable_energy[i] < mule_energy_cost && orbitals[i]->energy < 200.0f)
+        if (usable_energy[i] < API::OrbitalMuleCost && orbitals[i]->energy < 200.0f)
             continue;
 
         auto mineral_target = mineral_patches.GetClosestUnit(orbitals[i]->pos);

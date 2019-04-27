@@ -18,10 +18,12 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr float StepsPerSecond = 22.4f;
-
 namespace API {
 
+constexpr float StepsPerSecond = 22.4f;
+constexpr float OrbitalScanCost = 50.0f;
+constexpr float OrbitalMuleCost = 50.0f;
+constexpr float OrbitalScanRadius = 12.3f;
 
 struct Action {
     explicit Action(sc2::ActionInterface* action_);

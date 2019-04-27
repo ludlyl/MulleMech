@@ -107,20 +107,20 @@ void Governor::OnStep(Builder* builder_) {
     float vespene_consumption = consumption.second;
 
     //Converting from Mineral/frames to Mineral/min
-    mineral_consumption = mineral_consumption * StepsPerSecond * 60.f;
-    vespene_consumption = vespene_consumption * StepsPerSecond * 60.f;
+    mineral_consumption = mineral_consumption * API::StepsPerSecond * 60.f;
+    vespene_consumption = vespene_consumption * API::StepsPerSecond * 60.f;
 
     //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
 
-    if (mineral_overproduction > (StepsPerSecond * 60.f * tank_mineral / tank_build_time) &&
-        vespene_overproduction > (StepsPerSecond * 60.f * tank_vespene / tank_build_time)) {
+    if (mineral_overproduction > (API::StepsPerSecond * 60.f * tank_mineral / tank_build_time) &&
+        vespene_overproduction > (API::StepsPerSecond * 60.f * tank_vespene / tank_build_time)) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
     //TODO Confirm this value (2)
     //We never want more than 2 factories producing hellions
-    } else if (mineral_overproduction > (StepsPerSecond * 60.f * 2.f * hellion_mineral / hellion_build_time) &&
+    } else if (mineral_overproduction > (API::StepsPerSecond * 60.f * 2.f * hellion_mineral / hellion_build_time) &&
                CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) < 2) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);

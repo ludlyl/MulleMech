@@ -89,10 +89,10 @@ Unit::Attackable Unit::CanAttack(const Unit* other) const {
     }
 
     if (!has_wep_type)
-        return Attackable::False;
+        return Attackable::no;
 
     if (other->cloak == sc2::Unit::Cloaked)
-        return Attackable::NeedScan;
+        return Attackable::need_scan;
 
-    return Attackable::True;
+    return Attackable::yes;
 }

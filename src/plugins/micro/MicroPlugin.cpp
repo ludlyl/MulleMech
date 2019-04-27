@@ -7,7 +7,7 @@
 #include "Battlecruiser.h"
 #include "Cyclone.h"
 #include "SiegeTank.h"
-#include "../../Hub.h"
+#include "Hub.h"
 #include "core/API.h"
 
 
@@ -42,7 +42,7 @@ void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies, const Units& a
 
     // Request scan logic
     for (auto& enemy : enemies) {
-        if (self->CanAttack(enemy) == Unit::Attackable::NeedScan) {
+        if (self->CanAttack(enemy) == Unit::Attackable::need_scan) {
             gHub->RequestScan(enemy->pos);
             break;
         }

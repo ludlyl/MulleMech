@@ -19,6 +19,8 @@ class Unit : public sc2::Unit {
     friend API::Interface;
 
 public:
+    enum class Attackable { yes, no, need_scan };
+
     // TODO: Make "Make" function and constructor private (and same for worker) so only API can create new Unit objects
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);
@@ -42,7 +44,6 @@ public:
 
     sc2::UnitTypeData GetTypeData() const;
 
-    enum class Attackable { True, False, NeedScan };
     Attackable CanAttack(const Unit* other) const;
 
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
