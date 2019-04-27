@@ -10,84 +10,58 @@
 #include <sc2lib/sc2_search.h>
 
 #include <cmath>
+#include <optional>
+#include <queue>
 
 namespace {
 
-const float PI = 3.1415927f;
+constexpr int SearchMinOffset = -10;    // Defines min x and y in rectangle used for 
+constexpr int SearchMaxOffset = 10;
+constexpr sc2::ABILITY_ID TestAbility = sc2::ABILITY_ID::BUILD_COMMANDCENTER;
+constexpr float DistanceErrorMargin = 10.0f;
+constexpr float PatchNeighborDistance = 5.0f; // Maximum distance between neighboring mineral patches
 
-size_t CalculateQueries(float radius, float step_size, const sc2::Point2D& center,
-    std::vector<sc2::QueryInterface::PlacementQuery>* queries) {
-    sc2::Point2D current_grid, previous_grid(
-        std::numeric_limits<float>::max(),
-        std::numeric_limits<float>::max());
-    size_t valid_queries = 0;
+// A line of minerals together with point where Expansion can be built
+struct MineralLine {
+    explicit MineralLine(const sc2::Point3D& initial_patch_);
 
-    // Find a buildable location on the circumference of the sphere
-    float loc = 0.0f;
-    while (loc < 360.0f) {
-        sc2::Point2D point(
-            (radius * std::cos((loc * PI) / 180.0f)) + center.x,
-            (radius * std::sin((loc * PI) / 180.0f)) + center.y);
-
-        sc2::QueryInterface::PlacementQuery query(
-            sc2::ABILITY_ID::BUILD_COMMANDCENTER, point);
-
-        current_grid = sc2::Point2D(std::floor(point.x), std::floor(point.y));
-
-        if (previous_grid != current_grid) {
-            queries->push_back(query);
-            ++valid_queries;
-        }
-
-        previous_grid = current_grid;
-        loc += step_size;
-    }
-
-    return valid_queries;
-}
-
-struct Cluster {
-    explicit Cluster(uint64_t id_);
-
-    void AddPoint(const sc2::Point3D& point_);
+    void AddMineralPatch(const sc2::Point3D& point_);
 
     float Height() const;
 
-    sc2::Point3D Center() const;
+    sc2::Point2D Center() const;
 
-    uint64_t id;
-    sc2::Point3D center_of_mass;
-    sc2::Point3D town_hall_location;
-    std::vector<sc2::Point3D> points;
+    std::optional<sc2::Point2D> town_hall_location;      // Saved town hall location
+    std::vector<sc2::Point3D> mineral_patches;           // Points of mineral patches
 };
 
-typedef std::vector<Cluster> Clusters;
-
-Cluster::Cluster(uint64_t id_): id(id_) {
-    points.reserve(10);
+MineralLine::MineralLine(const sc2::Point3D& initial_patch_) {
+    mineral_patches.reserve(8);
+    mineral_patches.push_back(initial_patch_);
 }
 
-void Cluster::AddPoint(const sc2::Point3D& point_) {
-    if (points.empty()) {
-        center_of_mass = point_;
-    } else {
-        center_of_mass =
-            (center_of_mass * static_cast<float>(points.size() - 1) + point_)
-                / static_cast<float>(points.size());
-    }
-
-    points.push_back(point_);
+void MineralLine::AddMineralPatch(const sc2::Point3D& point_) {
+    mineral_patches.push_back(point_);
 }
 
-float Cluster::Height() const {
-    if (points.empty())
+float MineralLine::Height() const {
+    if (mineral_patches.empty())
         return 0.0f;
 
-    return points.back().z;
+    return mineral_patches.back().z;
 }
 
-sc2::Point3D Cluster::Center() const {
-    return sc2::Point3D(center_of_mass.x, center_of_mass.y, Height());
+sc2::Point2D MineralLine::Center() const {
+    assert(!mineral_patches.empty());
+
+    float x = 0;
+    float y = 0;
+    for (auto& mineral : mineral_patches) {
+        x += mineral.x;
+        y += mineral.y;
+    }
+
+    return sc2::Point2D(x / mineral_patches.size(), y / mineral_patches.size());
 }
 
 void CalculateGroundDistances(Expansions& expansions) {
@@ -117,20 +91,6 @@ void CalculateGroundDistances(Expansions& expansions) {
             exp->ground_distances[inner] = results[i];
             inner->ground_distances[exp] = results[i];
             ++i;
-        }
-    }
-}
-
-void CalculateAirDistances(Expansions& expansions) {
-    for (auto& exp : expansions) {
-        for (auto& inner : expansions) {
-            if (exp->distanceTo(inner) != 0.0f)
-                continue;
-
-            float dist = sc2::Distance3D(exp->town_hall_location, inner->town_hall_location);
-
-            exp->ground_distances[inner] = dist;
-            inner->ground_distances[exp] = dist;
         }
     }
 }
@@ -166,6 +126,51 @@ sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D& baseLocation) {
     return baseLocation + directionVector * (maxDist + 1.5f);
 }
 
+std::vector<MineralLine> GetMineralLines() {
+    auto mineral_patches = gAPI->observer().GetUnits(
+        [](const auto& unit) {
+        return unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750 ||
+            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750 ||
+            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750 ||
+            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750 ||
+            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750 ||
+            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750;
+    });
+
+    // Find all mineral lines (rather inefficient method, but guarantees no accidents,
+    // such as thinking two bases are linked, or ending up with one base being considered as two)
+    std::vector<MineralLine> mineral_lines;
+    mineral_lines.reserve(16);
+    while (!mineral_patches.empty()) {
+        std::queue<sc2::Point3D> mineral_frontier;
+        mineral_frontier.push(mineral_patches.front()->pos);
+        MineralLine line(mineral_frontier.front());
+        mineral_patches.erase(mineral_patches.begin());
+
+        // Gather mineral nodes by continously considering the closest remaining
+        while (!mineral_patches.empty() && !mineral_frontier.empty()) {
+            auto mineral_pos = mineral_frontier.front();
+            auto closest_patch = mineral_patches.GetClosestUnit(mineral_pos);
+            auto distance = Distance2D(closest_patch->pos, mineral_pos);
+
+            if (distance >= PatchNeighborDistance) {
+                mineral_frontier.pop();
+                continue;
+            }
+
+            mineral_frontier.push(closest_patch->pos);
+            line.AddMineralPatch(closest_patch->pos);
+            mineral_patches.remove(closest_patch);
+        }
+
+        mineral_lines.push_back(line);
+    }
+
+    gHistory.info() << "Map contains " << mineral_lines.size() << " mineral lines" << std::endl;
+
+    return mineral_lines;
+}
+
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
@@ -174,79 +179,72 @@ Expansion::Expansion(const sc2::Point3D& town_hall_location_):
 }
 
 Expansions CalculateExpansionLocations() {
-    Clusters clusters;
-    clusters.reserve(20);
+    auto mineral_lines = GetMineralLines();
 
-    auto resources = gAPI->observer().GetUnits(
-        IsFoggyResource(),
-        sc2::Unit::Alliance::Neutral);
-
-    if (resources.empty()) {
-        gHistory.warning() << "No expansions locations could be found!" << std::endl;
+    if (mineral_lines.empty()) {
+        gHistory.error() << "No expansion locations could be found!" << std::endl;
         return Expansions();
     }
 
-    for (const auto& i : resources) {
-        bool cluster_found = false;
+    Expansions expansions;
 
-        for (auto& j : clusters) {
-            if (sc2::DistanceSquared3D(i->pos, j.points.back()) < 225.0f) {
-                j.AddPoint(i->pos);
-                cluster_found = true;
+    // Manually register our starting location (and remove its mineral line from consideration)
+    auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
+    if (!ccs.empty()) {
+        for (auto itr = mineral_lines.begin(); itr != mineral_lines.end(); ++itr) {
+            if (sc2::Distance2D(itr->Center(), ccs.front()->pos) < DistanceErrorMargin) {
+                auto expo = std::make_shared<Expansion>(ccs.front()->pos);
+                expo->alliance = sc2::Unit::Alliance::Self;
+                expo->town_hall = ccs.front();
+                expansions.emplace_back(std::move(expo));
+                mineral_lines.erase(itr);
                 break;
             }
         }
+    }
 
-        if (!cluster_found) {
-            clusters.emplace_back(clusters.size());
-            clusters.back().AddPoint(i->pos);
+    // Find TownHall position for all mineral lines
+    for (auto& line : mineral_lines) {
+        auto center = line.Center();
+        // Find all possible TownHall locations for MineralLine
+        std::vector<sc2::QueryInterface::PlacementQuery> queries;
+        queries.reserve((SearchMaxOffset - SearchMinOffset + 1) * (SearchMaxOffset - SearchMinOffset + 1));
+        for (int x_offset = SearchMinOffset; x_offset <= SearchMaxOffset; ++x_offset) {
+            for (int y_offset = SearchMinOffset; y_offset <= SearchMaxOffset; ++y_offset) {
+                sc2::Point2D pos(center.x + x_offset, center.y + y_offset);
+                queries.emplace_back(TestAbility, pos);
+            }
         }
-    }
+        auto results = gAPI->query().CanBePlaced(queries);
 
-    std::vector<size_t> query_size;
-    std::vector<sc2::QueryInterface::PlacementQuery> queries;
-    for (auto& i : clusters)
-        query_size.push_back(CalculateQueries(5.3f, 0.5f, i.Center(), &queries));
+        // Narrow it down to the best TownHall position for MineralLine
+        for (int x_offset = SearchMinOffset; x_offset <= SearchMaxOffset; ++x_offset) {
+            for (int y_offset = SearchMinOffset; y_offset <= SearchMaxOffset; ++y_offset) {
+                sc2::Point2D pos(center.x + x_offset, center.y + y_offset);
 
-    // TODO: This method sometimes fails and we'll end up missing a base location
-    std::vector<bool> results = gAPI->query().CanBePlaced(queries);
+                // Buildable?
+                int index = (x_offset + 0 - SearchMinOffset) * (SearchMaxOffset - SearchMinOffset + 1) + (y_offset + 0 - SearchMinOffset);
+                assert(0 <= index && index < results.size());
+                if (!results[static_cast<std::size_t>(index)])
+                    continue;
 
-    size_t start_index = 0;
-    Expansions expansions;
-
-    // Manually add our starting location which can never be considered buildable due to having a CC
-    auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
-    if (!ccs.empty()) {
-        auto exp = std::make_shared<Expansion>(ccs.front()->pos);
-        exp->alliance = sc2::Unit::Alliance::Self;
-        expansions.emplace_back(std::move(exp));
-    }
-
-    // Add all derived locations
-    for (auto& i : clusters) {
-        for (size_t j = start_index, e = start_index + query_size[i.id]; j < e; ++j) {
-            if (!results[j])
-                continue;
-
-            sc2::Point3D town_hall_location = sc2::Point3D(
-                queries[j].target_pos.x,
-                queries[j].target_pos.y,
-                i.Height());
-            expansions.emplace_back(std::make_shared<Expansion>(town_hall_location));
-            break;
+                if (line.town_hall_location.has_value()) {
+                    if (sc2::DistanceSquared2D(center, pos) <
+                        sc2::DistanceSquared2D(center, line.town_hall_location.value())) {
+                        line.town_hall_location = pos;
+                    }
+                } else {
+                    line.town_hall_location = pos;
+                }
+            }
         }
 
-        start_index += query_size[i.id];
+        // Add Expansion entry
+        auto p = line.town_hall_location.value();
+        expansions.emplace_back(std::make_shared<Expansion>(sc2::Point3D(p.x, p.y, line.Height())));
     }
 
-    Timer t;
-    t.Start();
-#ifndef FAST_STARTUP
     CalculateGroundDistances(expansions);
-#else
-    CalculateAirDistances(expansions);
-#endif
-    gHistory.info() << "Calculating distances between expansions took " << t.Finish() << " ms" << std::endl;
 
     return expansions;
 }
