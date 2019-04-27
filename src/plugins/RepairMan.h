@@ -11,4 +11,9 @@ struct RepairMan : Plugin {
     void OnStep(Builder* builder_) final;
 
     void OnUnitDestroyed(Unit* unit_, Builder* builder_) final;
+
+private:
+    int repairMen;
+
+    Unit* m_self;
 };

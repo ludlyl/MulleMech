@@ -44,6 +44,12 @@ public:
 
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
+    enum class BuildingRepairPhase {
+        not_repairing,
+        repairing
+    };
+    BuildingRepairPhase m_repairPhase = BuildingRepairPhase::not_repairing;
+
 private:
     // Makes sc2::Unit::orders private, this isn't a very pretty solution but as sc2::Unit::orders
     // should never be used outside of this class it might be good to pick up on some bugs

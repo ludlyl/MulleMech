@@ -10,6 +10,64 @@ void RepairMan::OnStep(Builder*) {
     if (gAPI->observer().GetCurrentRace() != sc2::Race::Terran)
         return;
 
+    Units buildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+    for (Unit* unit : buildings) {
+        if (unit->build_progress < 1.0f) {
+            continue;
+        }
+
+        //TODO: more cases
+        /*if (littleHP) {
+            //do this
+        }
+        if (mediumMuch) {
+            //do this
+        }
+        if (alot) {
+            //do this
+        }*/
+
+        // i.e repair upgraded CC with all close mineral harvesting workers
+        if (unit->health < 1500 && IsPlanetaryFortress()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
+            unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
+            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                                 {IsWithinDist(unit->pos, 15.0f), IsHasrvestingMineralsWorker()}));
+            for (Unit* worker : workers) {
+                if (FreeWorkerExists()) {
+                    worker->AsWorker()->SetAsRepairer(unit);
+                }
+            }
+        }
+
+        // repair Orbital Command (on ground or flying) if it is dropping health
+        if (unit->health < 1400 && IsOrbitalCommand()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
+            unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
+            repairMen = 3;
+            for (int i = 0; i < repairMen; i++) {
+                if (FreeWorkerExists()) {
+                    auto worker = GetClosestFreeWorker(unit->pos);
+                    worker->SetAsRepairer(unit);
+                }
+            }
+        }
+    }
+
+    // checks if building has full health after repairing
+    for (Unit* unit : buildings) {
+        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && unit->health >= 0.94f * unit->health_max) {
+            // Get close repair workers
+            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                                 {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()}));
+            // Release workers
+            for (Unit* repairer : workers) {
+                repairer->AsWorker()->SetAsUnemployed();
+            }
+            // Set building as not repairing
+            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
+        }
+    }
+
+
     // FIXME (alkuratov): Put buildings repair code here.
 }
 

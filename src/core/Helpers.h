@@ -116,6 +116,26 @@ private:
     Worker::Job m_job;
 };
 
+struct IsUpgradedTownHall {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsPlanetaryFortress {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsOrbitalCommand {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsRepairWorker {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsHasrvestingMineralsWorker {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsTownHall {
     bool operator()(const sc2::Unit& unit_) const;
 };

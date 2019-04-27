@@ -82,3 +82,10 @@ void Worker::SetAsFighter() {
     assert(alliance == sc2::Unit::Alliance::Self);
     m_job = Job::fighting;
 }
+
+void Worker::SetAsRepairer(const Unit* lowHPBuilding) {
+    assert(alliance == sc2::Unit::Alliance::Self);
+    // TODO: possibly a data race can occur if another thread try to assign another task for same unit before this code is fully executed.
+    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, lowHPBuilding);
+    m_job = Job::repair;
+}
