@@ -168,6 +168,12 @@ bool Builder::AreNoneResourceRequirementsFulfilled(Order* order_, std::shared_pt
 }
 
 bool Builder::Build(Order* order_) {
+    // If the unit (building) that the order is assigned to has died we just return true
+    // (as that will lead to the order being deleted from the queue)
+    if (order_->assignee && !order_->assignee->is_alive) {
+        return true;
+    }
+
     if (m_minerals < order_->mineral_cost || m_vespene < order_->vespene_cost)
         return false;
 
