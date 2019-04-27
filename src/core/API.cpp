@@ -376,6 +376,10 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
     return decodedHeight;
 }
 
+sc2::Visibility Observer::GetVisibility(const sc2::Point2D& pos_) const {
+    return m_observer->GetVisibility(pos_);
+}
+
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
 }
 

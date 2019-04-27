@@ -18,10 +18,12 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr float StepsPerSecond = 22.4f;
-
 namespace API {
 
+constexpr float StepsPerSecond = 22.4f;
+constexpr float OrbitalScanCost = 50.0f;
+constexpr float OrbitalMuleCost = 50.0f;
+constexpr float OrbitalScanRadius = 12.3f;
 
 struct Action {
     explicit Action(sc2::ActionInterface* action_);
@@ -143,6 +145,8 @@ struct Observer {
     uint32_t GetGameLoop() const;
 
     float TerrainHeight(const sc2::Point2D& pos_) const;
+
+    sc2::Visibility GetVisibility(const sc2::Point2D& pos_) const;
 
  private:
      friend struct Interface;
