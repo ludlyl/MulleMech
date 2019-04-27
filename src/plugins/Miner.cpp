@@ -235,15 +235,37 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
     }
 }
 
+void Miner::OnBuildingConstructionComplete(Unit* unit_) {
+    // Needed to update SCV:s task after refinery construction has completed
+    // (as they start to collect gas directly instead of becoming idle)
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY) {
+        auto building_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
+        if (!building_workers.empty()) {
+            building_workers.GetClosestUnit(unit_->pos)->AsWorker()->SetAsUnemployed();
+        }
+    }
+}
+
 void Miner::OnUnitIdle(Unit* unit_, Builder*) {
     switch (unit_->unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_SCV:
+        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
+        case sc2::UNIT_TYPEID::ZERG_DRONE: {
+            auto job = unit_->AsWorker()->GetJob();
+            if (job == Worker::Job::gathering_minerals ||
+                job == Worker::Job::gathering_vespene) {
+                unit_->AsWorker()->SetAsUnemployed();
+            }
+            break;
+        }
+
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
             // Send MULE to closest mineral patch of our Starting Location on idle
             // TODO: Maybe send it to nearest mineral patch of a base belonging to us?
             auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
             auto mineral_target = units.GetClosestUnit(gAPI->observer().StartingLocation());
             if (!mineral_target)
-                return;
+                break;
 
             gAPI->action().Cast(unit_, sc2::ABILITY_ID::SMART, mineral_target);
             break;

@@ -9,6 +9,7 @@
 #include "objects/Worker.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "BuildingPlacer.h"
 
 #include <algorithm>
 #include <memory>
@@ -21,9 +22,6 @@ void Builder::OnStep() {
     m_vespene = gAPI->observer().GetVespene();
 
     m_available_food = gAPI->observer().GetAvailableFood();
-
-    // Find new SCVs if construction stopped on any building due to SCV's getting killed off
-    ResolveMissingWorkers();
 
     bool resources_needed_for_nonseq_order = false;
     auto nonseq_order_it = m_nonsequential_construction_orders.begin();
@@ -57,6 +55,72 @@ void Builder::OnStep() {
                 continue;
             }
             it = m_training_orders.erase(it);
+        }
+    }
+}
+
+void Builder::OnUnitCreated(Unit* unit_) {
+    if (IsBuilding()(*unit_) && !IsAddon()(*unit_)) {
+        auto building_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
+        if (!building_workers.empty()) {
+            auto worker = building_workers.GetClosestUnit(unit_->pos)->AsWorker();
+            if (worker->construction) {
+                worker->construction->building = unit_;
+            } else {
+                assert(false && "Worker set as building but does not have a construction");
+            }
+        }
+    }
+}
+
+void Builder::OnUnitIdle(Unit* unit_) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV) {
+        auto worker = unit_->AsWorker();
+        auto& construction = worker->construction;
+        if (worker->GetJob() == Worker::Job::building && construction) {
+            // Construction has finished
+            if (construction->building && construction->building->build_progress >= 1.f) {
+                worker->construction = nullptr;
+            // Building was destroyed while being constructed
+            } else if (construction->building && !construction->building->is_alive) {
+                worker->construction = nullptr;
+            // SCV failed to start construction
+            } else if (construction->building == nullptr) {
+                gBuildingPlacer->FreeReservedBuildingSpace(construction->position,
+                                                           construction->building_type,
+                                                           construction->includes_add_on_space);
+                ScheduleConstructionInRecommendedQueue(construction->building_type, true);
+            }
+            worker->SetAsUnemployed();
+        }
+    }
+}
+
+void Builder::OnUnitDestroyed(Unit* unit_) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV) {
+        auto worker = unit_->AsWorker();
+        auto& construction = worker->construction;
+        if (worker->GetJob() == Worker::Job::building && construction) {
+            // Worker got killed while constructing a building
+            if (construction->building && construction->building->build_progress < 1.f) {
+                auto new_worker = GetClosestFreeWorker(construction->building->pos);
+                if (new_worker) {
+                    new_worker->Build(construction->building);
+                    new_worker->construction = std::move(worker->construction);
+                    worker->construction = nullptr;
+
+                    gHistory.debug() << "Sent new SCV to construct "
+                                     << UnitTypeToName((new_worker->construction->building->unit_type))
+                                     << "; other one died" << std::endl;
+                }
+
+            // Worker got killed before starting the construction
+            } else if (worker->construction->building == nullptr) {
+                gBuildingPlacer->FreeReservedBuildingSpace(construction->position,
+                                                           construction->building_type,
+                                                           construction->includes_add_on_space);
+                ScheduleConstructionInRecommendedQueue(construction->building_type, true);
+            }
         }
     }
 }
@@ -209,22 +273,4 @@ bool Builder::HasTechRequirements(const Order *order_) const {
         }
     }
     return true;
-}
-
-void Builder::ResolveMissingWorkers() {
-    // Find any unfinished buildings that lacks SCV's working on them
-    auto& constructions = gHub->GetConstructions();
-
-    for (auto& construction : constructions) {
-        auto building = construction.GetBuilding();
-        if (!construction.GetScvIfAlive() && building) {
-            auto worker = GetClosestFreeWorker(building->pos);
-            if (worker) {
-                gHistory.debug() << "Sent new SCV to construct " << UnitTypeToName(building->unit_type) <<
-                    "; other one died" << std::endl;
-                worker->Build(building);
-                construction.scv = worker;
-            }
-        }
-    }
 }

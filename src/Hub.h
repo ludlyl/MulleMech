@@ -16,24 +16,12 @@
 #include <memory>
 #include <optional>
 
-struct Construction {
-    Construction(Unit* building_, Unit* scv_);
-    Unit* GetBuilding() const;
-    Unit* GetScvIfAlive() const;
-    Unit* building;
-    Unit* scv;
-};
-
 struct Hub {
     Hub(sc2::Race current_race_, Expansions  expansions_);
 
     void OnUnitCreated(Unit* unit_);
 
     void OnUnitDestroyed(Unit* unit_);
-
-    void OnUnitIdle(Unit* unit_);
-
-    void OnBuildingConstructionComplete(Unit* building_);
 
     sc2::Race GetCurrentRace() const;
 
@@ -60,8 +48,6 @@ struct Hub {
 
     std::shared_ptr<Expansion> GetClosestExpansion(const sc2::Point2D& location_) const;
 
-    std::vector<Construction>& GetConstructions() { return m_constructions; }
-
     // Returns a list of our expansions sorted with walking distance to starting location
     // index: 0=>main base, 1=>natural, etc
     Expansions GetOurExpansions() const;
@@ -75,8 +61,6 @@ struct Hub {
     sc2::Race m_current_race;
     Expansions m_expansions;
     sc2::UNIT_TYPEID m_current_worker_type;
-
-    std::vector<Construction> m_constructions;
 
     uint32_t m_lastStepScan;
 

@@ -128,23 +128,16 @@ float QuarterMaster::CalcEstimatedSupply(Builder* builder_) {
     const auto& non_seq = builder_->GetNonsequentialConstructionOrders();
     const auto& seq = builder_->GetSequentialConstructionOrders();
     const auto& training = builder_->GetTrainingOrders();
-    const auto& constructions = gHub->GetConstructions();
 
     // We need to manually include supply depots that any SCV is on his way to build
     float queued_supply = 0.0f;
     auto scvs = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
     for (auto& scv : scvs) {
-        // Only include supply depots (CC's take too long to build)
-        if (scv->GetPreviousStepOrders().empty() ||
-            scv->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::BUILD_SUPPLYDEPOT)
-            continue;
-
-        // Skip any SCV who's already started his building
-        auto itr = std::find_if(constructions.begin(), constructions.end(), [scv](auto& c) { return c.GetScvIfAlive() == scv; });
-        if (itr != constructions.end())
-            continue;
-
-        queued_supply += 8.0f;
+        auto worker = scv->AsWorker();
+        if (worker->construction && !worker->construction->building &&
+            worker->construction->building_type == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
+            queued_supply += 8.0f;
+        }
     }
 
     return
