@@ -8,6 +8,7 @@
 #include "plugins/micro/MicroPlugin.h"
 
 #include <sc2api/sc2_map_info.h>
+#include <sc2lib/sc2_lib.h>
 
 namespace API {
 
@@ -438,6 +439,14 @@ Observer Interface::observer() const {
 
 Query Interface::query() const {
     return Query(m_query);
+}
+
+std::vector<sc2::Point3D> Interface::CalculateExpansionLocations() {
+    auto ep = sc2::search::ExpansionParameters();
+
+    ep.radiuses_.emplace_back(AdditionalRadiusForExpansionsCalculation);
+
+    return sc2::search::CalculateExpansionLocations(m_observer, m_query, ep);
 }
 
 Unit* Interface::WrapUnit(const sc2::Unit* unit_) {

@@ -184,6 +184,9 @@ struct Interface {
 
     Query query() const;
 
+    // Needs to be placed here as it uses both ObservationInterface & QueryInterface
+    std::vector<sc2::Point3D> CalculateExpansionLocations();
+
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
     Unit* WrapUnit(const sc2::Unit* unit_);
 
@@ -198,6 +201,9 @@ struct Interface {
     const sc2::ObservationInterface* m_observer;
     sc2::QueryInterface* m_query;
     std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unitObjects;
+
+    // Taken from ocraft, makes things a bit better. But even with this it's still far from perfect
+    static constexpr float AdditionalRadiusForExpansionsCalculation = 5.1f;
 };
 
 }  // namespace API
