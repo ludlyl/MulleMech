@@ -108,7 +108,7 @@ struct Observer {
     size_t CountUnitType(sc2::UNIT_TYPEID type_,
         bool with_not_finished = false) const;
 
-    const std::vector<sc2::UpgradeID> GetUpgrades() const;
+    const std::vector<sc2::UpgradeID>& GetUpgrades() const;
 
     bool HasUpgrade(sc2::UPGRADE_ID upgrade_id_) const;
 
