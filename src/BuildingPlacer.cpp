@@ -47,6 +47,8 @@ void BuildingPlacer::OnUnitCreated(const Unit* unit_) {
 }
 
 void BuildingPlacer::OnUnitDestroyed(const Unit* unit_) {
+    // TODO: This only gets called if we observe the unit being destroyed.
+    //  When/if the enemy kills his own units or if they burn down outside our vision the tiles will never be freed
     // TODO: We don't know if the building has reserved space for an add-on (and if so we currently don't free that space)
     if (IsBuilding()(*unit_) && !unit_->is_flying) {
         RemoveBuildingFromOccupiedTiles(unit_);
@@ -54,7 +56,6 @@ void BuildingPlacer::OnUnitDestroyed(const Unit* unit_) {
 }
 
 void BuildingPlacer::OnUnitEnterVision(const Unit* unit_) {
-    // TODO: When these buildings are destroyed they will never get removed from the occupied tiles! Fix this!
     // The same building will be added over an over again...
     if (IsBuilding()(*unit_) && !unit_->is_flying) {
         AddBuildingToOccupiedTiles(unit_, TileOccupationStatus::has_building);

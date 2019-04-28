@@ -102,7 +102,6 @@ void Dispatcher::OnStep() {
     clock.Start();
 
     gAPI->OnStep();
-    gIntelligenceHolder->Update();
     gReasoner->CalculatePlayStyle();
     gReasoner->CalculateNeededUnitClasses();
 
@@ -147,19 +146,23 @@ void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
 }
 
 void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
-    if (unit_->alliance != sc2::Unit::Alliance::Self)
-        return;
-
-    gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
-        " was destroyed" << std::endl;
+    // The documentation for this function says that it's only called for our own units, but that ins't the case
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitDestroyed(unit);
     m_builder->OnUnitDestroyed(unit);
     gBuildingPlacer->OnUnitDestroyed(unit);
+    gIntelligenceHolder->OnUnitDestroyed(unit);
 
-    for (const auto& i : m_plugins)
-        i->OnUnitDestroyed(unit, m_builder.get());
+    // TODO: This check shouldn't have to be done here. Make sure Hub and all plugins check alliance themselves
+    if (unit_->alliance == sc2::Unit::Alliance::Self) {
+        gHistory.info() << "One of our: " << sc2::UnitTypeToName(unit_->unit_type) << " was destroyed" << std::endl;
+
+        m_builder->OnUnitDestroyed(unit);
+        gHub->OnUnitDestroyed(unit);
+        for (const auto& i : m_plugins)
+            i->OnUnitDestroyed(unit, m_builder.get());
+    }
 }
 
 void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
@@ -173,6 +176,7 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
 void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit_) {
     auto unit = gAPI->WrapUnit(unit_);
     gBuildingPlacer->OnUnitEnterVision(unit);
+    gIntelligenceHolder->OnUnitEnterVision(unit);
     for (const auto& i : m_plugins)
         i->OnUnitEnterVision(unit);
 }

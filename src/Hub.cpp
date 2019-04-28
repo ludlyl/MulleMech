@@ -87,19 +87,15 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
         case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (const auto& i : m_expansions) {
-                if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
-                        std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
-                    continue;
-
-                i->alliance = sc2::Unit::Alliance::Neutral;
-                i->town_hall = nullptr;
-                gHistory.info() << "Lost region: (" <<
-                    unit_->pos.x << ", " << unit_->pos.y <<
-                    ")" << std::endl;
-                return;
+            for (const auto& i : gHub->GetExpansions()) {
+                if (unit_ == i->town_hall) {
+                    i->alliance = sc2::Unit::Alliance::Neutral;
+                    i->town_hall = nullptr;
+                    gHistory.info() << "We lost region: (" << unit_->pos.x << ", " << unit_->pos.y << ")" << std::endl;
+                    break;
+                }
             }
-            return;
+            break;
 
         default:
             return;

@@ -65,8 +65,8 @@ void Governor::OnGameStart(Builder* builder_) {
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::SMARTSERVOS);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HIGHCAPACITYBARRELS);
 
-            // Fusion Core upgrades
-            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
+            // Fusion Core upgrades (uncommented as we never builds BC:s as of now)
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
 
             //Engineering Bay Upgrades (will ignore infantry upgrades since)
             //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANBUILDINGARMOR); //TODO fix so that this works
