@@ -205,7 +205,11 @@ Expansions CalculateExpansionLocations() {
 
     // Find TownHall position for all mineral lines
     for (auto& line : mineral_lines) {
+        // Expansions are always built at (x+0.5, y+0.5) if (x, y) is a pair of ints
         auto center = line.Center();
+        center.x = static_cast<int>(center.x) + 0.5f;
+        center.y = static_cast<int>(center.y) + 0.5f;
+
         // Find all possible TownHall locations for MineralLine
         std::vector<sc2::QueryInterface::PlacementQuery> queries;
         queries.reserve((SearchMaxOffset - SearchMinOffset + 1) * (SearchMaxOffset - SearchMinOffset + 1));
@@ -224,7 +228,7 @@ Expansions CalculateExpansionLocations() {
 
                 // Buildable?
                 int index = (x_offset + 0 - SearchMinOffset) * (SearchMaxOffset - SearchMinOffset + 1) + (y_offset + 0 - SearchMinOffset);
-                assert(0 <= index && index < results.size());
+                assert(0 <= index && index < static_cast<int>(results.size()));
                 if (!results[static_cast<std::size_t>(index)])
                     continue;
 
