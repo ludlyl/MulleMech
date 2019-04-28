@@ -47,15 +47,20 @@ void Dispatcher::OnGameStart() {
     gAPI->Init();
 
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
-    gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
-    gOverseerMap = std::make_unique<Overseer::MapImpl>();
 
     Timer clock;
+    clock.Start();
+    gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
+    auto duration = clock.Finish();
+    gHistory.info() << "Calculate Expansions took: " << duration << " ms" << std::endl;
+
+    gOverseerMap = std::make_unique<Overseer::MapImpl>();
+
     clock.Start();
     gOverseerMap->setBot(this);
     gOverseerMap->initialize();
     gBuildingPlacer->OnGameStart();
-    auto duration = clock.Finish();
+    duration = clock.Finish();
     gHistory.info() << "Map calculations took: " << duration << " ms" << std::endl;
     gHistory.info() << "Tiles in start region: " << gOverseerMap->getNearestRegion(gAPI->observer().StartingLocation())->getTilePositions().size() << std::endl;
 
