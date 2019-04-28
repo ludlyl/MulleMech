@@ -23,7 +23,7 @@ struct Expansion {
     sc2::Point3D center_behind_minerals;
     sc2::Unit::Alliance alliance;
     std::unordered_map<std::shared_ptr<Expansion>, float> ground_distances;
-    Unit* town_hall; // nullptr if we do not control the base
+    Unit* town_hall;
 
     // Returns: walk distance to other expansion
     float distanceTo(const std::shared_ptr<Expansion>& other_) const {
