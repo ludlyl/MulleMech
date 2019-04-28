@@ -31,6 +31,7 @@ bool bp::Refinery::Build(Order* order_) {
             Worker* worker = GetClosestFreeWorker(geyser->pos);
             if (worker) {
                 worker->BuildRefinery(order_, geyser);
+                worker->construction = std::make_unique<Construction>(geyser->pos, order_->unit_type_id);
                 return true;
             } else {
                 assert(false && "Refinery space reserved but no free worker was found!");

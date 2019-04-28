@@ -17,6 +17,12 @@ struct Builder {
 
     void OnStep();
 
+    void OnUnitCreated(Unit* unit_);
+
+    void OnUnitIdle(Unit* unit_);
+
+    void OnUnitDestroyed(Unit* unit_);
+
     // Unit is passed for e.g. add-ons
     // Note: Required structures are not scheduled when using this
     // (they are only scheduled when using ScheduleSequentialConstruction)
@@ -54,8 +60,6 @@ struct Builder {
 
     // Used to prevent deadlock in sequential construction orders
     void ScheduleRequiredStructures(const Order& order_, bool urgent);
-
-    void ResolveMissingWorkers();
 
     int32_t m_minerals;
     int32_t m_vespene;

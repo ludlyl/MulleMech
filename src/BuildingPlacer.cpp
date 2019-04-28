@@ -47,6 +47,7 @@ void BuildingPlacer::OnUnitCreated(const Unit* unit_) {
 }
 
 void BuildingPlacer::OnUnitDestroyed(const Unit* unit_) {
+    // TODO: We don't know if the building has reserved space for an add-on (and if so we currently don't free that space)
     if (IsBuilding()(*unit_) && !unit_->is_flying) {
         RemoveBuildingFromOccupiedTiles(unit_);
     }
@@ -168,6 +169,45 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
     }
 
     return std::nullopt;
+}
+
+void BuildingPlacer::FreeReservedBuildingSpace(sc2::Point3D building_position_, sc2::UNIT_TYPEID building_type_,
+                                               bool included_addon_space_) {
+    bool is_building = IsBuilding()(building_type_);
+    assert(is_building);
+    if (included_addon_space_) {
+        assert(IsBuildingWithSupportForAddon()(building_type_));
+    }
+
+    auto ability_id = gAPI->observer().GetUnitTypeData(building_type_).ability_id;
+    auto radius = gAPI->observer().GetAbilityData(ability_id).footprint_radius;
+    // Should always be whole numbers
+    int left_side_x = static_cast<int>(building_position_.x - radius);
+    int bottom_side_y = static_cast<int>(building_position_.y - radius);
+    int width = static_cast<int>(radius * 2);
+    int height = width;
+    sc2::Point2DI point; // Used to reuse the point object
+
+    for (int x  = left_side_x; x < (left_side_x + width); x++) {
+        for (int y  = bottom_side_y; y < (bottom_side_y + height); y++) {
+            point.x = x;
+            point.y = y;
+            auto itr = occupied_tiles.find(point);
+            if (itr != occupied_tiles.end() && itr->second == BuildingPlacer::TileOccupationStatus::reserved) {
+                occupied_tiles.erase(itr);
+            } else {
+                assert(false && "Tried to free non reserved building space");
+            }
+        }
+    }
+    // This is a unnecessarily inefficient way of solving it
+    if (included_addon_space_) {
+        auto addon_position = (GetTerranAddonPosition(building_position_));
+        // Add-ons are sometimes bugged (e.g. when checking if they can be placed)
+        // so we use another 2x2 building here instead
+        FreeReservedBuildingSpace(sc2::Point3D(addon_position.x, addon_position.y, building_position_.z),
+                                  sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, false);
+    }
 }
 
 bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {

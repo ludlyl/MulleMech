@@ -29,19 +29,6 @@ struct SortByDistance {
 
 }  // namespace
 
-Construction::Construction(Unit* building_, Unit* scv_)
-    : building(building_), scv(scv_) { }
-
-Unit* Construction::GetBuilding() const {
-    return building;
-}
-
-Unit* Construction::GetScvIfAlive() const {
-    if (!scv->is_alive)
-        return nullptr;
-    return scv;
-}
-
 Hub::Hub(sc2::Race current_race_, Expansions expansions_):
     m_current_race(current_race_), m_expansions(std::move(expansions_)),
     m_current_worker_type(sc2::UNIT_TYPEID::INVALID), m_lastStepScan(0) {
@@ -67,35 +54,6 @@ Hub::Hub(sc2::Race current_race_, Expansions expansions_):
 }
 
 void Hub::OnUnitCreated(Unit* unit_) {
-    // Record newly started constructions, noting which SCV is constructing it
-    if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
-        auto buildingData = unit_->GetTypeData();
-
-        // Find the SCV that's constructing this building
-        auto scvs = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And, {IsUnit(sc2::UNIT_TYPEID::TERRAN_SCV),
-            [&unit_, &buildingData](const sc2::Unit& scv) {
-                for (auto& order : scv.orders) {
-                    if (order.ability_id == buildingData.ability_id) {
-                        // Special case ("hack") for refineries. This is really ugly and a better solution should probably be made
-                        auto pos = sc2::Distance2D(scv.pos, unit_->pos);
-                        if (order.target_unit_tag != sc2::NullTag &&
-                            sc2::Distance2D(scv.pos, unit_->pos) < unit_->radius + RefineryConstructionToScvExtraDistance) {
-                            return true;
-                        } else if (order.target_pos.x == unit_->pos.x && order.target_pos.y == unit_->pos.y) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-        }), sc2::Unit::Alliance::Self);
-
-        // Make (and record) a new Construction data
-        if (!scvs.empty()) {
-            m_constructions.emplace_back(unit_, scvs[0]);
-        }
-    }
-
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
@@ -123,16 +81,6 @@ void Hub::OnUnitCreated(Unit* unit_) {
 }
 
 void Hub::OnUnitDestroyed(Unit* unit_) {
-    // Erase on-going construction if building was destroyed
-    if (IsBuilding()(*unit_) && unit_->alliance == sc2::Unit::Alliance::Self) {
-        for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
-            if (itr->building == unit_) {
-                m_constructions.erase(itr);
-                break;
-            }
-        }
-    }
-
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
         case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
@@ -155,41 +103,6 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
 
         default:
             return;
-    }
-}
-
-void Hub::OnUnitIdle(Unit* unit_) {
-    switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_PROBE:
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-        case sc2::UNIT_TYPEID::ZERG_DRONE: {
-            // TODO: This shouldn't be handled by Hub
-            auto job = unit_->AsWorker()->GetJob();
-            if (job == Worker::Job::gathering_minerals ||
-                job == Worker::Job::gathering_vespene ||
-                job == Worker::Job::building) {
-                unit_->AsWorker()->SetAsUnemployed();
-                gHistory.info() << "Our busy worker has finished task" << std::endl;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-void Hub::OnBuildingConstructionComplete(Unit* building_) {
-    // Remove finished building from our on-going constructions list
-    for (auto itr = m_constructions.begin(); itr != m_constructions.end(); ++itr) {
-        if (itr->building == building_) {
-            // "Hack" to set the new job for scv:s finishing refinery construction
-            if (itr->building->unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY) {
-                itr->scv->AsWorker()->SetAsUnemployed();
-            }
-
-            m_constructions.erase(itr);
-            break;
-        }
     }
 }
 

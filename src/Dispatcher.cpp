@@ -92,7 +92,6 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
         ": construction complete" << std::endl;
 
     auto building = gAPI->WrapUnit(building_);
-    gHub->OnBuildingConstructionComplete(building);
 
     for (auto& plugin : m_plugins)
         plugin->OnBuildingConstructionComplete(building);
@@ -132,6 +131,7 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
         " was created" << std::endl;
 
     gHub->OnUnitCreated(unit);
+    m_builder->OnUnitCreated(unit);
     gBuildingPlacer->OnUnitCreated(unit);
 
     for (const auto& i : m_plugins)
@@ -140,7 +140,7 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
 
 void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
     auto unit = gAPI->WrapUnit(unit_);
-    gHub->OnUnitIdle(unit);
+    m_builder->OnUnitIdle(unit);
 
     for (const auto& i : m_plugins)
         i->OnUnitIdle(unit, m_builder.get());
@@ -155,6 +155,7 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitDestroyed(unit);
+    m_builder->OnUnitDestroyed(unit);
     gBuildingPlacer->OnUnitDestroyed(unit);
 
     for (const auto& i : m_plugins)

@@ -36,6 +36,9 @@ public:
     // Note: This doesn't support refineries
     std::optional<sc2::Point3D> ReserveBuildingSpace(const Order& order_, bool include_addon_space_ = false);
 
+    void FreeReservedBuildingSpace(sc2::Point3D building_position_, sc2::UNIT_TYPEID building_type_,
+                                   bool included_addon_space_ = false);
+
     // Needed to support "CanBeBuilt" in the blueprints
     bool IsGeyserUnoccupied(const Unit* geyser_) const;
 
