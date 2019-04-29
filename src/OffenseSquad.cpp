@@ -54,6 +54,6 @@ void OffenseSquad::Update() {
         AbortMovement();
         // Ask micro plugin to deal with any enemies we have
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits(), GetAttackMovePoint());
     }
 }

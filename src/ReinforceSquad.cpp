@@ -35,7 +35,7 @@ void ReinforceSquad::Update() {
     // If we have enemies attacking us => attack them
     if (!GetEnemies().empty()) {
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits(), GetAttackMovePoint());
         return; // Don't do reinforce movement logic
     }
 

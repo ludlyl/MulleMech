@@ -33,7 +33,6 @@ public:
     const Units& GetAllies() const { return m_allies; }
     void SetAllies(Units allies) { m_allies = std::move(allies); }
 
-
     // Approach a position as a group; units are kept from getting too spread out
     void Approach(const sc2::Point2D& position);
 
@@ -51,9 +50,15 @@ public:
     // How spread out our units are
     float GetSpreadRadius() const { return m_spreadRadius; }
 
+    // Center point of enemies (only defined to sensible value if we have enemies)
+    const sc2::Point2D& GetEnemyCenter() const { return m_enemyCenter; }
+
     int GetId() const { return m_id; }
 
     const sc2::Point2D& GetApproachPoint() const { return m_approachPos; }
+
+    // Sensible A-move location for any unit in this squad
+    const sc2::Point2D& GetAttackMovePoint() const;
 
 protected:
     virtual void Update() = 0;
@@ -77,6 +82,7 @@ private:
     Units m_enemies;
     Units m_allies;
     sc2::Point2D m_center;                          // center of our units
+    sc2::Point2D m_enemyCenter;                     // center of enemy units
     sc2::Point2D m_regroupPos;
     sc2::Point2D m_approachPos;
     float m_spreadRadius = 0;                       // how spread out our units are from the center

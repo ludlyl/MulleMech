@@ -15,7 +15,8 @@ public:
     explicit MicroPlugin(Unit* unit);
     virtual ~MicroPlugin() = default;
 
-    void OnCombatFrame(Unit* self, const Units& enemies, const Units& allies);
+    void OnCombatFrame(Unit* self, const Units& enemies,
+        const Units& allies, const sc2::Point2D& attackMovePos);
 
     void OnCombatOver(Unit* self);
 
@@ -33,6 +34,12 @@ protected:
 
     void Attack(const Unit* target);
 
+    // Attack move towards enemies
+    void AttackMove();
+
+    // Attack move towards specific spot
+    void AttackMove(const sc2::Point2D& pos);
+
     void MoveTo(const sc2::Point2D& pos);
 
     bool HasBuff(sc2::BUFF_ID buff);
@@ -47,9 +54,14 @@ protected:
 
     bool IsMoving() const;
 
+    bool IsAttackMoving() const;
+
     Unit* m_self;
 
 private:
     const Unit* m_target;
+    sc2::Point2D m_attackMovePos;
     bool m_moving;
+
+    static constexpr float AttackMoveOutOfDateDistance = 10.0f; // Update attack move position if it moves this much
 };
