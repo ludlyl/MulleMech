@@ -4,7 +4,6 @@
 #include "Reaper.h"
 #include "SiegeTank.h"
 #include "core/API.h"
-#include "SCV.h"
 
 
 std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
@@ -16,8 +15,6 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
             return std::make_unique<SiegeTank>(unit);
-        case sc2::UNIT_TYPEID::TERRAN_SCV:
-            return std::make_unique<SCV>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
