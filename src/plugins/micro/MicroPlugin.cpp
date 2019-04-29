@@ -7,6 +7,7 @@
 #include "Battlecruiser.h"
 #include "Cyclone.h"
 #include "SiegeTank.h"
+#include "Widowmine.h"
 #include "Hub.h"
 #include "core/API.h"
 
@@ -27,6 +28,8 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Thor>(unit);
         case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
             return std::make_unique<Cyclone>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
+            return std::make_unique<Widowmine>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
