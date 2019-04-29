@@ -19,6 +19,8 @@ class Unit : public sc2::Unit {
     friend API::Interface;
 
 public:
+    enum class Attackable { yes, no, need_scan };
+
     // TODO: Make "Make" function and constructor private (and same for worker) so only API can create new Unit objects
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);
@@ -41,6 +43,12 @@ public:
     const Worker* AsWorker() const;
 
     sc2::UnitTypeData GetTypeData() const;
+
+    // Returns nullptr if the unit doesn't have any addon attached
+    // (uses API::Observer::GetUnit so returning a const Unit* isn't needed, but might want to do that anyway?)
+    Unit* GetAttachedAddon() const;
+
+    Attackable CanAttack(const Unit* other) const;
 
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 

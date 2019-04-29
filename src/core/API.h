@@ -18,10 +18,12 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr float StepsPerSecond = 22.4f;
-
 namespace API {
 
+constexpr float StepsPerSecond = 22.4f;
+constexpr float OrbitalScanCost = 50.0f;
+constexpr float OrbitalMuleCost = 50.0f;
+constexpr float OrbitalScanRadius = 12.3f;
 
 struct Action {
     explicit Action(sc2::ActionInterface* action_);
@@ -108,6 +110,10 @@ struct Observer {
     size_t CountUnitType(sc2::UNIT_TYPEID type_,
         bool with_not_finished = false) const;
 
+    const std::vector<sc2::UpgradeID>& GetUpgrades() const;
+
+    bool HasUpgrade(sc2::UPGRADE_ID upgrade_id_) const;
+
     const sc2::GameInfo& GameInfo() const;
 
     sc2::Point3D StartingLocation() const;
@@ -136,6 +142,8 @@ struct Observer {
 
     sc2::UNIT_TYPEID GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const;
 
+    sc2::UPGRADE_ID GetUpgradeFromAbility(sc2::ABILITY_ID id_) const;
+
     sc2::Race GetCurrentRace() const;
 
     const std::vector<sc2::ChatMessage>& GetChatMessages() const;
@@ -143,6 +151,8 @@ struct Observer {
     uint32_t GetGameLoop() const;
 
     float TerrainHeight(const sc2::Point2D& pos_) const;
+
+    sc2::Visibility GetVisibility(const sc2::Point2D& pos_) const;
 
  private:
      friend struct Interface;

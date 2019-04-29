@@ -41,20 +41,21 @@ void HarassSquad::Update() {
     } else {
         SetEnemies(std::move(workers));
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetAllies());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
     }
 }
 
 sc2::Point2D HarassSquad::NextHarassTarget(bool first) const {
-    sc2::Point3D base;
+    sc2::Point3D target;
 
     // First point: we chance on a likely future expansion of our enemy
     if (first) {
         auto expansions = gReasoner->GetLikelyEnemyExpansions();
         if (!expansions.empty()) {
-            base = expansions.front()->town_hall_location;
             if (expansions.size() >= 2 && sc2::GetRandomInteger(0, 1)) // 50% to check the second most likely
-                base = expansions[1]->town_hall_location;
+                target = expansions[1]->center_behind_minerals;
+            else
+                target = expansions.front()->center_behind_minerals;
         } else {
             return GetCenter(); // Idle as failure outcome
         }
@@ -65,16 +66,15 @@ sc2::Point2D HarassSquad::NextHarassTarget(bool first) const {
         if (!known_enemy_expansions.empty()) {
             // 50% chance to use latest base; otherwise pick random one
             if (sc2::GetRandomInteger(0, 1))
-                base = known_enemy_expansions.back()->town_hall_location;
+                target = known_enemy_expansions.back()->center_behind_minerals;
             else {
-                base = known_enemy_expansions.at(
-                        static_cast<Expansions::size_type>(sc2::GetRandomInteger(0, static_cast<int>(known_enemy_expansions.size()) - 1)))->town_hall_location;
+                target = known_enemy_expansions.at(
+                        static_cast<Expansions::size_type>(sc2::GetRandomInteger(0, static_cast<int>(known_enemy_expansions.size()) - 1)))->center_behind_minerals;
             }
         } else {
             return GetCenter(); // Idle as failure outcome
         }
     }
-    
-    // Find location behind mineral line of expansion
-    return BuildingPlacer::GetCenterBehindMinerals(base);
+
+    return target;
 }

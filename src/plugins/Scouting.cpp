@@ -92,7 +92,7 @@ void Scouting::ScvOffensiveScout() {
 
             // Note down base location if we only have one left
             if (m_unscoutedBases.size() == 1) {
-                gIntelligenceHolder->MarkEnemyExpansion(m_unscoutedBases.front());
+                gIntelligenceHolder->MarkEnemyMainBasePosition(m_unscoutedBases.front());
                 gHistory.debug(LogChannel::scouting) << "Approaching inferred enemy location" << std::endl;
             } else {
                 gHistory.debug(LogChannel::scouting) << "Approaching possible enemy location" << std::endl;

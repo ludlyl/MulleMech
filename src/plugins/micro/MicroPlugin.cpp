@@ -7,6 +7,8 @@
 #include "Battlecruiser.h"
 #include "Cyclone.h"
 #include "SiegeTank.h"
+#include "SCV.h"
+#include "Hub.h"
 #include "core/API.h"
 
 
@@ -26,6 +28,8 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Thor>(unit);
         case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
             return std::make_unique<Cyclone>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_SCV:
+            return std::make_unique<SCV>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
@@ -38,6 +42,14 @@ MicroPlugin::MicroPlugin(Unit* unit) :
 
 void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies, const Units& allies) {
     m_self = self;
+
+    // Request scan logic
+    for (auto& enemy : enemies) {
+        if (self->CanAttack(enemy) == Unit::Attackable::need_scan) {
+            gHub->RequestScan(enemy->pos);
+            break;
+        }
+    }
     OnCombatStep(enemies, allies);
 }
 
