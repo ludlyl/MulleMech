@@ -7,6 +7,10 @@
 #include "core/Helpers.h"
 #include "Hub.h"
 
+bool bp::Mutation::CanBeBuilt(const Order* order_) {
+    return gHub->GetFreeBuildingProductionAssignee(order_, order_->tech_alias.back()) != nullptr;
+}
+
 bool bp::Mutation::Build(Order* order_) {
     if (gHub->AssignBuildingProduction(order_, order_->tech_alias.back())) {
         gAPI->action().Build(*order_);

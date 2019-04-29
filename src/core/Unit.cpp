@@ -4,7 +4,7 @@
 #include "objects/Worker.h"
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit) {
+Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit), IsInVision(true) {
     if (unit.alliance == Unit::Alliance::Self) {
         m_micro = MicroPlugin::MakePlugin(this);
     }
@@ -35,6 +35,22 @@ void Unit::UpdateAPIData(const sc2::Unit& unit) {
     sc2::Unit::operator=(unit);
 }
 
+bool Unit::IsIdle() const {
+    return orders.empty() && !m_order_queued_in_current_step;
+}
+
+int Unit::NumberOfOrders() const {
+    if (m_order_queued_in_current_step) {
+        return static_cast<int>(orders.size() + 1);
+    } else {
+        return static_cast<int>(orders.size());
+    }
+}
+
+const std::vector<sc2::UnitOrder>& Unit::GetPreviousStepOrders() const {
+    return orders;
+}
+
 Worker* Unit::AsWorker() {
     return const_cast<Worker*>(const_cast<const Unit*>(this)->AsWorker());
 }
@@ -51,4 +67,36 @@ const Worker* Unit::AsWorker() const {
 
 sc2::UnitTypeData Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
+}
+
+Unit * Unit::GetAttachedAddon() const {
+    return gAPI->observer().GetUnit(this->add_on_tag);
+}
+
+Unit::Attackable Unit::CanAttack(const Unit* other) const {
+    auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
+
+    bool has_wep_type = false;
+    for (auto& weapon : our_data.weapons) {
+        if (sc2::Distance3D(pos, other->pos) < weapon.range)
+            continue;
+
+        if (weapon.type == sc2::Weapon::TargetType::Any)
+            has_wep_type = true;
+        else if (weapon.type == sc2::Weapon::TargetType::Ground && !other->is_flying)
+            has_wep_type = true;
+        else if (weapon.type == sc2::Weapon::TargetType::Air && other->is_flying)
+            has_wep_type = true;
+
+        if (has_wep_type)
+            break;
+    }
+
+    if (!has_wep_type)
+        return Attackable::no;
+
+    if (other->cloak == sc2::Unit::Cloaked)
+        return Attackable::need_scan;
+
+    return Attackable::yes;
 }

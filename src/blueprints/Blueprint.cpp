@@ -6,9 +6,6 @@
 #include "Building.h"
 #include "Mutation.h"
 #include "Refinery.h"
-#include "SupplyDepot.h"
-#include "ProductionBuilding.h"
-#include "TownHall.h"
 #include "Unit.h"
 #include "core/API.h"
 #include "core/Errors.h"
@@ -16,22 +13,11 @@
 
 #include <memory>
 
-bp::Blueprint::~Blueprint() {
-}
-
 std::shared_ptr<bp::Blueprint> bp::Blueprint::Plot(sc2::ABILITY_ID ability_) {
     switch (ability_) {
         // Specially handled Buildings
         case sc2::ABILITY_ID::BUILD_REFINERY:
             return std::make_shared<Refinery>();
-        case sc2::ABILITY_ID::BUILD_COMMANDCENTER:
-            return std::make_shared<TownHall>();
-        case sc2::ABILITY_ID::BUILD_SUPPLYDEPOT:
-            return std::make_shared<SupplyDepot>();
-        case sc2::ABILITY_ID::BUILD_BARRACKS:
-        case sc2::ABILITY_ID::BUILD_FACTORY:
-        case sc2::ABILITY_ID::BUILD_STARPORT:
-            return std::make_shared<ProductionBuilding>();
 
         // Add-ons
         case sc2::ABILITY_ID::BUILD_TECHLAB_BARRACKS:

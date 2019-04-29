@@ -12,6 +12,8 @@ struct Unit : Blueprint {
     // Here if required_addon_ = INVALID it means the add-on doesn't matter
     explicit Unit(sc2::UNIT_TYPEID who_builds_, sc2::UNIT_TYPEID required_addon_ = sc2::UNIT_TYPEID::INVALID);
 
+    bool CanBeBuilt(const Order* order_) final;
+
     bool Build(Order* order_) final;
 
 private:

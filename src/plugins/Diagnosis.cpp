@@ -8,12 +8,22 @@
 #include "core/API.h"
 
 void Diagnosis::OnStep(Builder* builder_) {
-    gAPI->debug().DrawText("Build order:");
+    gAPI->debug().DrawText("Nonsequential build order:");
 
-    if (builder_->GetConstructionOrders().empty()) {
+    if (builder_->GetNonsequentialConstructionOrders().empty()) {
         gAPI->debug().DrawText("Empty");
     } else {
-        for (const auto& i : builder_->GetConstructionOrders())
+        for (const auto& i : builder_->GetNonsequentialConstructionOrders())
+            gAPI->debug().DrawText(i.name);
+    }
+
+    gAPI->debug().DrawText("_______________________");
+    gAPI->debug().DrawText("Sequential build order:");
+
+    if (builder_->GetSequentialConstructionOrders().empty()) {
+        gAPI->debug().DrawText("Empty");
+    } else {
+        for (const auto& i : builder_->GetSequentialConstructionOrders())
             gAPI->debug().DrawText(i.name);
     }
 

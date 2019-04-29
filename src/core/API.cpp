@@ -11,72 +11,105 @@
 
 namespace API {
 
+static std::unordered_map<sc2::ABILITY_ID, sc2::UNIT_TYPEID> AbilityToUnitMap;
+static std::unordered_map<sc2::ABILITY_ID, sc2::UPGRADE_ID> AbilityToUpgradeMap;
+
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
 
-void Action::Build(const Order& order_, bool queue_) {
+void Action::Build(Order& order_, bool queue_) {
     m_action->UnitCommand(order_.assignee, order_.ability_id, queue_);
+    order_.assignee->m_order_queued_in_current_step = true;
 }
 
-void Action::Build(const Order& order_, const Unit* unit_, bool queue_) {
+void Action::Build(Order& order_, const Unit* unit_, bool queue_) {
     m_action->UnitCommand(order_.assignee, order_.ability_id, unit_, queue_);
+    order_.assignee->m_order_queued_in_current_step = true;
 }
 
-void Action::Build(const Order& order_, const sc2::Point2D& point_, bool queue_) {
+void Action::Build(Order& order_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(order_.assignee, order_.ability_id, point_, queue_);
+    order_.assignee->m_order_queued_in_current_step = true;
 }
 
-void Action::Attack(const Unit* unit_, const sc2::Point2D& point_, bool queue_) {
+void Action::Attack(Unit* unit_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(unit_, sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+    unit_->m_order_queued_in_current_step = true;
 }
 
-void Action::Attack(const Units& units_, const sc2::Point2D& point_, bool queue_) {
+void Action::Attack(Units& units_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
+    for (auto& unit : units_) {
+        unit->m_order_queued_in_current_step = true;
+    }
 }
 
-void Action::Attack(const Unit* unit_, const Unit* target_, bool queue_) {
+void Action::Attack(Unit* unit_, const Unit* target_, bool queue_) {
     m_action->UnitCommand(unit_, sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
+    unit_->m_order_queued_in_current_step = true;
 }
 
-void Action::Attack(const Units& units_, const Unit* target_, bool queue_) {
+void Action::Attack(Units& units_, const Unit* target_, bool queue_) {
     m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
+    for (auto& unit : units_) {
+        unit->m_order_queued_in_current_step = true;
+    }
 }
 
-void Action::MoveTo(const Unit* unit_, const sc2::Point2D& point_, bool queue_) {
+void Action::MoveTo(Unit* unit_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(unit_, sc2::ABILITY_ID::MOVE, point_, queue_);
+    unit_->m_order_queued_in_current_step = true;
 }
 
-void Action::MoveTo(const Units& units_, const sc2::Point2D& point_, bool queue_) {
+void Action::MoveTo(Units& units_, const sc2::Point2D& point_, bool queue_) {
     m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::MOVE, point_, queue_);
+    for (auto& unit : units_) {
+        unit->m_order_queued_in_current_step = true;
+    }
 }
 
-void Action::Stop(const Unit* unit_, bool queue_) {
+void Action::Stop(Unit* unit_, bool queue_) {
     m_action->UnitCommand(unit_, sc2::ABILITY_ID::STOP, queue_);
+    unit_->m_order_queued_in_current_step = true;
 }
 
-void Action::Stop(const Units& units_, bool queue_) {
+void Action::Stop(Units& units_, bool queue_) {
     m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::STOP, queue_);
+    for (auto& unit : units_) {
+        unit->m_order_queued_in_current_step = true;
+    }
 }
 
-void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_) {
+void Action::Cast(Unit* assignee_, sc2::ABILITY_ID ability_, bool queue_) {
     m_action->UnitCommand(assignee_, ability_, queue_);
+    assignee_->m_order_queued_in_current_step = true;
 }
 
-void Action::Cast(const Unit* assignee_, sc2::ABILITY_ID ability_,
+void Action::Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
     const Unit* target_, bool queue_) {
     m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), target_, queue_);
+    assignee_->m_order_queued_in_current_step = true;
 }
 
-void Action::LowerDepot(const Unit* assignee_) {
+void Action::Cast(Unit* assignee_, sc2::ABILITY_ID ability_,
+    const sc2::Point2D& point, bool queue_) {
+    m_action->UnitCommand(assignee_, convert::ToAbilityID(ability_), point, queue_);
+    assignee_->m_order_queued_in_current_step = true;
+}
+
+void Action::LowerDepot(Unit* assignee_) {
     m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_LOWER);
+    assignee_->m_order_queued_in_current_step = true;
 }
 
-void Action::RaiseDepot(const Unit* assignee_) {
+void Action::RaiseDepot(Unit* assignee_) {
     m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_SUPPLYDEPOT_RAISE);
+    assignee_->m_order_queued_in_current_step = true;
 }
 
-void Action::OpenGate(const Unit* assignee_) {
+void Action::OpenGate(Unit* assignee_) {
     m_action->UnitCommand(assignee_, sc2::ABILITY_ID::MORPH_WARPGATE);
+    assignee_->m_order_queued_in_current_step = true;
 }
 
 void Action::SendMessage(const std::string& text_) {
@@ -162,6 +195,19 @@ size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) c
                 m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
     }
     return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
+}
+
+const std::vector<sc2::UpgradeID>& Observer::GetUpgrades() const {
+    return m_observer->GetUpgrades();
+}
+
+bool Observer::HasUpgrade(sc2::UPGRADE_ID upgrade_id_) const {
+    for (auto& upgrade : GetUpgrades()) {
+        if (upgrade == upgrade_id_) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const sc2::GameInfo& Observer::GameInfo() const {
@@ -311,6 +357,20 @@ sc2::AbilityData Observer::GetAbilityData(sc2::ABILITY_ID id_) const {
     return m_observer->GetAbilityData()[convert::ToAbilityID(id_)];
 }
 
+sc2::UNIT_TYPEID Observer::GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) const {
+    auto itr = AbilityToUnitMap.find(id_);
+    if (itr == AbilityToUnitMap.end())
+        return sc2::UNIT_TYPEID::INVALID;
+    return itr->second;
+}
+
+sc2::UPGRADE_ID Observer::GetUpgradeFromAbility(sc2::ABILITY_ID id_) const {
+    auto itr = AbilityToUpgradeMap.find(id_);
+    if (itr == AbilityToUpgradeMap.end())
+        return sc2::UPGRADE_ID::INVALID;
+    return itr->second;
+}
+
 sc2::Race Observer::GetCurrentRace() const {
     uint32_t id = m_observer->GetPlayerID();
     return m_observer->GetGameInfo().player_info[id - 1].race_actual;
@@ -335,6 +395,10 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
     int encodedHeight = info.terrain_height.data[static_cast<unsigned>(posi.x + ((info.height - 1) - posi.y) * info.width)];
     float decodedHeight = -100.0f + 200.0f * float(encodedHeight) / 255.0f;
     return decodedHeight;
+}
+
+sc2::Visibility Observer::GetVisibility(const sc2::Point2D& pos_) const {
+    return m_observer->GetVisibility(pos_);
 }
 
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
@@ -372,6 +436,21 @@ Interface::Interface(sc2::ActionInterface* action_,
     m_observer(observer_), m_query(query_) {
 }
 
+void Interface::Init() {
+    // Make a mapping of ability -> unit, for abilities that construct units
+    const auto& unit_datas = m_observer->GetUnitTypeData();
+    for (auto& data : unit_datas) {
+        if (data.ability_id != sc2::ABILITY_ID::INVALID)
+            AbilityToUnitMap[data.ability_id] = data.unit_type_id;
+    }
+    // Make a mapping of ability -> upgrade
+    const auto& upgrade_datas = m_observer->GetUpgradeData();
+    for (auto& data : upgrade_datas) {
+        if (data.ability_id != sc2::ABILITY_ID::INVALID)
+            AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
+    }
+}
+
 Action Interface::action() const {
     return Action(m_action);
 }
@@ -401,16 +480,22 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
         return m_unitObjects[unit_->tag].get();
     }
 
+    itr->second->UpdateAPIData(*unit_);
     return itr->second.get();
 }
 
 void Interface::OnStep() {
+    for (auto& pair : m_unitObjects)
+        pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
+
     sc2::Units units = observer().m_observer->GetUnits();
     for (const sc2::Unit* unit : units) {
         auto itr = m_unitObjects.find(unit->tag);
         if (itr == m_unitObjects.end()) {
             m_unitObjects[unit->tag] = Unit::Make(*unit);
         } else {
+            itr->second->IsInVision = true;
+            itr->second->m_order_queued_in_current_step = false;
             itr->second->UpdateAPIData(*unit);
         }
     }

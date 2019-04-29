@@ -8,12 +8,18 @@ Squad::Squad() {
 }
 
 void Squad::OnStep() {
-    // Remove dead squad units
-    auto itr = std::remove_if(m_units.begin(), m_units.end(), [](auto* u) { return !u->is_alive; });
+    // Remove dead & lost vision of squad units (NOTE: units that despawn instantly, such as hellion, do not get marked dead)
+    auto itr = std::remove_if(m_units.begin(), m_units.end(),
+        [](auto* u) {
+        return !u->is_alive || !u->IsInVision;
+    });
     m_units.erase(itr, m_units.end());
 
-    // Remove dead enemies
-    auto jitr = std::remove_if(m_enemies.begin(), m_enemies.end(), [](auto* u) { return !u->is_alive; });
+    // Remove dead enemies or enemies that went back into fog of war
+    auto jitr = std::remove_if(m_enemies.begin(), m_enemies.end(),
+        [](const Unit* u) {
+            return !u->is_alive || !u->IsInVision;
+        });
     m_enemies.erase(jitr, m_enemies.end());
 
     CalculateCenter();
@@ -35,6 +41,7 @@ void Squad::RemoveUnit(Unit* unit) {
 }
 
 void Squad::Absorb(Squad& other) {
+    gAPI->action().MoveTo(other.GetUnits(), GetCenter(), true); // send them to us
     for (auto& unit : other.GetUnits())
         AddUnit(unit);
     other.GetUnits().clear();
@@ -137,4 +144,8 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
 
     if (!needToWait)
         gAPI->action().MoveTo(GetUnits(), position);
+}
+
+int Squad::Size() const {
+    return static_cast<int>(m_units.size());
 }

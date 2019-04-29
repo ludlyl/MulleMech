@@ -6,6 +6,7 @@
 
 #include "Order.h"
 #include "core/Unit.h"
+#include "objects/Worker.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -33,11 +34,28 @@ struct IsCombatUnit {
 
 struct IsTemporaryUnit {
     bool operator()(const sc2::Unit& unit_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+// Anti air = Can the unit attack air at all
+struct IsAntiAirUnit {
+    bool operator()(const sc2::Unit& unit_) const;
 };
 
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
-    bool operator()(sc2::UNIT_TYPEID) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+// I.e. is it a barracks, factory or starport
+struct IsBuildingWithSupportForAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+struct IsAddon {
+    bool operator()(const sc2::Unit& type_) const;
+    bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
 struct IsVisibleMineralPatch {
@@ -49,11 +67,15 @@ struct IsVisibleMineralPatch {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsFoggyResource {
+struct IsMineralPatch {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsVisibleGeyser {
+struct IsGeyser {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsVisibleUndepletedGeyser {
     // NOTE (alkurbatov): All the geysers has non-zero vespene contents while
     // the geysers covered by the fog of war don't have such parameter
     // (it is always zero) and can't be selected/targeted.
@@ -62,11 +84,11 @@ struct IsVisibleGeyser {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-// Check that the provided unit is not occupied and not depleted geyser
-struct IsFreeGeyser {
+struct IsFoggyResource {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+// I.e. IsFinishedRefinery
 struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -85,8 +107,13 @@ struct IsWorker {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-struct IsGasWorker {
+struct IsWorkerWithJob {
+    explicit IsWorkerWithJob(Worker::Job job_);
+
     bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    Worker::Job m_job;
 };
 
 struct IsTownHall {
@@ -173,18 +200,38 @@ private:
     sc2::Point2D m_point;
 };
 
+struct CloakState {
+    explicit CloakState(sc2::Unit::CloakState state_) : m_state(state_) { }
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::Unit::CloakState m_state;
+};
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints = 12);
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints = 12);
 
 sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation);
 
-// Returns "all" the (correct) tech requirements needed for a unit type.
+// Returns "all" the (correct) strucutre tech requirements needed for a unit type.
 // This is needed as UnitTypeData only can hold one requirement and some units have more than one
 // (e.g. Thors requires both an armory and a FACTORYTECHLAB). Furthermore this is needed as UnitTypeData doesn't
 // specify the type of techlab.
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::UnitTypeID id_);
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData& data_);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitTypeData& data_);
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
+                                                             sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+
+// Returns the upgrade tech requirement for a given ability.
+// This is needed as e.g. bio weapons lvl 2 has a requirement on bio weapons lvl 1
+sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_);
+
+// I.e. get mining and unemployed workers
+Units GetFreeWorkers();
+
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
+
+bool FreeWorkerExists();

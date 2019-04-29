@@ -99,9 +99,15 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
     // TODO: Check hallucinations
 
-    switch (unit_.unit_type.ToType()) {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_MULE:
+
         case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
         case sc2::UNIT_TYPEID::ZERG_BROODLING:
         case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
@@ -116,63 +122,129 @@ bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
     }
 }
 
+bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
+    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+    for (const auto& weapon : data.weapons) {
+        if (weapon.type == sc2::Weapon::TargetType::Air || weapon.type == sc2::Weapon::TargetType::Any) {
+            return true;
+        }
+    }
+    // Special cases. TODO: Put in more units here (raven? ht?)
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }
 
-bool IsBuilding::operator()(const sc2::UNIT_TYPEID unitTypeid_) const {
+bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     // NOTE: All units except overlord, larva & eggs require food,
     // thus we can use that to assume what is a building and what's not
-    auto data = gAPI->observer().GetUnitTypeData(unitTypeid_);
-    return data.food_required == 0 &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
-           unitTypeid_ != sc2::UNIT_TYPEID::ZERG_EGG;
+    auto data = gAPI->observer().GetUnitTypeData(type_);
+    return data.food_required == 0 && !IsTemporaryUnit()(type_) &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
+           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
+           type_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
+           type_ != sc2::UNIT_TYPEID::ZERG_EGG;
 }
 
-bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
-    return unit_.mineral_contents > 0;
+bool IsBuildingWithSupportForAddon::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
 }
 
-bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
-    switch (unit_.unit_type.ToType()) {
-        // Mineral types.
-        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD:
-        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750:
-        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD:
-
-        // Geyser types.
-        case sc2::UNIT_TYPEID::NEUTRAL_VESPENEGEYSER:
-        case sc2::UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER:
-        case sc2::UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER:
-        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERVESPENEGEYSER:
-        case sc2::UNIT_TYPEID::NEUTRAL_SHAKURASVESPENEGEYSER:
-        case sc2::UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER:
-            return unit_.display_type != sc2::Unit::DisplayType::Visible;
+bool IsBuildingWithSupportForAddon::operator()(sc2::UNIT_TYPEID type_) const {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSFLYING:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORY:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYFLYING:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORT:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTFLYING:
+            return true;
 
         default:
             return false;
     }
 }
 
-bool IsVisibleGeyser::operator()(const sc2::Unit& unit_) const {
+bool IsAddon::operator()(const sc2::Unit& unit_) const {
+    return (*this)(unit_.unit_type);
+}
+
+bool IsAddon::operator()(sc2::UNIT_TYPEID type_) const {
+    switch (type_) {
+        case sc2::UNIT_TYPEID::TERRAN_TECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB:
+        case sc2::UNIT_TYPEID::TERRAN_REACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_BARRACKSREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR:
+        case sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
+    return unit_.mineral_contents > 0;
+}
+
+bool IsMineralPatch::operator()(const sc2::Unit& unit_) const {
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750:
+        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD:
+        case sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+bool IsGeyser::operator()(const sc2::Unit& unit_) const {
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::NEUTRAL_VESPENEGEYSER:
+        case sc2::UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER:
+        case sc2::UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER:
+        case sc2::UNIT_TYPEID::NEUTRAL_PURIFIERVESPENEGEYSER:
+        case sc2::UNIT_TYPEID::NEUTRAL_SHAKURASVESPENEGEYSER:
+        case sc2::UNIT_TYPEID::NEUTRAL_RICHVESPENEGEYSER:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool IsVisibleUndepletedGeyser::operator()(const sc2::Unit& unit_) const {
     return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
 
-bool IsFreeGeyser::operator()(const sc2::Unit& unit_) const {
-    return IsVisibleGeyser()(unit_) && !gHub->IsOccupied(gAPI->WrapUnit(&unit_));
+bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
+    if (IsMineralPatch()(unit_) || IsGeyser()(unit_)) {
+        return unit_.display_type != sc2::Unit::DisplayType::Visible;
+    }
+    return false;
 }
+
 
 bool IsRefinery::operator()(const sc2::Unit& unit_) const {
     if (unit_.build_progress != 1.0f)
@@ -189,10 +261,11 @@ IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_id
 
 bool IsIdleUnit::operator()(const sc2::Unit& unit_) const {
     if (IsUnit(m_type)(unit_)) {
+        Unit* wrappedUnit = gAPI->WrapUnit(&unit_);
         if (m_count_non_full_reactor_as_idle && HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
-            return unit_.orders.size() < 2;
+            return wrappedUnit->NumberOfOrders() < 2;
         } else {
-            return unit_.orders.empty();
+            return wrappedUnit->IsIdle();
         }
     }
     return false;
@@ -204,25 +277,16 @@ bool IsWorker::operator()(const sc2::Unit& unit_) const {
         unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_PROBE;
 }
 
-bool IsGasWorker::operator()(const sc2::Unit& unit_) const {
-    if (!IsWorker()(unit_))
-        return false;
+IsWorkerWithJob::IsWorkerWithJob(Worker::Job job_) : m_job(job_) {
+}
 
-    if (unit_.orders.empty())
-        return false;
-
-    if (unit_.orders.front().ability_id == sc2::ABILITY_ID::HARVEST_RETURN) {
-        if (unit_.buffs.empty())
-            return false;
-
-        return unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGAS ||
-            unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGASZERG ||
-            unit_.buffs.front() == sc2::BUFF_ID::CARRYHARVESTABLEVESPENEGEYSERGASPROTOSS;
+bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetJob() == m_job) {
+            return true;
+        }
     }
-
-    if (unit_.orders.front().ability_id == sc2::ABILITY_ID::HARVEST_GATHER)
-        return gHub->IsTargetOccupied(unit_.orders.front());
-
     return false;
 }
 
@@ -315,6 +379,10 @@ sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) 
     return pos;
 }
 
+bool CloakState::operator()(const sc2::Unit& unit_) const {
+    return unit_.cloak == m_state;
+}
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
     std::vector<sc2::Point2D> points;
     points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
@@ -374,15 +442,16 @@ sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
     return vector_prime;
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_) {
-    return GetAllTechRequirements(gAPI->observer().GetUnitTypeData(id_));
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::UnitTypeID id_) {
+    return GetAllStructureTechRequirements(gAPI->observer().GetUnitTypeData(id_));
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData &data_) {
-    return GetAllTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitTypeData& data_) {
+    return GetAllStructureTechRequirements(data_.ability_id.ToType(), data_.tech_requirement);
 }
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_) {
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
+                                                             sc2::UnitTypeID suppliedTechRequirement_) {
     switch (id_.ToType()) {
         case sc2::ABILITY_ID::RESEARCH_COMBATSHIELD:
         case sc2::ABILITY_ID::RESEARCH_CONCUSSIVESHELLS:
@@ -461,4 +530,52 @@ std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::Uni
             return {suppliedTechRequirement_};
         }
     }
+}
+
+sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_) {
+    switch (id_.ToType()) {
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL2:
+            return sc2::UPGRADE_ID::TERRANINFANTRYARMORSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYARMORLEVEL3:
+            return sc2::UPGRADE_ID::TERRANINFANTRYARMORSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANINFANTRYWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANINFANTRYWEAPONSLEVEL2;
+
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2:
+            return sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3:
+            return sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2;
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL2:
+            return sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1;
+        case sc2::ABILITY_ID::RESEARCH_TERRANSHIPWEAPONSLEVEL3:
+            return sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2;
+
+        default:
+            return sc2::UPGRADE_ID::INVALID;
+    }
+}
+
+Units GetFreeWorkers() {
+    // Might be a bit too ineffective to do it this way
+    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or,
+            {IsWorkerWithJob(Worker::Job::unemployed),
+             IsWorkerWithJob(Worker::Job::gathering_minerals)}), sc2::Unit::Alliance::Self);
+}
+
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_) {
+    Unit* closest_unit = GetFreeWorkers().GetClosestUnit(location_);
+    if (!closest_unit)
+        return nullptr;
+
+    return closest_unit->AsWorker();
+}
+
+bool FreeWorkerExists() {
+    return !GetFreeWorkers().empty();
 }

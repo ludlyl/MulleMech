@@ -30,20 +30,51 @@ class Reasoner {
         PlayStyle CalculatePlayStyle();
 
         // Returns the latest calculated play style
-        PlayStyle GetPlayStyle();
+        PlayStyle GetPlayStyle() const;
+
+        const std::vector<UnitClass>& CalculateNeededUnitClasses();
 
         // Returns what types/classes of units we are currently in need of.
         // Inferred from our knowledge of our opponent (his units & buildings) and from our current units.
         // An empty return vector means that the "normal unit composition" (for the current state of the game) should be built
         // TODO: Return a vector of Pair<UnitClass, Priority> instead (sometimes we might just want a little more
         //  anti-air and sometimes getting as much anti-air as possible might be crucial to survive)
-        std::vector<UnitClass> GetNeededUnitClasses();
+        const std::vector<UnitClass>& GetNeededUnitClasses() const;
 
-        // Return: Vector of Expansions sorted by likelihood
+        // Return: Vector of Expansions sorted by likelihood (does not contain expansions we know our opponent has)
         std::vector<std::shared_ptr<Expansion>> GetLikelyEnemyExpansions();
 
     private:
+        std::string PlayStyleToString(PlayStyle play_style) const;
+
         PlayStyle m_latest_play_style = PlayStyle::normal;
+        std::vector<UnitClass> m_latest_needed_unit_classes;
+
+        // I.e. we want 50% more unit value that can hit air than our opponent has unit value in air units
+        static constexpr float AntiAirToAirUnitValueRatio = 1.5f;
+
+        // How much buffer we want at the very least vs *some* (e.g. doesn't count marine or reaper for now)
+        // of our opponents light units
+        static constexpr float BufferToEnemyLightUnitValueRatio = 0.5f;
+
+        // If we know our opponent has this many bases/expansions more than us we turn into "extreme measures" (all in or greed)
+        static constexpr int ExpansionDisadvantageBeforeExtremeMeasures = 2;
+
+        // How big is the chance that we will greed compared to all in
+        static constexpr float GreedToAllInChanceRatio = 0.5f;
+
+        // If our opponent has this much more combat unit value than we do we (are likely to) turn on defensive mode
+        // This should be made more advanced though and take things like counters into consideration
+        static constexpr float OpponentUnitValueAdvantageBeforeDefensiveRatio = 1.75f;
+
+        // Our opponent at least need to be above this value for defensive mode to be able to activate
+        static constexpr float DefensiveUnitValueThreshold = 500;
+
+        // If we have this many more units than our opponent we (are likely) to turn on scout mode
+        static constexpr float ScoutPlayStyleUnitValueRatio = 2.5f;
+
+        // We need to at least be above this value (for our own units) for scout mode to active
+        static constexpr float ScoutUnitValueThreshold = 1000;
 };
 
 extern std::unique_ptr<Reasoner> gReasoner;

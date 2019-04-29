@@ -8,20 +8,18 @@
 #include "Reasoner.h"
 #include "IntelligenceHolder.h"
 #include "core/API.h"
-#include "core/Brain.h"
 #include "core/Helpers.h"
 #include "core/Map.h"
 #include "core/Timer.h"
 #include "plugins/ChatterBox.h"
 #include "plugins/Diagnosis.h"
-#include "plugins/ForceCommander.h"
+#include "plugins/CombatCommander.h"
 #include "plugins/Governor.h"
 #include "plugins/Miner.h"
 #include "plugins/RepairMan.h"
 #include "plugins/QuarterMaster.h"
 #include "plugins/Scouting.h"
-#include "plugins/micro/Reaper.h"
-#include "plugins/ReaperHarass.h"
+#include "BuildingPlacer.h"
 
 #include <sc2api/sc2_common.h>
 #include <sc2api/sc2_unit.h>
@@ -32,7 +30,7 @@ Dispatcher::Dispatcher(const std::string& opponent_id_): m_builder(new Builder()
     gAPI = std::make_unique<API::Interface>(Actions(), Control(), Debug(), Observation(), Query());
     gReasoner = std::make_unique<Reasoner>();
     gIntelligenceHolder = std::make_unique<IntelligenceHolder>();
-    gBrain = std::make_unique<Brain>();
+    gBuildingPlacer = std::make_unique<BuildingPlacer>();
     m_plugins.reserve(10);
 
     if (opponent_id_.empty())
@@ -46,17 +44,33 @@ void Dispatcher::OnGameStart() {
     m_plugins.clear();
     gHistory.info() << "New game started!" << std::endl;
 
+    gAPI->Init();
+
     sc2::Race current_race = gAPI->observer().GetCurrentRace();
+
+    Timer clock;
+    clock.Start();
     gHub = std::make_unique<Hub>(current_race, CalculateExpansionLocations());
+    auto duration = clock.Finish();
+    gHistory.info() << "Calculate Expansions took: " << duration << " ms" << std::endl;
+
+    gOverseerMap = std::make_unique<Overseer::MapImpl>();
+
+    clock.Start();
+    gOverseerMap->setBot(this);
+    gOverseerMap->initialize();
+    gBuildingPlacer->OnGameStart();
+    duration = clock.Finish();
+    gHistory.info() << "Map calculations took: " << duration << " ms" << std::endl;
+    gHistory.info() << "Tiles in start region: " << gOverseerMap->getNearestRegion(gAPI->observer().StartingLocation())->getTilePositions().size() << std::endl;
 
     m_plugins.emplace_back(new Governor());
     m_plugins.emplace_back(new Miner());
     m_plugins.emplace_back(new QuarterMaster());
     m_plugins.emplace_back(new RepairMan());
-    m_plugins.emplace_back(new ForceCommander());
+    m_plugins.emplace_back(new CombatCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
-    m_plugins.emplace_back(new ReaperHarass());
 
 #ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
@@ -78,7 +92,6 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
         ": construction complete" << std::endl;
 
     auto building = gAPI->WrapUnit(building_);
-    gHub->OnBuildingConstructionComplete(building);
 
     for (auto& plugin : m_plugins)
         plugin->OnBuildingConstructionComplete(building);
@@ -89,9 +102,8 @@ void Dispatcher::OnStep() {
     clock.Start();
 
     gAPI->OnStep();
-    gHub->OnStep();
-    gIntelligenceHolder->Update();
     gReasoner->CalculatePlayStyle();
+    gReasoner->CalculateNeededUnitClasses();
 
     for (const auto& i : m_plugins)
         i->OnStep(m_builder.get());
@@ -109,15 +121,17 @@ void Dispatcher::OnStep() {
 }
 
 void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
+    auto unit = gAPI->WrapUnit(unit_);
     // NOTE (alkurbatov): Could be just a worker exiting a refinery.
-    if (unit_->alliance != sc2::Unit::Alliance::Self || IsGasWorker()(*unit_))
+    if (unit_->alliance != sc2::Unit::Alliance::Self || IsWorkerWithJob(Worker::Job::gathering_vespene)(*unit))
         return;
 
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
         " was created" << std::endl;
 
-    auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitCreated(unit);
+    m_builder->OnUnitCreated(unit);
+    gBuildingPlacer->OnUnitCreated(unit);
 
     for (const auto& i : m_plugins)
         i->OnUnitCreated(unit);
@@ -125,24 +139,30 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
 
 void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
     auto unit = gAPI->WrapUnit(unit_);
-    gHub->OnUnitIdle(unit);
+    m_builder->OnUnitIdle(unit);
 
     for (const auto& i : m_plugins)
         i->OnUnitIdle(unit, m_builder.get());
 }
 
 void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
-    if (unit_->alliance != sc2::Unit::Alliance::Self)
-        return;
-
-    gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
-        " was destroyed" << std::endl;
+    // The documentation for this function says that it's only called for our own units, but that ins't the case
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitDestroyed(unit);
+    m_builder->OnUnitDestroyed(unit);
+    gBuildingPlacer->OnUnitDestroyed(unit);
+    gIntelligenceHolder->OnUnitDestroyed(unit);
 
-    for (const auto& i : m_plugins)
-        i->OnUnitDestroyed(unit, m_builder.get());
+    // TODO: This check shouldn't have to be done here. Make sure Hub and all plugins check alliance themselves
+    if (unit_->alliance == sc2::Unit::Alliance::Self) {
+        gHistory.info() << "One of our: " << sc2::UnitTypeToName(unit_->unit_type) << " was destroyed" << std::endl;
+
+        m_builder->OnUnitDestroyed(unit);
+        gHub->OnUnitDestroyed(unit);
+        for (const auto& i : m_plugins)
+            i->OnUnitDestroyed(unit, m_builder.get());
+    }
 }
 
 void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
@@ -155,6 +175,8 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
 
 void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit_) {
     auto unit = gAPI->WrapUnit(unit_);
+    gBuildingPlacer->OnUnitEnterVision(unit);
+    gIntelligenceHolder->OnUnitEnterVision(unit);
     for (const auto& i : m_plugins)
         i->OnUnitEnterVision(unit);
 }

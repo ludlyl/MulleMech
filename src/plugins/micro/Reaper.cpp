@@ -2,13 +2,11 @@
 #include "core/API.h"
 
 Reaper::Reaper(Unit* unit)
-        : DefaultUnit(unit)
+        : MicroPlugin(unit)
 {
 }
 
-void Reaper::OnCombatStep(const Units& enemies) {
-    DefaultUnit::OnCombatStep(enemies);
-
+void Reaper::OnCombatStep(const Units& enemies, const Units& allies) {
     const Unit* target = enemies.GetClosestUnit(m_self->pos);
     //Retreat
     if ((m_self->health) < (35) && !((gAPI->observer().StartingLocation().x == m_self->pos.x) &&
@@ -34,6 +32,5 @@ void Reaper::OnCombatStep(const Units& enemies) {
             MoveTo(sc2::Point2D(gAPI->observer().StartingLocation().x,
                                 gAPI->observer().StartingLocation().y));
         }
-
     }
 }
