@@ -67,7 +67,7 @@ void Builder::OnUnitCreated(Unit* unit_) {
             if (worker->construction) {
                 worker->construction->building = unit_;
             } else {
-                assert(false && "Worker set as building but does not have a construction");
+                assert(false && "Worker set as builder but does not have a construction");
             }
         }
     }
