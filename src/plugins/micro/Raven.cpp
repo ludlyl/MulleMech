@@ -5,10 +5,6 @@ Raven::Raven(Unit* unit)
         : MicroPlugin(unit) {}
 
 void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
-
-    //Use to find missing IDs, will be removed
-    auto abilities = gAPI->query().GetAbilitiesForUnit(m_self).abilities;
-    auto abilities2 = gAPI->query().GetAbilitiesForUnit(m_self).abilities;
     
     if(m_self->energy>=50){
         Units copy = enemies;
