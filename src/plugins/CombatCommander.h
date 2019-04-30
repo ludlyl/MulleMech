@@ -50,5 +50,4 @@ private:
     static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
     static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
     static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
-    static constexpr float HellionHarassChance = 0.35f;     // Chance hellion is added to a Harass Squad
 };

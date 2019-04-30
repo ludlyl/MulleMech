@@ -210,7 +210,10 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
             }
         }
 
-        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && HellionHarassChance < sc2::GetRandomFraction())
+        // Add all hellions to harass squad after we get an armory (i.e. can make hellbats) and none before
+        auto t = gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY);
+        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION &&
+            gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) == 0)
             add = false;
 
         if (add) {

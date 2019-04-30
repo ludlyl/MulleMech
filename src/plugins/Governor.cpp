@@ -31,6 +31,7 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
@@ -40,7 +41,6 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
@@ -281,11 +281,16 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     gHistory.info() << "Schedule double Widowmine training" << std::endl;
-                    return;
+                } else if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) > 0 &&
+                    sc2::GetRandomFraction() > HellionProductionChance) {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLIONTANK, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLIONTANK, false, unit_);
+                    gHistory.info() << "Schedule double Hellbat training" << std::endl;
+                } else {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                    gHistory.info() << "Schedule double Hellion training" << std::endl;
                 }
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
-                gHistory.info() << "Schedule double Hellion training" << std::endl;
                 return;
             } else {
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);

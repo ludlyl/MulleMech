@@ -36,5 +36,5 @@ private:
     static constexpr float ThorsToTanksRatio = 1.f / 3.f;
     static constexpr int OptimalNumOfRavens = 2;
     static constexpr float MedivacsToHellbatsRatio = 1.f / 8.f;
-    
+    static constexpr float HellionProductionChance = 0.2f;
 };
