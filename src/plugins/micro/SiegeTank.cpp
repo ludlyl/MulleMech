@@ -17,7 +17,7 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
     ground_enemies.erase(itr, ground_enemies.end());
 
     if (!ground_enemies.empty()) {
-        float closestEnemyDistance = Distance2D(m_self->pos, enemies.GetClosestUnit(m_self->pos)->pos);
+        float closestEnemyDistance = Distance2D(m_self->pos, ground_enemies.GetClosestUnit(m_self->pos)->pos);
         // Siege if within siege range and not on top of unit
         if (closestEnemyDistance <= siegeMaxRange && closestEnemyDistance > siegeMinRange + 1) {
             if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANK) {
