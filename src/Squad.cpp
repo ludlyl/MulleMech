@@ -82,6 +82,9 @@ void Squad::CalculateCenter() {
     auto pair = m_units.CalculateCircle();
     m_center = pair.first;
     m_spreadRadius = pair.second;
+
+    if (!m_enemies.empty())
+        m_enemyCenter = m_enemies.CalculateCircle().first;
 }
 
 void Squad::UpdateMovement() {
@@ -148,4 +151,8 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
 
 int Squad::Size() const {
     return static_cast<int>(m_units.size());
+}
+
+const sc2::Point2D& Squad::GetAttackMovePoint() const {
+    return m_enemyCenter;
 }

@@ -35,9 +35,10 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
                 }
             }
 
-            if (!enemy_in_sieged_shooting_range) {
+            if (!enemy_in_sieged_shooting_range)
                 Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
-            }
+        } else {
+            AttackMove();
         }
     } else if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
         Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);

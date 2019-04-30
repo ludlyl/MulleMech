@@ -37,8 +37,10 @@ MicroPlugin::MicroPlugin(Unit* unit) :
 {
 }
 
-void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies, const Units& allies) {
+void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies,
+    const Units& allies, const sc2::Point2D& attackMovePos) {
     m_self = self;
+    m_attackMovePos = attackMovePos;
 
     // Request scan logic
     for (auto& enemy : enemies) {
@@ -72,6 +74,18 @@ void MicroPlugin::Attack(const Unit* target) {
     if (m_self && !IsAttacking(target)) {
         gAPI->action().Attack(m_self, target);
         m_target = target;
+        m_moving = false;
+    }
+}
+
+void MicroPlugin::AttackMove() {
+    AttackMove(m_attackMovePos);
+}
+
+void MicroPlugin::AttackMove(const sc2::Point2D& pos) {
+    if (m_self && !IsAttackMoving(pos)) {
+        gAPI->action().Attack(m_self, pos);
+        m_target = nullptr;
         m_moving = false;
     }
 }
@@ -112,3 +126,16 @@ bool MicroPlugin::IsAttacking(const Unit* target) const {
 bool MicroPlugin::IsMoving() const {
     return m_moving;
 }
+
+bool MicroPlugin::IsAttackMoving() const {
+    return m_self && !m_target &&
+        !m_self->GetPreviousStepOrders().empty() &&
+        m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK;
+}
+
+bool MicroPlugin::IsAttackMoving(const sc2::Point2D& pos) const {
+    return IsAttackMoving() &&
+        sc2::DistanceSquared2D(pos, m_self->GetPreviousStepOrders().front().target_pos) <=
+        AttackMoveOutOfDateDistance * AttackMoveOutOfDateDistance;
+}
+
