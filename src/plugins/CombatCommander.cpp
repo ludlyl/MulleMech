@@ -199,7 +199,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Use unit for harass?
-    if (!m_harassSquad.IsSent() && (m_playStyle == PlayStyle::normal || m_playStyle == PlayStyle::offensive) &&
+    if (!m_harassSquad.IsSent() && m_playStyle != PlayStyle::all_in && m_playStyle != PlayStyle::very_defensive &&
         (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REAPER || unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION)) {
         // Keep harass squads homogenous (reapers don't play nice in group with other units due to cliff walk)
         bool add = true;
