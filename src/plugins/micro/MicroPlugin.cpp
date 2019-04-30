@@ -83,7 +83,7 @@ void MicroPlugin::AttackMove() {
 }
 
 void MicroPlugin::AttackMove(const sc2::Point2D& pos) {
-    if (m_self && !IsAttackMoving()) {
+    if (m_self && !IsAttackMoving(pos)) {
         gAPI->action().Attack(m_self, pos);
         m_target = nullptr;
         m_moving = false;
@@ -128,11 +128,14 @@ bool MicroPlugin::IsMoving() const {
 }
 
 bool MicroPlugin::IsAttackMoving() const {
-    if (m_self && !m_self->GetPreviousStepOrders().empty()) {
-        if (m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK) {
-            return sc2::DistanceSquared2D(m_attackMovePos, m_self->GetPreviousStepOrders().front().target_pos) <=
-                AttackMoveOutOfDateDistance * AttackMoveOutOfDateDistance;
-        }
-    }
-    return false;
+    return m_self && !m_target &&
+        !m_self->GetPreviousStepOrders().empty() &&
+        m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK;
 }
+
+bool MicroPlugin::IsAttackMoving(const sc2::Point2D& pos) const {
+    return IsAttackMoving() &&
+        sc2::DistanceSquared2D(pos, m_self->GetPreviousStepOrders().front().target_pos) <=
+        AttackMoveOutOfDateDistance * AttackMoveOutOfDateDistance;
+}
+

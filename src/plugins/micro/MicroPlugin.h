@@ -25,7 +25,7 @@ public:
 protected:
     // Combat step function for MicroPlugin, only processed during combat
     // enemies: List of all enemies we are currently fighting in our localized area (i.e. not irrelevant enemies far away)
-    // TODO: Should probably have a list of all allies that are part of the fight
+    // allies: other allies that are fighting with us in this localized area
     virtual void OnCombatStep(const Units& enemies, const Units& allies) = 0;
 
     virtual void OnCombatEnded() { }
@@ -56,12 +56,14 @@ protected:
 
     bool IsAttackMoving() const;
 
+    bool IsAttackMoving(const sc2::Point2D& pos) const;
+
     Unit* m_self;
 
 private:
     const Unit* m_target;
     sc2::Point2D m_attackMovePos;
-    bool m_moving;
+    bool m_moving;                  // Move command; does not include Attack Move command
 
     static constexpr float AttackMoveOutOfDateDistance = 10.0f; // Update attack move position if it moves this much
 };
