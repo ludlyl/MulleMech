@@ -52,9 +52,9 @@ void Governor::OnGameStart(Builder* builder_) {
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3);
 
-            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1); TODO fix so that these work
-            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2);
-            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3);
 
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1);
             builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2);
