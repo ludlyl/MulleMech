@@ -116,6 +116,15 @@ private:
     Worker::Job m_job;
 };
 
+struct IsWorkerWithUnstartedConstructionOrderFor {
+    explicit IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::UNIT_TYPEID m_type;
+};
+
 struct IsTownHall {
     bool operator()(const sc2::Unit& unit_) const;
 };
