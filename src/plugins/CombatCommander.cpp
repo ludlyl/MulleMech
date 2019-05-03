@@ -94,6 +94,8 @@ void CombatCommander::PlayDefensive(){ // TODO
     if(m_changedPlayStyle){
         m_mainSquad->AbortTakeOver();
         gAPI->action().MoveTo(m_mainSquad->GetUnits(), gAPI->observer().StartingLocation());
+        if (!m_harassSquad.IsSent())
+            m_mainSquad->Absorb(m_harassSquad);
     }
 }
 
@@ -111,8 +113,6 @@ void CombatCommander::PlayScout(){ // TODO
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
     auto ourBuildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
-    if (ourBuildings.empty())
-        return {};
 
     // Consider defense in regards to every building we have, making a perimeter circle
     // for our base does not work in the general case
@@ -202,7 +202,8 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Use unit for harass?
-    if (!m_harassSquad.IsSent() && m_playStyle != PlayStyle::all_in && m_playStyle != PlayStyle::very_defensive &&
+    if (!m_harassSquad.IsSent() && m_playStyle != PlayStyle::all_in &&
+        m_playStyle != PlayStyle::very_defensive && m_playStyle != PlayStyle::defensive &&
         (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REAPER || unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION)) {
         // Keep harass squads homogenous (reapers don't play nice in group with other units due to cliff walk)
         bool add = true;
