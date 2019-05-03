@@ -22,7 +22,9 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     });
     copy.erase(itr, copy.end());
 
-    if(!(m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE || m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE)){
+    if (!m_self->GetPreviousStepOrders().empty() &&
+        m_self->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE &&
+        m_self->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE) {
         const Unit *target = nullptr;
         if (!copy.empty()) {
             target = copy.GetClosestUnit(m_self->pos);
@@ -33,7 +35,7 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
         }
 
         if (target) {
-            Cast(sc2::ABILITY_ID::SMART, target);
+            Attack(target);
         }
     }
 
