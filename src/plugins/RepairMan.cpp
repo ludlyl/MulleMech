@@ -2,16 +2,20 @@
 //
 // Copyright (c) 2017-2018 Alexander Kurbatov
 
+#include <iostream>
 #include "RepairMan.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include <algorithm>
 
 void RepairMan::OnStep(Builder*) {
     if (gAPI->observer().GetCurrentRace() != sc2::Race::Terran)
         return;
 
     Units buildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+
     for (Unit* unit : buildings) {
+        // i.e only handle fully constructed buildings/workers
         if (unit->build_progress < 1.0f) {
             continue;
         }
@@ -27,45 +31,75 @@ void RepairMan::OnStep(Builder*) {
             //do this
         }*/
 
-        // i.e repair upgraded CC with all close mineral harvesting workers
+        // i.e repair Planetary fortress with all close mineral harvesting workers
         if (unit->health < 1500 && IsPlanetaryFortress()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
-            unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
             auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
                                                                  {IsWithinDist(unit->pos, 15.0f), IsHasrvestingMineralsWorker()}));
-            for (Unit* worker : workers) {
-                if (FreeWorkerExists()) {
+            if (!workers.empty()) {
+                unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
+                for (Unit* worker : workers) {
+                    //if (FreeWorkerExists()) {
                     worker->AsWorker()->SetAsRepairer(unit);
                 }
             }
         }
 
         // repair Orbital Command (on ground or flying) if it is dropping health
-        if (unit->health < 1400 && IsOrbitalCommand()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
+        if (unit->health < 1499 && IsOrbitalCommand()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
             unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
             repairMen = 3;
             for (int i = 0; i < repairMen; i++) {
-                if (FreeWorkerExists()) {
-                    auto worker = GetClosestFreeWorker(unit->pos);
-                    worker->SetAsRepairer(unit);
+                if (!FreeWorkerExists()) {
+                    break;
+                }
+                auto worker = GetClosestFreeWorker(unit->pos);
+                worker->AsWorker()->SetAsRepairer(unit);
+            }
+        }
+    }
+
+    for (Unit* unit : buildings) {
+        // checks if building has full health after repairing
+        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && unit->health + std::numeric_limits<float>::epsilon() >= unit->health_max) {
+            // Get close repair workers
+            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                                 {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()}));
+            // Release workers if there is any
+            if (!workers.empty()) {
+                for (Unit *repairer : workers) {
+                    repairer->AsWorker()->SetAsUnemployed();
+                }
+            }
+            // Set building as not repairing
+            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
+        }
+
+        //if somehow there is buildings in repair-mode but no repairers
+        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && ((gAPI->observer().GetUnits(IsRepairWorker())).size()) < 1) {
+            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
+        }
+
+        // i.e handle idle repairers
+        Units repairers = gAPI->observer().GetUnits(IsRepairWorker());
+        if (!repairers.empty() && unit->m_repairPhase == Unit::BuildingRepairPhase::repairing) {
+            for (Unit *repairer : repairers) {
+                if (repairer->IsIdle()) {
+                    repairer->AsWorker()->SetAsRepairer(unit);
                 }
             }
         }
     }
 
-    // checks if building has full health after repairing
+    // recover if repairers mystically stops repairing but still are repairer for a certain building
     for (Unit* unit : buildings) {
-        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && unit->health >= 0.94f * unit->health_max) {
-            // Get close repair workers
-            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                 {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()}));
-            // Release workers
-            for (Unit* repairer : workers) {
-                repairer->AsWorker()->SetAsUnemployed();
+        for (Unit* repairer : (gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                                     {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})))) {
+            if (unit->health < unit->health_max && IsOrbitalCommand()(*unit)) {
+                repairer->AsWorker()->SetAsRepairer(unit);
             }
-            // Set building as not repairing
-            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
         }
     }
+
 
 
     // FIXME (alkuratov): Put buildings repair code here.
@@ -124,4 +158,19 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
             builder_->ScheduleConstructionInRecommendedQueue(unit_->unit_type.ToType(), true);
             return;
     }
+}
+
+std::size_t RepairMan::CountRepairMen(Unit* unit) {
+    std::size_t nOfRepairMen = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                        {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})).size();
+    return nOfRepairMen;
+}
+
+bool RepairMan::IsAnyRepairersNearby(Unit* unit) {
+    std::size_t nOfRepairMen = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+                                                                     {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})).size();
+    if (nOfRepairMen > 0) {
+        return true;
+    }
+    return false;
 }
