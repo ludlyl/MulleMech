@@ -43,12 +43,11 @@ private:
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
-    static constexpr float SearchEnemyRadiusPadding = 8.0f;
+    static constexpr float SearchEnemyPadding = 15.0f;      // Defend this far from our buildings
     static constexpr float EnemyGroupingDistance = 15.0f;   // Enemies this far apart => different groups
     static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
     static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
     static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
     static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
     static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
-    static constexpr float HellionHarassChance = 0.35f;     // Chance hellion is added to a Harass Squad
 };

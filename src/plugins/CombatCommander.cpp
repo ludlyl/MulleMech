@@ -94,6 +94,8 @@ void CombatCommander::PlayDefensive(){ // TODO
     if(m_changedPlayStyle){
         m_mainSquad->AbortTakeOver();
         gAPI->action().MoveTo(m_mainSquad->GetUnits(), gAPI->observer().StartingLocation());
+        if (!m_harassSquad.IsSent())
+            m_mainSquad->Absorb(m_harassSquad);
     }
 }
 
@@ -110,13 +112,14 @@ void CombatCommander::PlayScout(){ // TODO
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
-    // Calculate a circle using all our buildings for search radius and then increase it a bit
-    // TODO: Improve this, using a circle for our base might spread way further than our perimeter
-    //       is on some maps where our bases don't end up in a pattern fitting well in a circle
-    float searchRadius = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self)
-            .CalculateCircle().second + SearchEnemyRadiusPadding;
-    Units enemyUnits = gAPI->observer().GetUnits(IsWithinDist(gAPI->observer().StartingLocation(),
-            searchRadius), sc2::Unit::Alliance::Enemy);
+    auto ourBuildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+
+    // Consider defense in regards to every building we have, making a perimeter circle
+    // for our base does not work in the general case
+    Units enemyUnits = gAPI->observer().GetUnits([&ourBuildings](auto& enemy) {
+        return sc2::DistanceSquared2D(enemy.pos, ourBuildings.GetClosestUnit(enemy.pos)->pos) <=
+                SearchEnemyPadding * SearchEnemyPadding;
+    }, sc2::Unit::Alliance::Enemy);
 
     // Split them up into groups that are together
     std::vector<Units> enemyGroups;
@@ -199,7 +202,8 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Use unit for harass?
-    if (!m_harassSquad.IsSent() && (m_playStyle == PlayStyle::normal || m_playStyle == PlayStyle::offensive) &&
+    if (!m_harassSquad.IsSent() && m_playStyle != PlayStyle::all_in &&
+        m_playStyle != PlayStyle::very_defensive && m_playStyle != PlayStyle::defensive &&
         (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REAPER || unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION)) {
         // Keep harass squads homogenous (reapers don't play nice in group with other units due to cliff walk)
         bool add = true;
@@ -210,7 +214,9 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
             }
         }
 
-        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && HellionHarassChance < sc2::GetRandomFraction())
+        // Add all hellions to harass squad after we get an armory (i.e. can make hellbats) and none before
+        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION &&
+            gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) == 0)
             add = false;
 
         if (add) {
