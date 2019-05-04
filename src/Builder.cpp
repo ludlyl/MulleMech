@@ -50,11 +50,14 @@ void Builder::OnStep() {
 
         it = m_training_orders.begin();
         while (it != m_training_orders.end()) {
-            if (!Build(&(*it))) {
+            if (AreNoneResourceRequirementsFulfilled(&*it)) {
+                if (!Build(&(*it)))
+                    break;
+                else
+                    it = m_training_orders.erase(it);
+            } else {
                 ++it;
-                continue;
             }
-            it = m_training_orders.erase(it);
         }
     }
 }
@@ -173,7 +176,11 @@ void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, Unit* assignee
     auto data = gAPI->observer().GetUnitTypeData(id_);
 
     if (urgent) {
-        m_training_orders.emplace_front(data, assignee_);
+        // Always keep SCVs first in training orders
+        auto itr = m_training_orders.begin();
+        while (itr != m_training_orders.end() && itr->unit_type_id == sc2::UNIT_TYPEID::TERRAN_SCV)
+            ++itr;
+        m_training_orders.emplace(itr, data, assignee_);
     } else {
         m_training_orders.emplace_back(data, assignee_);
     }
@@ -186,8 +193,13 @@ void Builder::ScheduleTrainingOrders(const std::vector<Order>& orders_, bool urg
         }
 
         if (urgent) {
-            m_training_orders.emplace_front(i);
-        } else {
+            // Always keep SCVs first in training orders
+            auto itr = m_training_orders.begin();
+            while (itr != m_training_orders.end() && itr->unit_type_id == sc2::UNIT_TYPEID::TERRAN_SCV)
+                ++itr;
+            m_training_orders.emplace(itr, i);
+        }
+        else {
             m_training_orders.emplace_back(i);
         }
     }

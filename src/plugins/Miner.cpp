@@ -43,6 +43,13 @@ Unit* GetMovableWorker(const Units& workers) {
 }
 
 void SecureMineralsIncome(Builder* builder_) {
+    // Cut SCV production on the following playstyles
+    switch (gReasoner->GetPlayStyle()) {
+        case PlayStyle::all_in:
+        case PlayStyle::very_defensive:
+            return;
+    }
+
     std::vector<Order> orders;
     auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
@@ -79,15 +86,7 @@ void SecureMineralsIncome(Builder* builder_) {
     if (orders.empty())
         return;
 
-    switch (gReasoner->GetPlayStyle()) {
-        case PlayStyle::very_defensive:
-        case PlayStyle::defensive:
-        case PlayStyle::all_in:
-            builder_->ScheduleTrainingOrders(orders);
-            break;
-        default:
-            builder_->ScheduleTrainingOrders(orders, true);
-    }
+    builder_->ScheduleTrainingOrders(orders, true);
 }
 
 // TODO: Workers should use the "home base system" for gas gathering too
