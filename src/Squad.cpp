@@ -83,8 +83,11 @@ void Squad::CalculateCenter() {
     m_center = pair.first;
     m_spreadRadius = pair.second;
 
-    if (!m_enemies.empty())
-        m_enemyCenter = m_enemies.CalculateCircle().first;
+    if (!m_enemies.empty()) {
+        auto circle = m_enemies.CalculateCircle();
+        m_enemyCenter = circle.first;
+        m_enemySpreadRadius = circle.second;
+    }
 }
 
 void Squad::UpdateMovement() {
