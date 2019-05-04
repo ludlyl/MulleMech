@@ -113,6 +113,10 @@ void CombatCommander::PlayScout(){ // TODO
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
+    auto expansions = gHub->GetOurExpansions();
+    if (expansions.empty())
+        return {};
+
     auto ourBuildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
 
     // Consider defense in regards to every building we have, making a perimeter circle
@@ -122,26 +126,25 @@ std::vector<Units> CombatCommander::GroupEnemiesInBase() {
                 SearchEnemyPadding * SearchEnemyPadding;
     }, sc2::Unit::Alliance::Enemy);
 
-    // Split them up into groups that are together
+    // Setup base to group map
+    std::map<Expansion*, Units&> baseToGroupMap;
     std::vector<Units> enemyGroups;
-    while (!enemyUnits.empty()) {
-        Units newGroup;
-        auto leader = enemyUnits.front();
-        newGroup.push_back(leader);
-        enemyUnits.erase(enemyUnits.begin());
-
-        // Add units "grouped" with the selected "leader"
-        for (auto itr = enemyUnits.begin(); itr != enemyUnits.end(); ) {
-            if (sc2::Distance3D(leader->pos, (*itr)->pos) <= EnemyGroupingDistance) {
-                newGroup.push_back(*itr);
-                itr = enemyUnits.erase(itr);
-            } else {
-                ++itr;
-            }
-        }
-
-        enemyGroups.emplace_back(std::move(newGroup));
+    enemyGroups.resize(expansions.size());
+    for (std::size_t i = 0; i < expansions.size(); ++i) {
+        baseToGroupMap.emplace(expansions[i].get(), enemyGroups[i]);
     }
+
+    // Split enemies up into groups based on which base they're attacking
+    for (auto& unit : enemyUnits) {
+        std::nth_element(expansions.begin(), expansions.begin(), expansions.end(), [&unit](auto& a, auto& b) {
+            return sc2::DistanceSquared2D(unit->pos, a->town_hall_location) < sc2::DistanceSquared2D(unit->pos, b->town_hall_location);
+        });
+        baseToGroupMap.at(expansions[0].get()).push_back(unit);
+    }
+
+    // Remove any empty group
+    auto itr = std::remove_if(enemyGroups.begin(), enemyGroups.end(), [](auto& g) { return g.empty(); });
+    enemyGroups.erase(itr, enemyGroups.end());
 
     return enemyGroups;
 }
