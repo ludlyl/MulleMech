@@ -236,7 +236,7 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         m_reinforceSquads.back().AddUnit(unit_);
     } else {
         m_mainSquad->AddUnit(unit_);
-        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition(), true);
+        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition());
     }
 }
 
