@@ -7,6 +7,7 @@
 #include "Battlecruiser.h"
 #include "Cyclone.h"
 #include "SiegeTank.h"
+#include "Widowmine.h"
 #include "Hub.h"
 #include "core/API.h"
 
@@ -20,6 +21,7 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
         case sc2::UNIT_TYPEID::TERRAN_REAPER:
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
+        case sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: // cannot spawn as this, but might as well have this case
             return std::make_unique<SiegeTank>(unit);
         case sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER:
             return std::make_unique<Battlecruiser>(unit);
@@ -27,6 +29,9 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Thor>(unit);
         case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
             return std::make_unique<Cyclone>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED: // cannot spawn as this, but might as well have this case
+            return std::make_unique<Widowmine>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
