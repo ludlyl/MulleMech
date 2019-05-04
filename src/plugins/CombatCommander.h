@@ -27,14 +27,12 @@ private:
     void PlayGreedy();
     void PlayScout();
 
-    int UnitResourceWorth(const Unit* unit) const;
-
     // Returns new defense group with more defenders (if needed, same group otherwise) given,
     // defenders: current defenders (can be empty)
     // enemies:   group of enemies to defend against
-    Units GenerateDefenseFor(Units&& defenders, const Units& enemies);
+    Units GenerateDefenseFor(Units defenders, const Units& enemies);
 
-    void AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_resources);
+    void AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources);
 
     sc2::Point3D GetArmyIdlePosition() const;
 
@@ -55,6 +53,5 @@ private:
     static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
     static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
     static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
-    static constexpr float VespeneCostMod = 1.25f;          // Vespene modifier in resource calculation
     static constexpr float DefenseResourcesOveredo = 1.25f; // Spend this much more resources on defense comapred to enemy
 };

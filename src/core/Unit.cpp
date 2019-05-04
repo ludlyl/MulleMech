@@ -111,3 +111,8 @@ bool Unit::CanAttackFlying() const {
 
     return false;
 }
+
+int Unit::GetValue() const {
+    auto type_data = GetTypeData();
+    return type_data.mineral_cost + static_cast<int>(type_data.vespene_cost * VespeneCostMod);
+}

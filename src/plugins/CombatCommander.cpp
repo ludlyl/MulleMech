@@ -184,7 +184,7 @@ void CombatCommander::DefenseCheck() {
         }
     }
 
-    // Add more defenders if necessary (TODO: Intelligent selection)
+    // Add more defenders if necessary
     for (auto& defSquad : m_defenseSquads) {
         auto defenders = GenerateDefenseFor(std::move(defSquad.GetUnits()), defSquad.GetEnemies());
         defSquad.SetUnits(std::move(defenders));
@@ -240,47 +240,42 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
     }
 }
 
-int CombatCommander::UnitResourceWorth(const Unit* unit) const {
-    auto type_data = unit->GetTypeData();
-    return type_data.mineral_cost + static_cast<int>(type_data.vespene_cost * VespeneCostMod);
-}
-
-Units CombatCommander::GenerateDefenseFor(Units&& defenders, const Units& enemies) {
-    int needed_resources = 0;
+Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies) {
+    int needed_remaining_resources = 0;
     int needed_antiair_resources = 0;
 
     // Total resources we need for defense
     for (auto& enemy : enemies) {
         if (enemy->is_flying)
-            needed_antiair_resources += UnitResourceWorth(enemy);
+            needed_antiair_resources += enemy->GetValue();
         else
-            needed_resources += UnitResourceWorth(enemy);
+            needed_remaining_resources += enemy->GetValue();
     }
 
     needed_antiair_resources *= DefenseResourcesOveredo;
-    needed_resources *= DefenseResourcesOveredo;
+    needed_remaining_resources *= DefenseResourcesOveredo;
 
     // Subtract current defenders
     for (auto& defender : defenders) {
         if (defender->CanAttackFlying())
-            needed_antiair_resources -= UnitResourceWorth(defender);
+            needed_antiair_resources -= defender->GetValue();
         else
-            needed_resources -= UnitResourceWorth(defender);
+            needed_remaining_resources -= defender->GetValue();
     }
 
     if (needed_antiair_resources <= 0) {
-        needed_resources += needed_antiair_resources;
-        if (needed_resources <= 0)
-            return std::move(defenders);
+        needed_remaining_resources += needed_antiair_resources;
+        if (needed_remaining_resources <= 0)
+            return defenders;
     }
 
     // Grab new units
-    AddDefenders(defenders, enemies.CalculateCircle().first, needed_antiair_resources, needed_resources);
+    AddDefenders(defenders, enemies.CalculateCircle().first, needed_antiair_resources, needed_remaining_resources);
 
-    return std::move(defenders);
+    return defenders;
 }
 
-void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_resources) {
+void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources) {
     // Prefer close units
     Units sorted_mainsquad = m_mainSquad->GetUnits(); // make a copy for the purpose of sorting
     std::sort(sorted_mainsquad.begin(), sorted_mainsquad.end(), ClosestToPoint2D(location));
@@ -291,7 +286,7 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
             break;
 
         if ((*itr)->CanAttackFlying()) {
-            needed_antiair_resources -= UnitResourceWorth(*itr);
+            needed_antiair_resources -= (*itr)->GetValue();
             defenders.push_back(*itr);
             m_mainSquad->RemoveUnit(*itr);
             itr = sorted_mainsquad.erase(itr);
@@ -301,22 +296,22 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
     }
 
     // Grab any unit
-    needed_resources += needed_antiair_resources;
+    needed_remaining_resources += needed_antiair_resources;
     for (auto itr = sorted_mainsquad.begin(); itr != sorted_mainsquad.end(); ) {
-        if (needed_resources <= 0)
+        if (needed_remaining_resources <= 0)
             break;
-        needed_resources -= UnitResourceWorth(*itr);
+        needed_remaining_resources -= (*itr)->GetValue();
         defenders.push_back(*itr);
         m_mainSquad->RemoveUnit(*itr);
         itr = sorted_mainsquad.erase(itr);
     }
 
     // Use SCVs as a last resort
-    while (needed_resources > 0) {
+    while (needed_remaining_resources > 0) {
         auto worker = GetClosestFreeWorker(location);
         if (!worker)
             break;
-        needed_resources -= UnitResourceWorth(worker);
+        needed_remaining_resources -= (worker)->GetValue();
         defenders.push_back(worker);
         worker->SetAsFighter();
     }

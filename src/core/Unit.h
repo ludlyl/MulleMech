@@ -52,6 +52,9 @@ public:
 
     bool CanAttackFlying() const;
 
+    // A single number corresponding to the resource value of this unit
+    int GetValue() const;
+
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
 private:
@@ -68,6 +71,9 @@ private:
     bool m_order_queued_in_current_step = false;
 
     std::unique_ptr<MicroPlugin> m_micro;
+
+    static constexpr float VespeneCostMod = 1.25f; // Vespene modifier in Unit::GetValue() calculation
+                                                   // (note: a scv gather ~35 gas per minute or ~42 minerals)
 };
 
 // Allow hashmap usage
