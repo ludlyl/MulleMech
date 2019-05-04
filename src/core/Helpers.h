@@ -205,6 +205,14 @@ struct ClosestToPoint2D {
         return sc2::DistanceSquared2D(m_point, a) < sc2::DistanceSquared2D(m_point, b);
     }
 
+    bool operator()(const sc2::Unit& a, const sc2::Unit& b) const {
+        return sc2::DistanceSquared2D(m_point, a.pos) < sc2::DistanceSquared2D(m_point, b.pos);
+    }
+
+    bool operator()(const Unit* a, const Unit* b) const {
+        return sc2::DistanceSquared2D(m_point, a->pos) < sc2::DistanceSquared2D(m_point, b->pos);
+    }
+
 private:
     sc2::Point2D m_point;
 };
