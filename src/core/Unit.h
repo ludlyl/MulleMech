@@ -50,6 +50,8 @@ public:
 
     Attackable CanAttack(const Unit* other) const;
 
+    bool CanAttackFlying() const;
+
     bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
 
 private:

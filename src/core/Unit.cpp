@@ -100,3 +100,14 @@ Unit::Attackable Unit::CanAttack(const Unit* other) const {
 
     return Attackable::yes;
 }
+
+bool Unit::CanAttackFlying() const {
+    auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
+
+    for (auto& weapon : our_data.weapons) {
+        if (weapon.type == sc2::Weapon::TargetType::Any || weapon.type == sc2::Weapon::TargetType::Air)
+            return true;
+    }
+
+    return false;
+}
