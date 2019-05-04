@@ -1,6 +1,7 @@
 #include "Squad.h"
 #include "Historican.h"
 #include "core/API.h"
+#include "core/Helpers.h"
 
 Squad::Squad() {
     static int globalId = 0;
@@ -41,9 +42,15 @@ void Squad::RemoveUnit(Unit* unit) {
 }
 
 void Squad::Absorb(Squad& other) {
-    gAPI->action().MoveTo(other.GetUnits(), GetCenter(), true); // send them to us
-    for (auto& unit : other.GetUnits())
-        AddUnit(unit);
+    for (auto& unit : other.GetUnits()) {
+        if (IsWorker()(*unit)) { // don't absorb workers, mark them unemployed instead
+            unit->AsWorker()->SetAsUnemployed();
+        } else {
+            gAPI->action().MoveTo(unit, GetCenter()); // send to us
+            AddUnit(unit);
+        }
+    }
+
     other.GetUnits().clear();
 }
 

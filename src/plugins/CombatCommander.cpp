@@ -310,6 +310,16 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
         m_mainSquad->RemoveUnit(*itr);
         itr = sorted_mainsquad.erase(itr);
     }
+
+    // Use SCVs as a last resort
+    while (needed_resources > 0) {
+        auto worker = GetClosestFreeWorker(location);
+        if (!worker)
+            break;
+        needed_resources -= UnitResourceWorth(worker);
+        defenders.push_back(worker);
+        worker->SetAsFighter();
+    }
 }
 
 sc2::Point3D CombatCommander::GetArmyIdlePosition() const {
