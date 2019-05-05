@@ -48,15 +48,27 @@ void Builder::OnStep() {
             it = m_sequential_construction_orders.erase(it);
         }
 
+        bool reserved = false;
         it = m_training_orders.begin();
         while (it != m_training_orders.end()) {
-            if (AreNoneResourceRequirementsFulfilled(&*it)) {
-                if (!Build(&(*it)))
-                    break;
-                else
-                    it = m_training_orders.erase(it);
+            if (m_minerals < 50)
+                break; // no point in trying more orders
+
+            if (!AreNoneResourceRequirementsFulfilled(&*it)) {
+                ++it;
+                continue;
+            }
+
+            if (Build(&(*it))) {
+                it = m_training_orders.erase(it);
             } else {
                 ++it;
+                // Reserve resources for first non-buildale unit so the queue has some fairness to it
+                if (!reserved) {
+                    m_minerals -= it->mineral_cost;
+                    m_vespene -= it->vespene_cost;
+                    reserved = true;
+                }
             }
         }
     }
