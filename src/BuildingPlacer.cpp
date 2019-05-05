@@ -214,7 +214,7 @@ void BuildingPlacer::FreeReservedBuildingSpace(sc2::Point3D building_position_, 
 bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
     assert(IsGeyser()(*geyser_));
 
-    auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    auto radius = geyser_->radius; // Radius seem to be correct for geysers...
     int width = static_cast<int>(radius * 2);
     int height = width;
     sc2::Point2DI bottom_left_tile;
@@ -235,7 +235,7 @@ bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
 
 bool BuildingPlacer::ReserveGeyser(const Unit* geyser_) {
     if (IsGeyserUnoccupied(geyser_)) {
-        auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+        auto radius = geyser_->radius; // Radius seem to be correct for geysers...
         int width = static_cast<int>(radius * 2);
         int height = width;
         sc2::Point2DI bottom_left_tile;
@@ -254,7 +254,12 @@ void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupatio
     if (unit_->is_flying)
         return;
 
-    auto radius = unit_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
+    sc2::UnitTypeData type_data = unit_->GetTypeData();
+    if (!type_data.tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    }
+    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);
@@ -277,7 +282,12 @@ void BuildingPlacer::RemoveBuildingFromOccupiedTiles(const Unit* unit_) {
     if (unit_->is_flying)
         return;
 
-    auto radius = unit_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
+    sc2::UnitTypeData type_data = unit_->GetTypeData();
+    if (!type_data.tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    }
+    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);
