@@ -257,22 +257,14 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
-                if (num_of_tanks < 1 / ThorsToTanksRatio && !anti_air) {
-                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
-                    gHistory.info() << "Schedule Siegetank training" << std::endl;
-                    return;
-                }
-                //Build anti-air if army ratio is not fullfilled
-                if (num_of_thors == 0 || anti_air ||
-                   (( num_of_thors + num_of_tanks) / static_cast<float>(num_of_thors)) < ThorsToTanksRatio ) {
-
+                if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) != 0 &&
+                    (anti_air || num_of_tanks != 0 && (num_of_thors + 1) / static_cast<float>(num_of_tanks) <= ThorsToTanksRatio)) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
-                    return;
+                } else {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
+                    gHistory.info() << "Schedule Siegetank training" << std::endl;
                 }
-
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
-                gHistory.info() << "Schedule Siegetank training" << std::endl;
                 return;
             }
             else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
@@ -302,8 +294,8 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
                  if (num_of_ravens > OptimalNumOfRavens) { // If we have enough ravens, build other units
-                     if (num_of_medivacs == 0 ||
-                         (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
+                     if (num_of_hellbats != 0 &&
+                         (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                          builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                          gHistory.info() << "Schedule Medivac training" << std::endl;
                          return;
@@ -317,8 +309,8 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  gHistory.info() << "Schedule Raven training" << std::endl;
              }
              else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
-                 if (num_of_medivacs == 0 ||
-                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
+                 if (num_of_hellbats != 0 &&
+                     (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule double Medivac training" << std::endl;
@@ -329,8 +321,8 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  gHistory.info() << "Schedule double Hellion training" << std::endl;
              }
              else { //case of no addon
-                 if (num_of_medivacs == 0 ||
-                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
+                 if (num_of_hellbats != 0 &&
+                     (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule Medivac training" << std::endl;
                      return;
