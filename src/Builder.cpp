@@ -20,55 +20,55 @@ Builder::Builder(): m_minerals(0), m_vespene(0), m_available_food(0.0f) {
 void Builder::OnStep() {
     m_minerals = gAPI->observer().GetMinerals();
     m_vespene = gAPI->observer().GetVespene();
-
     m_available_food = gAPI->observer().GetAvailableFood();
 
-    bool resources_needed_for_nonseq_order = false;
+    int max_minerals_needed = 0;
+    int max_vespene_needed = 0;
     auto nonseq_order_it = m_nonsequential_construction_orders.begin();
-    while (nonseq_order_it != m_nonsequential_construction_orders.end()) {
-        if (AreNoneResourceRequirementsFulfilled(&(*nonseq_order_it))) {
-            if (Build(&(*nonseq_order_it))) {
-                nonseq_order_it = m_nonsequential_construction_orders.erase(nonseq_order_it);
-                continue;
-            }
-            resources_needed_for_nonseq_order = true;
+    while (nonseq_order_it != m_nonsequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        if (!AreNoneResourceRequirementsFulfilled(&(*nonseq_order_it))) {
+            ++nonseq_order_it;
+            continue;
         }
-        ++nonseq_order_it;
+
+        if (Build(&(*nonseq_order_it))) {
+            nonseq_order_it = m_nonsequential_construction_orders.erase(nonseq_order_it);
+        } else {
+            ++nonseq_order_it;
+            // We want to save enough resources to afford the most expensive thing we can build in the queue
+            max_minerals_needed = std::max(max_minerals_needed, nonseq_order_it->mineral_cost);
+            max_vespene_needed = std::max(max_vespene_needed, nonseq_order_it->vespene_cost);
+        }
     }
 
-    // I.e. we don't have to save money for nonsequential construction order
-    // TODO: This should be made more advanced to distinguish between minerals/gas
-    //  (currently if we have a ton of minerals and just need to save gas for e.g. an upgrade the minerals can't be used in the meanwhile)
-    if (!resources_needed_for_nonseq_order) {
-        auto it = m_sequential_construction_orders.begin();
-        while (it != m_sequential_construction_orders.end()) {
-            if (!Build(&(*it)))
-                break;
+    m_minerals = std::max(0, m_minerals - max_minerals_needed);
+    m_vespene = std::max(0, m_vespene - max_vespene_needed);
 
-            it = m_sequential_construction_orders.erase(it);
+    auto it = m_sequential_construction_orders.begin();
+    while (it != m_sequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        if (!Build(&(*it)))
+            break;
+
+        it = m_sequential_construction_orders.erase(it);
+    }
+
+    bool reserved = false;
+    it = m_training_orders.begin();
+    while (it != m_training_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        if (!AreNoneResourceRequirementsFulfilled(&*it)) {
+            ++it;
+            continue;
         }
 
-        bool reserved = false;
-        it = m_training_orders.begin();
-        while (it != m_training_orders.end()) {
-            if (m_minerals < 50)
-                break; // no point in trying more orders
-
-            if (!AreNoneResourceRequirementsFulfilled(&*it)) {
-                ++it;
-                continue;
-            }
-
-            if (Build(&(*it))) {
-                it = m_training_orders.erase(it);
-            } else {
-                ++it;
-                // Reserve resources for first non-buildale unit so the queue has some fairness to it
-                if (!reserved) {
-                    m_minerals -= it->mineral_cost;
-                    m_vespene -= it->vespene_cost;
-                    reserved = true;
-                }
+        if (Build(&(*it))) {
+            it = m_training_orders.erase(it);
+        } else {
+            ++it;
+            // Reserve resources for first non-buildable unit so the queue has some fairness to it
+            if (!reserved) {
+                m_minerals = std::max(0, m_minerals - it->mineral_cost);
+                m_vespene = std::max(0, m_vespene - it->vespene_cost);
+                reserved = true;
             }
         }
     }

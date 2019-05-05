@@ -56,6 +56,7 @@ struct Builder {
 
  private:
     // If no blueprint is sent in the function will create one
+    // Resources = minerals & gas (i.e. supply is not seen as a resource)
     bool AreNoneResourceRequirementsFulfilled(Order* order_, std::shared_ptr<bp::Blueprint> blueprint = nullptr);
 
     bool Build(Order* order_);
@@ -71,4 +72,6 @@ struct Builder {
     std::list<Order> m_nonsequential_construction_orders;
     std::list<Order> m_sequential_construction_orders;
     std::list<Order> m_training_orders;
+
+    static constexpr int MinimumUnitMineralCost = 50; // I.e. what the cheapest unit's mineral cost is
 };
