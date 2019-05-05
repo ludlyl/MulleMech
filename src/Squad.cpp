@@ -1,6 +1,7 @@
 #include "Squad.h"
 #include "Historican.h"
 #include "core/API.h"
+#include "core/Helpers.h"
 
 Squad::Squad() {
     static int globalId = 0;
@@ -41,9 +42,15 @@ void Squad::RemoveUnit(Unit* unit) {
 }
 
 void Squad::Absorb(Squad& other) {
-    gAPI->action().MoveTo(other.GetUnits(), GetCenter(), true); // send them to us
-    for (auto& unit : other.GetUnits())
-        AddUnit(unit);
+    for (auto& unit : other.GetUnits()) {
+        if (IsWorker()(*unit)) { // don't absorb workers, mark them unemployed instead
+            unit->AsWorker()->SetAsUnemployed();
+        } else {
+            gAPI->action().MoveTo(unit, GetCenter()); // send to us
+            AddUnit(unit);
+        }
+    }
+
     other.GetUnits().clear();
 }
 
@@ -82,6 +89,12 @@ void Squad::CalculateCenter() {
     auto pair = m_units.CalculateCircle();
     m_center = pair.first;
     m_spreadRadius = pair.second;
+
+    if (!m_enemies.empty()) {
+        auto circle = m_enemies.CalculateCircle();
+        m_enemyCenter = circle.first;
+        m_enemySpreadRadius = circle.second;
+    }
 }
 
 void Squad::UpdateMovement() {
@@ -148,4 +161,8 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
 
 int Squad::Size() const {
     return static_cast<int>(m_units.size());
+}
+
+const sc2::Point2D& Squad::GetAttackMovePoint() const {
+    return m_enemyCenter;
 }

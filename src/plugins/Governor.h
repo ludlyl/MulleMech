@@ -27,14 +27,14 @@ struct Governor : Plugin {
     int CountTotalUnits(Builder* builder_, sc2::UNIT_TYPEID type);
     
 
-    private:
-        //Used the put all commandcenters in the planner queue at the top of the list
-        void PrioritizeCommandCenter();
+private:
+    //Used the put all commandcenters in the planner queue at the top of the list
+    void PrioritizeCommandCenter();
 
-        std::list<sc2::UNIT_TYPEID> m_planner_queue;
+    std::list<sc2::UNIT_TYPEID> m_planner_queue;
 
-        const float thors_to_tank_ratio = 1 / 3;
-        const int optimal_num_of_ravens = 2;
-        const float medivacs_to_hellbat_ratio = 1 / 8;
-    
+    static constexpr float ThorsToTanksRatio = 1.f / 3.f;
+    static constexpr int OptimalNumOfRavens = 2;
+    static constexpr float MedivacsToHellbatsRatio = 1.f / 8.f;
+    static constexpr float HellionProductionChance = 0.2f;
 };

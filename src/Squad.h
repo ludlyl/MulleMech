@@ -46,9 +46,18 @@ public:
     // How spread out our units are
     float GetSpreadRadius() const { return m_spreadRadius; }
 
+    // Center point of enemies (only defined to sensible value if we have enemies)
+    const sc2::Point2D& GetEnemyCenter() const { return m_enemyCenter; }
+
+    // How spread out enemies are (only defined to sensible value if we have enemies)
+    float GetEnemySpreadRadius() const { return m_enemySpreadRadius; }
+
     int GetId() const { return m_id; }
 
     const sc2::Point2D& GetApproachPoint() const { return m_approachPos; }
+
+    // Sensible A-move location for any unit in this squad
+    const sc2::Point2D& GetAttackMovePoint() const;
 
 protected:
     virtual void Update() = 0;
@@ -71,9 +80,11 @@ private:
     Units m_units;
     Units m_enemies;
     sc2::Point2D m_center;                          // center of our units
+    sc2::Point2D m_enemyCenter;                     // center of enemy units
     sc2::Point2D m_regroupPos;
     sc2::Point2D m_approachPos;
     float m_spreadRadius = 0;                       // how spread out our units are from the center
+    float m_enemySpreadRadius = 0;                  // how spread enemies are from their center
     MovementState m_moveState = MovementState::idle;
     bool m_wasApproaching = false;                  // true if we were approaching before regroup command
     int m_id;

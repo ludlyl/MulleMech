@@ -14,65 +14,31 @@ namespace {
 
 struct CalcSupplies {
     float operator()(float sum, const Unit* unit_) const;
-
-    float operator()(float sum, const Order& order_) const;
 };
 
 float CalcSupplies::operator()(float sum, const Unit* unit_) const {
     // Even though MulleMech is only able to play terran,
     // it's good that this function is valid for all races if we want to calculate our opponents supply
-    switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
-            return sum + 15;
-        case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
-        case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING:
-        case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
-        case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING:
-        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS: {
-            float SB_to_CC_buildtime_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
+    sc2::UNIT_TYPEID unit_type = unit_->unit_type;
+
+    /*
+     * Tested on 2019-05-01 and this code isn't benifitial (we don't really get supply blocked anyway).
+     * This might change in the future though and if we get supply blocked it might be worth trying this out
+     * (should probably be generalized for all buildings that take longer to build than depots etc. though)
+     *
+       float SB_to_CC_buildtime_ratio = 1 - (gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).build_time /
                                    gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER).build_time);
+       if(unit_->build_progress > SB_to_CC_buildtime_ratio)
+     *
+     * */
 
-            if(unit_->build_progress > SB_to_CC_buildtime_ratio) // We use this number because if it's smaller it will be faster to build a new
-                return sum + 15.0f;                    // supply depot than to wait for the command center to finish.
-
-            return sum;
+    if (unit_->unit_type == sc2::UNIT_TYPEID::ZERG_EGG) {
+        if (unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD) {
+            unit_type = sc2::UNIT_TYPEID::ZERG_OVERLORD;
         }
-        case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-        case sc2::UNIT_TYPEID::ZERG_HIVE:
-        case sc2::UNIT_TYPEID::ZERG_LAIR:
-            return sum + 6.0f;
-
-        case sc2::UNIT_TYPEID::ZERG_EGG: {
-            if (unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::TRAIN_OVERLORD)
-                return sum + 8.0f;
-
-            return sum;
-        }
-        case sc2::UNIT_TYPEID::PROTOSS_PYLON:
-        case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT:
-        case sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORD:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORDCOCOON:
-        case sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT:
-        case sc2::UNIT_TYPEID::ZERG_OVERSEER:
-            return sum + 8.0f;
-
-        default:
-            return sum;
     }
-}
 
-float CalcSupplies::operator()(float sum, const Order& order_) const {
-    switch (order_.ability_id.ToType()) {
-        case sc2::ABILITY_ID::BUILD_COMMANDCENTER:
-            return sum + 15.0f;
-
-        case sc2::ABILITY_ID::BUILD_SUPPLYDEPOT:
-            return sum + 8.0f;
-
-        default:
-            return sum;
-    }
+    return sum + gAPI->observer().GetUnitTypeData(unit_type).food_provided;
 }
 
 struct CalcDemand {
@@ -125,32 +91,13 @@ float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
 
 float QuarterMaster::CalcEstimatedSupply(Builder* builder_) {
     auto units = gAPI->observer().GetUnits(sc2::Unit::Alliance::Self);
-    const auto& non_seq = builder_->GetNonsequentialConstructionOrders();
-    const auto& seq = builder_->GetSequentialConstructionOrders();
-    const auto& training = builder_->GetTrainingOrders();
-    const auto& constructions = gHub->GetConstructions();
 
-    // We need to manually include supply depots that any SCV is on his way to build
-    float queued_supply = 0.0f;
-    auto scvs = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
-    for (auto& scv : scvs) {
-        // Only include supply depots (CC's take too long to build)
-        if (scv->GetPreviousStepOrders().empty() ||
-            scv->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::BUILD_SUPPLYDEPOT)
-            continue;
-
-        // Skip any SCV who's already started his building
-        auto itr = std::find_if(constructions.begin(), constructions.end(), [scv](auto& c) { return c.GetScv() == scv; });
-        if (itr != constructions.end())
-            continue;
-
-        queued_supply += 8.0f;
-    }
+    // CountScheduledStructures also counts scvs on their way to build the building
+    // As we don't play zerg we do not have to check training orders
+    float scheduled_supply_depots = builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
+    float supply_from_depot = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).food_provided;
 
     return
-        queued_supply +
-        std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies()) +
-        std::accumulate(non_seq.begin(), non_seq.end(), 0.0f, CalcSupplies()) +
-        std::accumulate(seq.begin(), seq.end(), 0.0f, CalcSupplies()) +
-        std::accumulate(training.begin(), training.end(), 0.0f, CalcSupplies());
+        scheduled_supply_depots * supply_from_depot +
+        std::accumulate(units.begin(), units.end(), 0.0f, CalcSupplies());
 }

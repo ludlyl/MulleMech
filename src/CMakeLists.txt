@@ -3,12 +3,13 @@
 # Copyright (c) 2017-2018 Alexander Kurbatov
 
 # All the source files for the bot.
-file(GLOB_RECURSE BOT_SOURCES "*.cpp" "*.h")
+file(GLOB_RECURSE BOT_SOURCES "*.cpp" "*.h" "${PROJECT_SOURCE_DIR}/overseer/src/*/*.cpp" "${PROJECT_SOURCE_DIR}/overseer/src/*/*.h")
 
 include_directories(SYSTEM
     ${PROJECT_SOURCE_DIR}/s2client-api/include
     ${PROJECT_SOURCE_DIR}/s2client-api/contrib/protobuf/src
     ${PROJECT_BINARY_DIR}/s2client-api/generated
+    ${PROJECT_SOURCE_DIR}/overseer/src
     "."
 )
 

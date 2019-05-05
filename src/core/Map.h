@@ -7,6 +7,7 @@
 #include "Unit.h"
 
 #include <sc2api/sc2_unit.h>
+#include <overseer/MapImpl.h>
 
 #include <list>
 #include <memory>
@@ -17,10 +18,12 @@
 struct Expansion {
     explicit Expansion(const sc2::Point3D& town_hall_location_);
 
+    // TODO: Some of these values should be const (it's bad if other parts of the code can change all of these)
     sc2::Point3D town_hall_location;
+    sc2::Point3D center_behind_minerals;
     sc2::Unit::Alliance alliance;
     std::unordered_map<std::shared_ptr<Expansion>, float> ground_distances;
-    Unit* town_hall; // nullptr if we do not control the base
+    Unit* town_hall;
 
     // Returns: walk distance to other expansion
     float distanceTo(const std::shared_ptr<Expansion>& other_) const {
@@ -35,3 +38,6 @@ typedef std::vector<std::shared_ptr<Expansion>> Expansions;
 
 // NOTE (alkurbatov): Slightly optimised version of the builtin function.
 Expansions CalculateExpansionLocations();
+
+extern std::unique_ptr<Overseer::MapImpl> gOverseerMap;
+

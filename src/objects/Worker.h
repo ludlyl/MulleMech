@@ -2,6 +2,7 @@
 
 #include "core/Unit.h"
 #include "core/Order.h"
+#include "core/Construction.h"
 
 struct Expansion;
 
@@ -45,6 +46,9 @@ public:
 
     // Will always return unemployed for enemy workers
     Job GetJob() const { return m_job; }
+
+    // The construction order (or building) that the scv is on its way to start or is currently constructing
+    std::unique_ptr<Construction> construction = nullptr;
 
 private:
     Job m_job = Job::unemployed;

@@ -25,21 +25,55 @@ void Governor::OnGameStart(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+
+            // Armory Upgrades
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL3);
+
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3);
+
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL1);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL2);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANSHIPWEAPONSLEVEL3);
+
+            // Tech lab upgrades
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::DRILLCLAWS);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::SMARTSERVOS);
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HIGHCAPACITYBARRELS);
+
+            // Fusion Core upgrades (uncommented as we never builds BC:s as of now)
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::BATTLECRUISERENABLESPECIALIZATIONS);
+
+            //Engineering Bay Upgrades (will ignore infantry upgrades since)
+            //builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANBUILDINGARMOR); //TODO fix so that this works
+            builder_->ScheduleUpgrade(sc2::UPGRADE_ID::HISECAUTOTRACKING);
+
+            break;
+        default:
             break;
     }
 }
@@ -57,7 +91,7 @@ void Governor::OnStep(Builder* builder_) {
     PlayStyle playstyle = gReasoner->GetPlayStyle();
     float greed_modifier = 1.f;
 
-    //TODO, fill in the other ones aswell
+    //TODO, fill in the other ones as well
     switch (playstyle) {
     case PlayStyle::all_in:
     case PlayStyle::defensive:
@@ -79,7 +113,7 @@ void Governor::OnStep(Builder* builder_) {
     if (minerals < 50)
        return;
     //TODO add priority flag for factory production
-    //TODO create exeception handler for planner_queue
+    //TODO create exception handler for planner_queue
     auto it = m_planner_queue.begin();
     int planned_cost = 0;
     while (it != m_planner_queue.end()) {
@@ -100,57 +134,41 @@ void Governor::OnStep(Builder* builder_) {
     float vespene_consumption = consumption.second;
 
     //Converting from Mineral/frames to Mineral/min
-    mineral_consumption = mineral_consumption * steps_per_second * 60.f;
-    vespene_consumption = vespene_consumption * steps_per_second * 60.f;
+    mineral_consumption = mineral_consumption * API::StepsPerSecond * 60.f;
+    vespene_consumption = vespene_consumption * API::StepsPerSecond * 60.f;
 
     //Values here are in Minerals/min
     float mineral_overproduction = mineral_income - mineral_consumption;
     float vespene_overproduction = vespene_income - vespene_consumption;
 
-    if (mineral_overproduction < 0)
-        return;
-
-    if (vespene_overproduction < 0) {
-        // In this case we have minerals but not vespene -> produce hellions
-
-        //cost of factory with reactor producing  
-        if (mineral_overproduction < (steps_per_second * 60.f * 2.f * hellion_mineral / hellion_build_time)) 
-            return;
-
-        //TODO Confirm this value (2)
-        //We never want more than 2 factories producing hellions
-        if (CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) > 1)
-            return;
-
+    if (mineral_overproduction > (API::StepsPerSecond * 60.f * tank_mineral / tank_build_time) &&
+        vespene_overproduction > (API::StepsPerSecond * 60.f * tank_vespene / tank_build_time)) {
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
+        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+    //TODO Confirm this value (2)
+    //We never want more than 2 factories producing hellions
+    } else if (mineral_overproduction > (API::StepsPerSecond * 60.f * 2.f * hellion_mineral / hellion_build_time) &&
+               CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR) < 2) {
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
         m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
     }
 
-    if (mineral_overproduction > (steps_per_second * 60.f * tank_mineral / tank_build_time) &&
-        vespene_overproduction > (steps_per_second * 60.f * tank_vespene / tank_build_time)) {
-
-        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
-        m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
-    }
     //TODO expand our base based on enum from higher-order plugin.
-
     auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
-    // Variable used for messuring when we want to expand or not.
+    // Variable used for measuring when we want to expand or not.
     int optimal_workers = 0;
 
-
     //Counting plans of expansion
-    int scheduled_cc = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
+    int scheduled_ccs = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
 
     for (const auto i : m_planner_queue) {
         if (i == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER)
-            scheduled_cc++;
+            scheduled_ccs++;
     }
 
-    if (scheduled_cc == 0) {
-
+    if (scheduled_ccs == 0) {
         // Calculate Optimal Workers
         for (auto& cc : command_centers)
             optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
@@ -162,11 +180,16 @@ void Governor::OnStep(Builder* builder_) {
 
         //If we have more workers than the optimal amount we want to expand in order to place them at new commandcenters
         if (num_workers >= optimal_workers) {
-            if(playstyle == PlayStyle::greedy)
+            if (playstyle == PlayStyle::greedy) {
+                m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
-            else
+            }
+            else {
                 m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
-            //TODO add orbital command?
+                m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
+            }
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
         }
     }
 }
@@ -234,14 +257,14 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
-                if (num_of_tanks < 1 / thors_to_tank_ratio && !anti_air) {
+                if (num_of_tanks < 1 / ThorsToTanksRatio && !anti_air) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_SIEGETANK, false, unit_);
                     gHistory.info() << "Schedule Siegetank training" << std::endl;
                     return;
                 }
                 //Build anti-air if army ratio is not fullfilled
                 if (num_of_thors == 0 || anti_air ||
-                   (( num_of_thors + num_of_tanks) / num_of_thors) < thors_to_tank_ratio ) {
+                   (( num_of_thors + num_of_tanks) / static_cast<float>(num_of_thors)) < ThorsToTanksRatio ) {
 
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
@@ -258,11 +281,16 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
                     gHistory.info() << "Schedule double Widowmine training" << std::endl;
-                    return;
+                } else if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) > 0 &&
+                    sc2::GetRandomFraction() > HellionProductionChance) {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLIONTANK, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLIONTANK, false, unit_);
+                    gHistory.info() << "Schedule double Hellbat training" << std::endl;
+                } else {
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                    builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
+                    gHistory.info() << "Schedule double Hellion training" << std::endl;
                 }
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
-                builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
-                gHistory.info() << "Schedule double Hellion training" << std::endl;
                 return;
             } else {
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_HELLION, false, unit_);
@@ -273,9 +301,9 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
-                 if (num_of_ravens > optimal_num_of_ravens) { // If we have enough ravens, build other units
+                 if (num_of_ravens > OptimalNumOfRavens) { // If we have enough ravens, build other units
                      if (num_of_medivacs == 0 ||
-                         num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                         (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                          builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                          gHistory.info() << "Schedule Medivac training" << std::endl;
                          return;
@@ -290,7 +318,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
              }
              else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
                  if (num_of_medivacs == 0 ||
-                     num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule double Medivac training" << std::endl;
@@ -302,7 +330,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
              }
              else { //case of no addon
                  if (num_of_medivacs == 0 ||
-                     num_of_medivacs / num_of_hellbats < medivacs_to_hellbat_ratio) {
+                     (num_of_medivacs / static_cast<float>(num_of_hellbats)) < MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
                      gHistory.info() << "Schedule Medivac training" << std::endl;
                      return;
@@ -310,7 +338,6 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
                  gHistory.info() << "Schedule Hellion training" << std::endl;
              }
-
 
             break;
         default:
@@ -355,13 +382,13 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
         2.f * hellion_mineral / hellion_build_time;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        tank_mineral / tank_build_time * (1 - thors_to_tank_ratio) +
+        tank_mineral / tank_build_time * (1 - ThorsToTanksRatio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_mineral / thor_build_time * thors_to_tank_ratio;
+        thor_mineral / thor_build_time * ThorsToTanksRatio;
     vespene_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        (tank_vespene / tank_build_time) * (1 - thors_to_tank_ratio) +
+        (tank_vespene / tank_build_time) * (1 - ThorsToTanksRatio) +
         CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB) *
-        thor_vespene / thor_build_time * thors_to_tank_ratio;
+        thor_vespene / thor_build_time * ThorsToTanksRatio;
 
     mineral_consumption += CountTotalStructures(builder_, sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) *
         2.f * viking_mineral / viking_build_time;

@@ -9,24 +9,30 @@
 // Things we have learned about our opponent
 class IntelligenceHolder {
 public:
-    // Updates the internal list(s) of enemy units
-    void Update();
+    void OnUnitEnterVision(Unit* unit_);
+
+    void OnUnitDestroyed(Unit* unit_);
 
     // Returns nullptr if the enemy main-base location is unknown
     std::shared_ptr<Expansion> GetEnemyMainBase();
 
+    void MarkEnemyMainBasePosition(const sc2::Point2D& pos_);
+
+    // Returns a list of our expansions sorted with walking distance to starting location;
+    // index: 0=>main base, 1=>natural, etc
+    Expansions GetKnownEnemyExpansions() const;
+
     std::shared_ptr<Expansion> GetLatestKnownEnemyExpansion() const;
 
-    int GetEnemyExpansionCount() const;
+    int GetKnownEnemyExpansionCount() const;
 
-    void MarkEnemyExpansion(const sc2::Point2D& pos);
-    void MarkEnemyExpansion(Unit* unit);
+    void MarkEnemyExpansion(Unit* unit_);
 
     // Get all enemy units that we currently have intel on (dead units are cleared in the Update function)
     const Units& GetEnemyUnits() const;
 
     // Returns a copy
-    Units GetEnemyUnits(unsigned int lastSeenByGameLoop) const;
+    Units GetEnemyUnits(unsigned int last_seen_by_game_loop_) const;
 
 private:
     std::shared_ptr<Expansion> m_enemy_main_base = nullptr;

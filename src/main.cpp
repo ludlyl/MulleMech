@@ -21,8 +21,8 @@ int main(int argc, char* argv[]) {
     gHistory.Init("history.log");
     gHistory.SetSeverity(LogSeverity::debug);
     // gHistory.AddFilter(LogChannel::general);
+    // gHistory.AddFilter(LogChannel::reasoning);
     // gHistory.AddFilter(LogChannel::scouting);
-    // gHistory.AddFilter(LogChannel::reaperharass);
     // gHistory.AddFilter(LogChannel::economy);
     // gHistory.AddFilter(LogChannel::combat);
 

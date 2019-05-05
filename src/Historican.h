@@ -20,8 +20,8 @@ enum class LogSeverity {
 
 enum class LogChannel {
     general,
+    reasoning,
     scouting,
-    reaperharass,
     economy,
     combat
 };
@@ -29,8 +29,8 @@ enum class LogChannel {
 inline std::string LogChannel_str(LogChannel channel) {
     switch (channel) {
     case LogChannel::general:       return "[GENERAL]";
+    case LogChannel::reasoning:     return "[REASONING]";
     case LogChannel::scouting:      return "[SCOUTING]";
-    case LogChannel::reaperharass:  return "[REAPERS]";
     case LogChannel::economy:       return "[ECONOMY]";
     case LogChannel::combat:        return "[COMBAT]";
     }

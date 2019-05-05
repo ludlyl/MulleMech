@@ -1,30 +1,42 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2017-2018 Alexander Kurbatov
-
 #include "Refinery.h"
 #include "Hub.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "BuildingPlacer.h"
 
 bool bp::Refinery::CanBeBuilt(const Order*) {
-    auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
-                                             sc2::Unit::Alliance::Neutral);
-
-    auto geyser = geysers.GetClosestUnit(gAPI->observer().StartingLocation());
-    if (!geyser)
-        return false;
-
-    return GetClosestFreeWorker(geyser->pos) != nullptr;
+    if (FreeWorkerExists()) {
+        auto geysers = gAPI->observer().GetUnits(IsVisibleUndepletedGeyser());
+        for (const auto& geyser : geysers) {
+            if (gBuildingPlacer->IsGeyserUnoccupied(geyser))
+                return true;
+        }
+    }
+    return false;
 }
 
 bool bp::Refinery::Build(Order* order_) {
-    auto geysers = gAPI->observer().GetUnits(IsFreeGeyser(),
-                                             sc2::Unit::Alliance::Neutral);
+    // Should "FreeWorkerExists" be checked here too? CanBeBuilt is always called before this so feels necessary,
+    // but it's really bad if ReserveBuildingSpace is called, succeeds and no free worker is found
 
-    auto geyser = geysers.GetClosestUnit(gAPI->observer().StartingLocation());
-    if (!geyser)
-        return false;
+    auto geysers = gAPI->observer().GetUnits(IsVisibleUndepletedGeyser());
+    const auto& starting = gAPI->observer().StartingLocation();
+    std::sort(geysers.begin(), geysers.end(), [&starting](auto& g1, auto& g2) {
+        return sc2::Distance2D(starting, g1->pos) < sc2::Distance2D(starting, g2->pos);
+    });
 
-    return gHub->AssignRefineryConstruction(order_, geyser);
+
+    for (const auto& geyser : geysers) {
+        if (gBuildingPlacer->ReserveGeyser(geyser)) {
+            Worker* worker = GetClosestFreeWorker(geyser->pos);
+            if (worker) {
+                worker->BuildRefinery(order_, geyser);
+                worker->construction = std::make_unique<Construction>(geyser->pos, order_->unit_type_id);
+                return true;
+            } else {
+                assert(false && "Refinery space reserved but no free worker was found!");
+            }
+        }
+    }
+    return false;
 }
