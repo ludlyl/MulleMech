@@ -44,5 +44,4 @@ private:
     static constexpr float MedivacsToHellbatsRatio = 1.f / 8.f;
     static constexpr float HellionProductionChance = 0.2f;
     static constexpr int MineralsBufferThreshold = 500;     // If we got this much buffer, move build order stage Early->Mid
-    static constexpr int MaxMarines = 8;                    // Never exceed this count of marines
 };

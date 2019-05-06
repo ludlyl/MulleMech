@@ -187,7 +187,7 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
     return Units(m_observer->GetUnits(alliance_, filter_));
 }
 
-size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
+size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished, bool count_tech_alias) const {
     // TODO: Add some nice solutions for buildings that are the same but differ in ID depending on state
     //       such as flying, burrowed, morphed, etc
     // As the API thinks of depots and lowered depots as different buildings, we handle this as a special case
@@ -197,7 +197,7 @@ size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) c
                 m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
     }
     // Same with Orbital Command, Planetary Fortress and Command Center
-    if (type_ == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+    if (count_tech_alias && type_ == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
         return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, with_not_finished)).size() +
             m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, with_not_finished)).size() +
             m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, with_not_finished)).size();

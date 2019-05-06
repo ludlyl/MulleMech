@@ -154,10 +154,10 @@ void Governor::AddEarlyGameBuildOrder(Builder* builder_) {
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_BARRACKS);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
-    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
-    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYTECHLAB);
+    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
+    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_FACTORYREACTOR);
@@ -266,7 +266,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
     switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_BARRACKS:
             // Make marines in early-game to not die to all-ins
-            if (m_build_order_stage == BuildOrderStage::Early && CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_MARINE) < MaxMarines)
+            if (m_build_order_stage == BuildOrderStage::Early)
                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MARINE);
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORY:
