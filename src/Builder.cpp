@@ -34,10 +34,10 @@ void Builder::OnStep() {
         if (Build(&(*nonseq_order_it))) {
             nonseq_order_it = m_nonsequential_construction_orders.erase(nonseq_order_it);
         } else {
-            ++nonseq_order_it;
             // We want to save enough resources to afford the most expensive thing we can build in the queue
             max_minerals_needed = std::max(max_minerals_needed, nonseq_order_it->mineral_cost);
             max_vespene_needed = std::max(max_vespene_needed, nonseq_order_it->vespene_cost);
+            ++nonseq_order_it;
         }
     }
 
@@ -63,13 +63,13 @@ void Builder::OnStep() {
         if (Build(&(*it))) {
             it = m_training_orders.erase(it);
         } else {
-            ++it;
             // Reserve resources for first non-buildable unit so the queue has some fairness to it
             if (!reserved) {
                 m_minerals = std::max(0, m_minerals - it->mineral_cost);
                 m_vespene = std::max(0, m_vespene - it->vespene_cost);
                 reserved = true;
             }
+            ++it;
         }
     }
 }
