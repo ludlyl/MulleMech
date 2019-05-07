@@ -1,5 +1,6 @@
 #include "Order.h"
 #include "Helpers.h"
+#include "Historican.h"
 #include "core/Unit.h"
 
 Order::Order(const sc2::UnitTypeData &data_, Unit* assignee_) :
@@ -25,4 +26,24 @@ Order::Order(const sc2::UpgradeData &data_) :
         // It's possible to manually fix this
         // (e.g. command center has mapped upgrade id to ability id manually, see TechTree.cpp in that project)
         ability_id(data_.ability_id) {
+
+    // Patch some broken Ability IDs (TODO: Remove when they are correct in API)
+    sc2::ABILITY_ID override_id = sc2::ABILITY_ID::INVALID;
+    switch (data_.upgrade_id) {
+        case static_cast<uint32_t>(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL1) :
+            override_id = sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1;
+            break;
+        case static_cast<uint32_t>(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL2) :
+            override_id = sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL2;
+            break;
+        case static_cast<uint32_t>(sc2::UPGRADE_ID::TERRANVEHICLEANDSHIPARMORSLEVEL3) :
+            override_id = sc2::ABILITY_ID::RESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL3;
+            break;
+    }
+
+    if (override_id != sc2::ABILITY_ID::INVALID) {
+        if (override_id == ability_id)
+            gHistory.warning() << "Unecessary id override in Order.cpp of " << sc2::AbilityTypeToName(ability_id) << std::endl;
+        ability_id = override_id;
+    }
 }

@@ -120,6 +120,15 @@ private:
     Worker::Job m_job;
 };
 
+struct IsWorkerWithUnstartedConstructionOrderFor {
+    explicit IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::UNIT_TYPEID m_type;
+};
+
 struct IsTownHall {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -198,6 +207,14 @@ struct ClosestToPoint2D {
 
     bool operator()(const sc2::Point2D& a, const sc2::Point2D& b) const {
         return sc2::DistanceSquared2D(m_point, a) < sc2::DistanceSquared2D(m_point, b);
+    }
+
+    bool operator()(const sc2::Unit& a, const sc2::Unit& b) const {
+        return sc2::DistanceSquared2D(m_point, a.pos) < sc2::DistanceSquared2D(m_point, b.pos);
+    }
+
+    bool operator()(const Unit* a, const Unit* b) const {
+        return sc2::DistanceSquared2D(m_point, a->pos) < sc2::DistanceSquared2D(m_point, b->pos);
     }
 
 private:

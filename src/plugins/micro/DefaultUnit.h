@@ -7,6 +7,4 @@ public:
     explicit DefaultUnit(Unit* unit);
 
     void OnCombatStep(const Units& enemies, const Units& allies) override;
-
-    static constexpr float FleeHpPct = 0.4f;
 };

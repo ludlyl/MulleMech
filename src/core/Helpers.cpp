@@ -336,6 +336,21 @@ bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
     return false;
 }
 
+IsWorkerWithUnstartedConstructionOrderFor::IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_) : m_type(type_) {
+}
+
+bool IsWorkerWithUnstartedConstructionOrderFor::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->construction &&
+            worker->construction->building_type == m_type &&
+            worker->construction->building == nullptr) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool IsTownHall::operator()(const sc2::Unit& unit_) const {
     return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_NEXUS ||
            unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||

@@ -6,6 +6,7 @@
 #include "core/API.h"
 #include "core/Helpers.h"
 #include <sc2api/sc2_common.h>
+#include <algorithm>
 
 CombatCommander::CombatCommander() :
     m_mainSquad(std::make_shared<OffenseSquad>()),
@@ -94,6 +95,8 @@ void CombatCommander::PlayDefensive(){ // TODO
     if(m_changedPlayStyle){
         m_mainSquad->AbortTakeOver();
         gAPI->action().MoveTo(m_mainSquad->GetUnits(), gAPI->observer().StartingLocation());
+        if (!m_harassSquad.IsSent())
+            m_mainSquad->Absorb(m_harassSquad);
     }
 }
 
@@ -110,34 +113,38 @@ void CombatCommander::PlayScout(){ // TODO
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
-    // Calculate a circle using all our buildings for search radius and then increase it a bit
-    // TODO: Improve this, using a circle for our base might spread way further than our perimeter
-    //       is on some maps where our bases don't end up in a pattern fitting well in a circle
-    float searchRadius = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self)
-            .CalculateCircle().second + SearchEnemyRadiusPadding;
-    Units enemyUnits = gAPI->observer().GetUnits(IsWithinDist(gAPI->observer().StartingLocation(),
-            searchRadius), sc2::Unit::Alliance::Enemy);
+    auto expansions = gHub->GetOurExpansions();
+    if (expansions.empty())
+        return {};
 
-    // Split them up into groups that are together
+    auto ourBuildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+
+    // Consider defense in regards to every building we have, making a perimeter circle
+    // for our base does not work in the general case
+    Units enemyUnits = gAPI->observer().GetUnits([&ourBuildings](auto& enemy) {
+        return sc2::DistanceSquared2D(enemy.pos, ourBuildings.GetClosestUnit(enemy.pos)->pos) <=
+                SearchEnemyPadding * SearchEnemyPadding;
+    }, sc2::Unit::Alliance::Enemy);
+
+    // Setup base to group map
+    std::map<Expansion*, Units&> baseToGroupMap;
     std::vector<Units> enemyGroups;
-    while (!enemyUnits.empty()) {
-        Units newGroup;
-        auto leader = enemyUnits.front();
-        newGroup.push_back(leader);
-        enemyUnits.erase(enemyUnits.begin());
-
-        // Add units "grouped" with the selected "leader"
-        for (auto itr = enemyUnits.begin(); itr != enemyUnits.end(); ) {
-            if (sc2::Distance3D(leader->pos, (*itr)->pos) <= EnemyGroupingDistance) {
-                newGroup.push_back(*itr);
-                itr = enemyUnits.erase(itr);
-            } else {
-                ++itr;
-            }
-        }
-
-        enemyGroups.emplace_back(std::move(newGroup));
+    enemyGroups.resize(expansions.size());
+    for (std::size_t i = 0; i < expansions.size(); ++i) {
+        baseToGroupMap.emplace(expansions[i].get(), enemyGroups[i]);
     }
+
+    // Split enemies up into groups based on which base they're attacking
+    for (auto& unit : enemyUnits) {
+        std::nth_element(expansions.begin(), expansions.begin(), expansions.end(), [&unit](auto& a, auto& b) {
+            return sc2::DistanceSquared2D(unit->pos, a->town_hall_location) < sc2::DistanceSquared2D(unit->pos, b->town_hall_location);
+        });
+        baseToGroupMap.at(expansions[0].get()).push_back(unit);
+    }
+
+    // Remove any empty group
+    auto itr = std::remove_if(enemyGroups.begin(), enemyGroups.end(), [](auto& g) { return g.empty(); });
+    enemyGroups.erase(itr, enemyGroups.end());
 
     return enemyGroups;
 }
@@ -171,26 +178,16 @@ void CombatCommander::DefenseCheck() {
 
         // Need a new squad to deal with this enemy group?
         if (!dealtWith) {
-            // TODO: Intelligent defender selection
-            Units defenders;
-            int steal = static_cast<int>(group.size()) + 1;
-            while (--steal >= 0 && StealUnitFromMainSquad(defenders))
-                /* empty */;
+            auto defenders = GenerateDefenseFor(Units(), group);
             if (!defenders.empty())
                 m_defenseSquads.emplace_back(std::move(defenders), std::move(group), std::move(defenders));
         }
     }
 
-    // Add more defenders if necessary (TODO: Intelligent selection)
+    // Add more defenders if necessary
     for (auto& defSquad : m_defenseSquads) {
-        int diff = static_cast<int>(defSquad.GetEnemies().size()) - static_cast<int>(defSquad.Size());
-        while (--diff >= 0) {
-            auto unit = m_mainSquad->GetUnits().GetRandomUnit();
-            if (!unit)
-                return; // No more units
-            defSquad.AddUnit(unit);
-            m_mainSquad->RemoveUnit(unit);
-        }
+        auto defenders = GenerateDefenseFor(std::move(defSquad.GetUnits()), defSquad.GetEnemies());
+        defSquad.SetUnits(std::move(defenders));
     }
 }
 
@@ -199,7 +196,8 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         return;
 
     // Use unit for harass?
-    if (!m_harassSquad.IsSent() && (m_playStyle == PlayStyle::normal || m_playStyle == PlayStyle::offensive) &&
+    if (!m_harassSquad.IsSent() && m_playStyle != PlayStyle::all_in &&
+        m_playStyle != PlayStyle::very_defensive && m_playStyle != PlayStyle::defensive &&
         (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REAPER || unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION)) {
         // Keep harass squads homogenous (reapers don't play nice in group with other units due to cliff walk)
         bool add = true;
@@ -210,7 +208,9 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
             }
         }
 
-        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION && HellionHarassChance < sc2::GetRandomFraction())
+        // Add all hellions to harass squad after we get an armory (i.e. can make hellbats) and none before
+        if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION &&
+            gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) == 0)
             add = false;
 
         if (add) {
@@ -236,18 +236,85 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
         m_reinforceSquads.back().AddUnit(unit_);
     } else {
         m_mainSquad->AddUnit(unit_);
-        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition(), true);
+        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition());
     }
 }
 
-bool CombatCommander::StealUnitFromMainSquad(Units& defenders) {
-    if (!m_mainSquad->GetUnits().empty()) {
-        auto unit = m_mainSquad->GetUnits().GetRandomUnit();
-        defenders.push_back(unit);
-        m_mainSquad->RemoveUnit(unit);
-        return true;
+Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies) {
+    int needed_remaining_resources = 0;
+    int needed_antiair_resources = 0;
+
+    // Total resources we need for defense
+    for (auto& enemy : enemies) {
+        if (enemy->is_flying)
+            needed_antiair_resources += enemy->GetValue();
+        else
+            needed_remaining_resources += enemy->GetValue();
     }
-    return false;
+
+    needed_antiair_resources *= DefenseResourcesOveredo;
+    needed_remaining_resources *= DefenseResourcesOveredo;
+
+    // Subtract current defenders
+    for (auto& defender : defenders) {
+        if (defender->CanAttackFlying())
+            needed_antiair_resources -= defender->GetValue();
+        else
+            needed_remaining_resources -= defender->GetValue();
+    }
+
+    if (needed_antiair_resources <= 0) {
+        needed_remaining_resources += needed_antiair_resources;
+        if (needed_remaining_resources <= 0)
+            return defenders;
+    }
+
+    // Grab new units
+    AddDefenders(defenders, enemies.CalculateCircle().first, needed_antiair_resources, needed_remaining_resources);
+
+    return defenders;
+}
+
+void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources) {
+    // Prefer close units
+    Units sorted_mainsquad = m_mainSquad->GetUnits(); // make a copy for the purpose of sorting
+    std::sort(sorted_mainsquad.begin(), sorted_mainsquad.end(), ClosestToPoint2D(location));
+
+    // Grab anti-air units
+    for (auto itr = sorted_mainsquad.begin(); itr != sorted_mainsquad.end(); ) {
+        if (needed_antiair_resources <= 0)
+            break;
+
+        if ((*itr)->CanAttackFlying()) {
+            needed_antiair_resources -= (*itr)->GetValue();
+            defenders.push_back(*itr);
+            m_mainSquad->RemoveUnit(*itr);
+            itr = sorted_mainsquad.erase(itr);
+        } else {
+            ++itr;
+        }
+    }
+
+    // Grab any unit
+    needed_remaining_resources += needed_antiair_resources;
+    for (auto itr = sorted_mainsquad.begin(); itr != sorted_mainsquad.end(); ) {
+        if (needed_remaining_resources <= 0)
+            break;
+        needed_remaining_resources -= (*itr)->GetValue();
+        defenders.push_back(*itr);
+        m_mainSquad->RemoveUnit(*itr);
+        itr = sorted_mainsquad.erase(itr);
+    }
+
+    // Use SCVs as a last resort
+    while (needed_remaining_resources > 0) {
+        auto worker = GetClosestFreeWorker(location);
+        if (!worker)
+            break;
+        needed_remaining_resources -= (worker)->GetValue();
+        defenders.push_back(worker);
+        worker->SetAsFighter();
+    }
 }
 
 sc2::Point3D CombatCommander::GetArmyIdlePosition() const {
