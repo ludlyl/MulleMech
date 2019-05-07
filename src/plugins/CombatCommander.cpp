@@ -3,6 +3,7 @@
 #include "BuildingPlacer.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "IntelligenceHolder.h"
 #include "core/API.h"
 #include "core/Helpers.h"
 #include <sc2api/sc2_common.h>
@@ -118,7 +119,7 @@ void CombatCommander::PlayScout(){ // TODO
 }
 
 void CombatCommander::UpdateAttackTarget(){
-    Expansions expos = gHub->GetKnownEnemyExpansions();
+    Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
     if(!expos.empty()){
         m_mainAttackTarget = expos.front()->town_hall_location;
     }else{
@@ -135,16 +136,27 @@ std::vector<sc2::Point2D> CombatCommander::GetListOfMapPoints(){
     std::vector<sc2::Point2D> points;
     float mapHeightLimit = gAPI->observer().GameInfo().height - PointDistance;
     float mapWidthLimit = gAPI->observer().GameInfo().width - PointDistance;
-    float x = PointDistance;
-    float y = PointDistance;
+    float x = PointDistance, y = PointDistance;
     while(x < mapWidthLimit){
         while(y < mapHeightLimit){
-            points.push_back(sc2::Point2D(x,y));
+            sc2::Point2D point = sc2::Point2D(x,y);
+            if(PointIsReachable(point)){
+                points.push_back(point);
+            }
             y += PointDistance;
         }
         x += PointDistance;
     }
+
     return points;
+}
+
+bool CombatCommander::PointIsReachable(sc2::Point2D point){
+    sc2::Point3D point3D = gAPI->observer().StartingLocation();
+    float x = point3D.x, y = point3D.y;
+    sc2::Point2D point2D = sc2::Point2D(x, y);
+    return (gOverseerMap->getTile(point)->getTileTerrain() == Overseer::path
+            && gAPI->query().PathingDistance(point, point2D) != 0.0f);
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
