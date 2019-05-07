@@ -20,5 +20,5 @@ protected:
 private:
     bool m_engaged;
 
-    static constexpr float EngageRadius = 15.0f; // move as a unit until we get this close, then engage
+    static constexpr float EngageRadius = 20.0f; // move as a unit until we get this close, then engage
 };

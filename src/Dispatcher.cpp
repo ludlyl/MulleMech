@@ -150,7 +150,6 @@ void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
 
     auto unit = gAPI->WrapUnit(unit_);
     gHub->OnUnitDestroyed(unit);
-    m_builder->OnUnitDestroyed(unit);
     gBuildingPlacer->OnUnitDestroyed(unit);
     gIntelligenceHolder->OnUnitDestroyed(unit);
 

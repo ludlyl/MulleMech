@@ -36,16 +36,12 @@ PlayStyle Reasoner::CalculatePlayStyle() {
         float own_combat_unit_value = 0;
 
         for (auto& unit : gIntelligenceHolder->GetEnemyUnits()) {
-            if (IsCombatUnit()(*unit)) {
-                enemy_combat_unit_value += unit->GetTypeData().mineral_cost;
-                enemy_combat_unit_value += unit->GetTypeData().vespene_cost;
-            }
+            if (IsCombatUnit()(*unit))
+                enemy_combat_unit_value += unit->GetValue();
         }
 
-        for (auto& unit : gAPI->observer().GetUnits(IsCombatUnit(), sc2::Unit::Alliance::Self)) {
-            own_combat_unit_value += unit->GetTypeData().mineral_cost;
-            own_combat_unit_value += unit->GetTypeData().vespene_cost;
-        }
+        for (auto& unit : gAPI->observer().GetUnits(IsCombatUnit(), sc2::Unit::Alliance::Self)) 
+            own_combat_unit_value += unit->GetValue();
 
         // * Defensive *
 
@@ -127,21 +123,16 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
     // more unit value that can hit air units than our opponent has unit value in air units
     // This doesn't take into account turrets at all but they should continuously be built anyway
 
-    // Unit value = minerals + gas
     float enemy_air_unit_value = 0;
     float own_anti_air_unit_value = 0;
 
     for (auto& unit : gIntelligenceHolder->GetEnemyUnits()) {
-        if (IsCombatUnit()(*unit) && unit->is_flying) {
-            enemy_air_unit_value += unit->GetTypeData().mineral_cost;
-            enemy_air_unit_value += unit->GetTypeData().vespene_cost;
-        }
+        if (IsCombatUnit()(*unit) && unit->is_flying)
+            enemy_air_unit_value += unit->GetValue();
     }
 
-    for (auto& unit : gAPI->observer().GetUnits(IsAntiAirUnit(), sc2::Unit::Alliance::Self)) {
-        own_anti_air_unit_value += unit->GetTypeData().mineral_cost;
-        own_anti_air_unit_value += unit->GetTypeData().vespene_cost;
-    }
+    for (auto& unit : gAPI->observer().GetUnits(IsAntiAirUnit(), sc2::Unit::Alliance::Self))
+        own_anti_air_unit_value += unit->GetValue();
 
     if (enemy_air_unit_value * AntiAirToAirUnitValueRatio > own_anti_air_unit_value) {
         m_latest_needed_unit_classes.emplace_back(UnitClass::anti_air);
@@ -153,7 +144,6 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
     // (we don't count all types) units than we have buffer units
     // If this value is set we should probably prioritize hellbats/helions over mines
 
-    // Unit value = minerals + gas
     float enemy_light_unit_value = 0;
     float own_buffer_unit_value = 0;
 
@@ -166,8 +156,7 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
             case sc2::UNIT_TYPEID::ZERG_ZERGLINGBURROWED:
             case sc2::UNIT_TYPEID::PROTOSS_ADEPT:
             case sc2::UNIT_TYPEID::PROTOSS_ZEALOT:
-                enemy_light_unit_value += unit->GetTypeData().mineral_cost;
-                enemy_light_unit_value += unit->GetTypeData().vespene_cost;
+                enemy_light_unit_value += unit->GetValue();
                 break;
             default:
                 break;
@@ -179,8 +168,7 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
         if (unit->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLION ||
             unit->unit_type == sc2::UNIT_TYPEID::TERRAN_HELLIONTANK ||
             unit->unit_type == sc2::UNIT_TYPEID::TERRAN_MARINE) {
-            own_buffer_unit_value += unit->GetTypeData().mineral_cost;
-            own_buffer_unit_value += unit->GetTypeData().vespene_cost;
+            own_buffer_unit_value += unit->GetValue();
         }
     }
 
