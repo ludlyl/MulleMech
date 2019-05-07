@@ -53,7 +53,7 @@ std::shared_ptr<Expansion> Worker::GetHomeBase() const {
 void Worker::Mine() {
     assert(alliance == sc2::Unit::Alliance::Self);
     // TODO: Change this to check all mineral patches (not just the visible ones)
-    auto visibleMinerals = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
+    auto visibleMinerals = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
 
     sc2::Point2D pos;
     if (m_home_base) {

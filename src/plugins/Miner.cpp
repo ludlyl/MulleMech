@@ -149,7 +149,7 @@ void CallDownMULE() {
     }
 
     // Call down mules
-    auto mineral_patches = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
+    auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(),
         sc2::Unit::Alliance::Neutral);
 
     for (std::size_t i = 0; i < orbitals.size(); ++i) {
@@ -233,7 +233,7 @@ void Miner::OnUnitIdle(Unit* unit_, Builder*) {
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
             // Send MULE to closest mineral patch of our Starting Location on idle
             // TODO: Maybe send it to nearest mineral patch of a base belonging to us?
-            auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
+            auto units = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
             auto mineral_target = units.GetClosestUnit(gAPI->observer().StartingLocation());
             if (!mineral_target)
                 break;
