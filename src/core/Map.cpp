@@ -171,6 +171,23 @@ std::vector<MineralLine> GetMineralLines() {
     return mineral_lines;
 }
 
+void CalculateGeysers(Expansions& expansions){
+    auto geysers = gAPI->observer().GetUnits(IsGeyser());
+
+    // Not all bases has 2 geysers, so we can't just do GetClosestUnit(exp.pos)
+    for (auto& geyser : geysers) {
+        // This is pretty inefficient
+        auto closest = expansions[0];
+        for (auto& exp : expansions) {
+            if (sc2::DistanceSquared2D(geyser->pos, exp->town_hall_location) <
+                sc2::DistanceSquared2D(geyser->pos, closest->town_hall_location)) {
+                closest = exp;
+            }
+        }
+        closest->geysers.emplace_back(geyser);
+    }
+}
+
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
@@ -249,6 +266,7 @@ Expansions CalculateExpansionLocations() {
     }
 
     CalculateGroundDistances(expansions);
+    CalculateGeysers(expansions);
 
     return expansions;
 }
