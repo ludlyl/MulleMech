@@ -247,9 +247,6 @@ bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
 
 
 bool IsRefinery::operator()(const sc2::Unit& unit_) const {
-    if (unit_.build_progress != 1.0f)
-        return false;
-
     return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR ||
         unit_.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR ||
         unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;

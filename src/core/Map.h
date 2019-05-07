@@ -24,7 +24,7 @@ struct Expansion {
     sc2::Unit::Alliance alliance;
     std::unordered_map<std::shared_ptr<Expansion>, float> ground_distances;
     Unit* town_hall;
-    std::vector<Unit*> geysers;
+    std::vector<Unit*> geysers; // Note: For some reason the data on these do not update
     std::vector<Unit*> refineries; // Only set for our own bases as of now
 
     // Returns: walk distance to other expansion

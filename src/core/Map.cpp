@@ -172,7 +172,7 @@ std::vector<MineralLine> GetMineralLines() {
 }
 
 void CalculateGeysers(Expansions& expansions){
-    auto geysers = gAPI->observer().GetUnits(IsGeyser());
+    auto geysers = gAPI->observer().GetUnits(IsGeyser(), sc2::Unit::Alliance::Neutral);
 
     // Not all bases has 2 geysers, so we can't just do GetClosestUnit(exp.pos)
     for (auto& geyser : geysers) {

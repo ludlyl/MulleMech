@@ -84,26 +84,28 @@ void SecureMineralsIncome(Builder* builder_) {
     builder_->ScheduleTrainingOrders(orders, true);
 }
 
-// TODO: Do not mine gas from expansions we do not own (might want to change so Expansion hold refineries and/or gases)
 void SecureVespeneIncome() {
-    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
 
     // We move max one for each refinery in each call to this function
-    for (const auto& refinery : refineries) {
-        if (refinery->assigned_harvesters < refinery->ideal_harvesters) {
-            // NOTE: Home base is updated in Worker::GatherVespene()
-            auto worker = GetClosestFreeWorker(refinery->pos);
-            if (worker) {
-                worker->GatherVespene(refinery);
-            }
-        // Makes sure that we never have more than 3 workers on gas.
-        } else if (refinery->assigned_harvesters > refinery->ideal_harvesters) {
-            for (auto& gas_worker : gas_workers) {
-                if (refinery->tag == gas_worker->GetPreviousStepOrders().front().target_unit_tag) {
-                    gas_worker->AsWorker()->Mine();
-                    gas_workers.remove(gas_worker);
-                    break;
+    for (const auto& expansion : gHub->GetExpansions()) {
+        if (expansion->alliance == sc2::Unit::Alliance::Self) {
+            for (const auto& refinery : expansion->refineries) {
+                if (refinery->assigned_harvesters < refinery->ideal_harvesters) {
+                    // NOTE: Home base is updated in Worker::GatherVespene()
+                    auto worker = GetClosestFreeWorker(refinery->pos);
+                    if (worker) {
+                        worker->GatherVespene(refinery);
+                    }
+                    // Makes sure that we never have more than 3 workers on gas.
+                } else if (refinery->assigned_harvesters > refinery->ideal_harvesters) {
+                    for (auto it = gas_workers.begin(); it != gas_workers.end(); it++) {
+                        if (refinery->tag == (*it)->GetPreviousStepOrders().front().target_unit_tag) {
+                            (*it)->AsWorker()->Mine();
+                            gas_workers.erase(it);
+                            break;
+                        }
+                    }
                 }
             }
         }

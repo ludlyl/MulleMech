@@ -54,51 +54,53 @@ Hub::Hub(sc2::Race current_race_, Expansions expansions_):
 }
 
 void Hub::OnUnitCreated(Unit* unit_) {
-    switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
-        case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
-        case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (const auto& i : m_expansions) {
-                if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
-                        std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
-                    continue;
+    if (IsTownHall()(*unit_)) {
+        for (auto& i : m_expansions) {
+            if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
+                std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
+                continue;
 
-                i->alliance = sc2::Unit::Alliance::Self;
-                i->town_hall = unit_;
+            i->alliance = sc2::Unit::Alliance::Self;
+            i->town_hall = unit_;
 
-                if (i->alliance != sc2::Unit::Alliance::Self) {
-                    gHistory.info() << "Captured region: (" <<
-                        unit_->pos.x << ", " << unit_->pos.y <<
-                        ")" << std::endl;
-                }
-                return;
+            if (i->alliance != sc2::Unit::Alliance::Self) {
+                gHistory.info() << "Captured region: (" << unit_->pos.x << ", " << unit_->pos.y << ")" << std::endl;
             }
-            return;
-
-        default:
-            return;
+            break;
+        }
+    } else if (IsRefinery()(*unit_)) {
+        // Would it be better to use GetClosestExpansion?
+        for (auto& i : m_expansions) {
+            for (const auto& geyser : i->geysers) {
+                if (unit_->pos.x == geyser->pos.x && unit_->pos.y == geyser->pos.y) {
+                    i->refineries.emplace_back(unit_);
+                    return;
+                }
+            }
+        }
     }
 }
 
 void Hub::OnUnitDestroyed(Unit* unit_) {
-    switch (unit_->unit_type.ToType()) {
-        case sc2::UNIT_TYPEID::PROTOSS_NEXUS:
-        case sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER:
-        case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
-        case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-        case sc2::UNIT_TYPEID::ZERG_HATCHERY:
-            for (const auto& i : gHub->GetExpansions()) {
-                if (unit_ == i->town_hall) {
-                    i->alliance = sc2::Unit::Alliance::Neutral;
-                    i->town_hall = nullptr;
-                    gHistory.info() << "We lost region: (" << unit_->pos.x << ", " << unit_->pos.y << ")" << std::endl;
-                    break;
+    if (IsTownHall()(*unit_)) {
+        for (const auto& i : m_expansions) {
+            if (unit_ == i->town_hall) {
+                i->alliance = sc2::Unit::Alliance::Neutral;
+                i->town_hall = nullptr;
+                gHistory.info() << "We lost region: (" << unit_->pos.x << ", " << unit_->pos.y << ")" << std::endl;
+                break;
+            }
+        }
+    } else if (IsRefinery()(*unit_)) {
+        // Would it be better to use GetClosestExpansion?
+        for (auto& i : m_expansions) {
+            for (auto it = i->refineries.begin(); it != i->refineries.end(); it++) {
+                if (unit_ == *it) {
+                    i->refineries.erase(it);
+                    return;
                 }
             }
-            break;
-
-        default:
-            return;
+        }
     }
 }
 
