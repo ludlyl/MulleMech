@@ -276,7 +276,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
                 if (gAPI->observer().CountUnitType(sc2::UNIT_TYPEID::TERRAN_ARMORY) != 0 &&
-                    (anti_air || num_of_tanks != 0 && (num_of_thors + 1) / static_cast<float>(num_of_tanks) <= ThorsToTanksRatio)) {
+                    (anti_air || (num_of_tanks != 0 && (num_of_thors + 1) / static_cast<float>(num_of_tanks) <= ThorsToTanksRatio))) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_THOR, false, unit_);
                     gHistory.info() << "Schedule Thor training" << std::endl;
                 } else {

@@ -25,13 +25,9 @@ struct Miner : Plugin {
     void OnUnitIdle(Unit* unit_, Builder*) final;
 
 private:
-    // Send workers to mine at another base (expansionDied=false => Only miners get redistributed)
-    void SplitWorkersOf(const std::shared_ptr<Expansion>& expansion, bool expansionDied);
+    // This should only be called when "evacuating" a base or when a base has died
+    void SplitWorkersOf(const std::shared_ptr<Expansion>& expansion_);
 
     // Balance Workers by means of redistribution
     void BalanceWorkers();
-
-    void AbandonMinedOutBases();
-
-    std::unordered_map<std::shared_ptr<Expansion>, Units> m_expansionWorkers; // Map of Expansion -> Worker
 };

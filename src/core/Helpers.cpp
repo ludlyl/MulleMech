@@ -290,6 +290,19 @@ bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
     return false;
 }
 
+IsWorkerWithHomeBase::IsWorkerWithHomeBase(const std::shared_ptr<Expansion>& home_base_) : m_home_base(home_base_) {
+}
+
+bool IsWorkerWithHomeBase::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetHomeBase() == m_home_base) {
+            return true;
+        }
+    }
+    return false;
+}
+
 IsWorkerWithUnstartedConstructionOrderFor::IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_) : m_type(type_) {
 }
 

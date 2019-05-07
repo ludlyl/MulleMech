@@ -43,11 +43,11 @@ void Worker::GatherVespene(const Unit* target_) {
 
 void Worker::SetHomeBase(std::shared_ptr<Expansion> base) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    m_homeBase = std::move(base);
+    m_home_base = std::move(base);
 }
 
 std::shared_ptr<Expansion> Worker::GetHomeBase() const {
-    return m_homeBase;
+    return m_home_base;
 }
 
 void Worker::Mine() {
@@ -56,13 +56,19 @@ void Worker::Mine() {
     auto visibleMinerals = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
 
     sc2::Point2D pos;
-    if (m_homeBase)
-        pos = m_homeBase->town_hall_location;
-    else
+    if (m_home_base) {
+        assert(m_home_base->town_hall && m_home_base->town_hall->is_alive);
+        pos = m_home_base->town_hall_location;
+    }
+    else {
         pos = gAPI->observer().StartingLocation();
+    }
 
     auto mineralTarget = visibleMinerals.GetClosestUnit(pos);
     if (mineralTarget) {
+        // Is this really a good way to do it? Feels like this sometimes might produce some weird results..
+        m_home_base = gHub->GetClosestExpansion(mineralTarget->pos);
+
         gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineralTarget);
         m_job = Job::gathering_minerals;
     }

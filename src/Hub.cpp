@@ -178,7 +178,7 @@ Expansions Hub::GetOurExpansions() const {
 
     for (auto& expo : m_expansions) {
         if (expo->alliance == sc2::Unit::Alliance::Self)
-            expos.push_back(expo);
+            expos.emplace_back(expo);
     }
 
     // Sort bases by how far they are (walkable distance) from the main, with the assumption
