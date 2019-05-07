@@ -22,17 +22,21 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     });
     copy.erase(itr, copy.end());
 
-    const Unit* target = nullptr;
-    if(!copy.empty()){
-        target = copy.GetClosestUnit(m_self->pos);
-    }
-    //If there is no target besides cannon fodder, shoot any nearby unit
-    else if(!enemies.empty()){
-        target = enemies.GetClosestUnit(m_self->pos);
-    }
+    if (!m_self->GetPreviousStepOrders().empty() &&
+        m_self->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE &&
+        m_self->GetPreviousStepOrders().front().ability_id != sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE) {
+        const Unit *target = nullptr;
+        if (!copy.empty()) {
+            target = copy.GetClosestUnit(m_self->pos);
+        }
+            //If there is no target besides cannon fodder, shoot any nearby unit
+        else if (!enemies.empty()) {
+            target = enemies.GetClosestUnit(m_self->pos);
+        }
 
-    if(target){
-        Cast(sc2::ABILITY_ID::SMART, target);
+        if (target) {
+            Attack(target);
+        }
     }
 
     //Switch modes if there is a significant presence of Mutalisks, Banshees, ravens, pheonixes or Oracles
@@ -46,11 +50,16 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
     copy.erase(itr2, copy.end());
 
     //Switch back once there are no more squishy units
-    if(copy.empty()){
-        Cast(sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE);
-    }
-    //Turn on explosive mode if there is a significant amount of squishy flying units
-    else if(copy.size()>MinimumFlyingUnits){
-        Cast(sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE);
+    if (copy.empty()) {
+        if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_THOR) {
+            Cast(sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE);
+
+        }
+            //Turn on explosive mode if there is a significant amount of squishy flying units
+        else if (copy.size() > MinimumFlyingUnits) {
+            if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_THORAP) {
+                Cast(sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE);
+            }
+        }
     }
 }

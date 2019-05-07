@@ -47,13 +47,15 @@ void BuildingPlacer::OnUnitCreated(const Unit* unit_) {
 }
 
 void BuildingPlacer::OnUnitDestroyed(const Unit* unit_) {
+    // TODO: This only gets called if we observe the unit being destroyed.
+    //  When/if the enemy kills his own units or if they burn down outside our vision the tiles will never be freed
+    // TODO: We don't know if the building has reserved space for an add-on (and if so we currently don't free that space)
     if (IsBuilding()(*unit_) && !unit_->is_flying) {
         RemoveBuildingFromOccupiedTiles(unit_);
     }
 }
 
 void BuildingPlacer::OnUnitEnterVision(const Unit* unit_) {
-    // TODO: When these buildings are destroyed they will never get removed from the occupied tiles! Fix this!
     // The same building will be added over an over again...
     if (IsBuilding()(*unit_) && !unit_->is_flying) {
         AddBuildingToOccupiedTiles(unit_, TileOccupationStatus::has_building);
@@ -88,6 +90,7 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
     int height = width;
     int margin;
     sc2::Point2DI point; // Used to reuse the point object
+    sc2::Point2DI addon_bottom_left_tile; // Only used when include_addon_space_ is true
     // TODO: We want some kind of "search origin" that is different for different kinds of buildings.
     //  I.e. we want depots, production buildings, ebays/armories in different places
 
@@ -128,13 +131,6 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
         margin = DefaultBuildingMargin;
     }
 
-    // Special case for when we want to include space for addon. For now we just increase width with the addon width
-    // This isn't optimal as it leaves unnecessarily much margin around the building (but it is not like we are space efficient anyway)
-    if (include_addon_space_) {
-        // The building is guaranteed to be a barracks, factory or starport as we've asserted otherwise
-        width += AddonSize;
-    }
-
     for (const auto& expansion : gHub->GetExpansions()) {
         const auto& closest_region = gOverseerMap->getNearestRegion(expansion->town_hall_location); // Is this costly?
         auto& wrapped_region = regions[closest_region->getId() - 1]; // Might be bad to assume that the regions remain unchanged
@@ -145,6 +141,17 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
                 point.y = y;
                 // We need to multiple the margin by 2 as we want margin on all sides
                 if (IsBuildSpaceFree(point, width + margin * 2, height + margin * 2, wrapped_region.buildable_tiles)) {
+                    if (include_addon_space_) {
+                        addon_bottom_left_tile = point;
+                        addon_bottom_left_tile.x += width;
+                        if (IsBuildSpaceFree(addon_bottom_left_tile, AddonSize + margin * 2, AddonSize + margin * 2, wrapped_region.buildable_tiles)) {
+                            // When we actually place the addon we don't want to check with the margin anymore
+                            addon_bottom_left_tile.x += margin;
+                            addon_bottom_left_tile.y += margin;
+                        } else {
+                            continue;
+                        }
+                    }
                     // When we actually place the building we don't want to check with the margin anymore
                     point.x += margin;
                     point.y += margin;
@@ -152,6 +159,9 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
                     // Do we want to do "CanBePlaced" for the addon too? Doing it has both pros and cons
                     if (gAPI->query().CanBePlaced(order_, pos)) {
                         MarkTilesAsReserved(point, width, height);
+                        if (include_addon_space_) {
+                            MarkTilesAsReserved(addon_bottom_left_tile, AddonSize, AddonSize);
+                        }
                         return pos;
                     }
                 }
@@ -162,10 +172,49 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
     return std::nullopt;
 }
 
+void BuildingPlacer::FreeReservedBuildingSpace(sc2::Point3D building_position_, sc2::UNIT_TYPEID building_type_,
+                                               bool included_addon_space_) {
+    bool is_building = IsBuilding()(building_type_);
+    assert(is_building);
+    if (included_addon_space_) {
+        assert(IsBuildingWithSupportForAddon()(building_type_));
+    }
+
+    auto ability_id = gAPI->observer().GetUnitTypeData(building_type_).ability_id;
+    auto radius = gAPI->observer().GetAbilityData(ability_id).footprint_radius;
+    // Should always be whole numbers
+    int left_side_x = static_cast<int>(building_position_.x - radius);
+    int bottom_side_y = static_cast<int>(building_position_.y - radius);
+    int width = static_cast<int>(radius * 2);
+    int height = width;
+    sc2::Point2DI point; // Used to reuse the point object
+
+    for (int x  = left_side_x; x < (left_side_x + width); x++) {
+        for (int y  = bottom_side_y; y < (bottom_side_y + height); y++) {
+            point.x = x;
+            point.y = y;
+            auto itr = occupied_tiles.find(point);
+            if (itr != occupied_tiles.end() && itr->second == BuildingPlacer::TileOccupationStatus::reserved) {
+                occupied_tiles.erase(itr);
+            } else {
+                assert(false && "Tried to free non reserved building space");
+            }
+        }
+    }
+    // This is a unnecessarily inefficient way of solving it
+    if (included_addon_space_) {
+        auto addon_position = (GetTerranAddonPosition(building_position_));
+        // Add-ons are sometimes bugged (e.g. when checking if they can be placed)
+        // so we use another 2x2 building here instead
+        FreeReservedBuildingSpace(sc2::Point3D(addon_position.x, addon_position.y, building_position_.z),
+                                  sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, false);
+    }
+}
+
 bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
     assert(IsGeyser()(*geyser_));
 
-    auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    auto radius = geyser_->radius; // Radius seem to be correct for geysers...
     int width = static_cast<int>(radius * 2);
     int height = width;
     sc2::Point2DI bottom_left_tile;
@@ -186,7 +235,7 @@ bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
 
 bool BuildingPlacer::ReserveGeyser(const Unit* geyser_) {
     if (IsGeyserUnoccupied(geyser_)) {
-        auto radius = geyser_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+        auto radius = geyser_->radius; // Radius seem to be correct for geysers...
         int width = static_cast<int>(radius * 2);
         int height = width;
         sc2::Point2DI bottom_left_tile;
@@ -205,7 +254,12 @@ void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupatio
     if (unit_->is_flying)
         return;
 
-    auto radius = unit_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
+    sc2::UnitTypeData type_data = unit_->GetTypeData();
+    if (!type_data.tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    }
+    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);
@@ -228,7 +282,12 @@ void BuildingPlacer::RemoveBuildingFromOccupiedTiles(const Unit* unit_) {
     if (unit_->is_flying)
         return;
 
-    auto radius = unit_->radius - 0.25f; // Unit radius seem to always be 0.25 bigger for some reason...
+    // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
+    sc2::UnitTypeData type_data = unit_->GetTypeData();
+    if (!type_data.tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    }
+    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);

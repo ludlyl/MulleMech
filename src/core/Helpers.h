@@ -116,6 +116,15 @@ private:
     Worker::Job m_job;
 };
 
+struct IsWorkerWithUnstartedConstructionOrderFor {
+    explicit IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::UNIT_TYPEID m_type;
+};
+
 struct IsTownHall {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -196,8 +205,24 @@ struct ClosestToPoint2D {
         return sc2::DistanceSquared2D(m_point, a) < sc2::DistanceSquared2D(m_point, b);
     }
 
+    bool operator()(const sc2::Unit& a, const sc2::Unit& b) const {
+        return sc2::DistanceSquared2D(m_point, a.pos) < sc2::DistanceSquared2D(m_point, b.pos);
+    }
+
+    bool operator()(const Unit* a, const Unit* b) const {
+        return sc2::DistanceSquared2D(m_point, a->pos) < sc2::DistanceSquared2D(m_point, b->pos);
+    }
+
 private:
     sc2::Point2D m_point;
+};
+
+struct CloakState {
+    explicit CloakState(sc2::Unit::CloakState state_) : m_state(state_) { }
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    sc2::Unit::CloakState m_state;
 };
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints = 12);
@@ -206,15 +231,20 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
 
 sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation);
 
-// Returns "all" the (correct) tech requirements needed for a unit type.
+// Returns "all" the (correct) strucutre tech requirements needed for a unit type.
 // This is needed as UnitTypeData only can hold one requirement and some units have more than one
 // (e.g. Thors requires both an armory and a FACTORYTECHLAB). Furthermore this is needed as UnitTypeData doesn't
 // specify the type of techlab.
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::UnitTypeID id_);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::UnitTypeID id_);
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(const sc2::UnitTypeData& data_);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitTypeData& data_);
 
-std::vector<sc2::UnitTypeID> GetAllTechRequirements(sc2::AbilityID id_, sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
+                                                             sc2::UnitTypeID suppliedTechRequirement_ = sc2::UNIT_TYPEID::INVALID);
+
+// Returns the upgrade tech requirement for a given ability.
+// This is needed as e.g. bio weapons lvl 2 has a requirement on bio weapons lvl 1
+sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_);
 
 // I.e. get mining and unemployed workers
 Units GetFreeWorkers();

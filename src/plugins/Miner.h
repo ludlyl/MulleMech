@@ -18,6 +18,10 @@ struct Miner : Plugin {
 
     void OnUnitDestroyed(Unit* unit_, Builder*) final;
 
+    // Needed to update SCV:s task after refinery construction has completed
+    // (as they start to collect gas directly instead of becoming idle)
+    void OnBuildingConstructionComplete(Unit* unit_) final;
+
     void OnUnitIdle(Unit* unit_, Builder*) final;
 
 private:

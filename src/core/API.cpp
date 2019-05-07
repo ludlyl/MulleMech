@@ -12,6 +12,7 @@
 namespace API {
 
 static std::unordered_map<sc2::ABILITY_ID, sc2::UNIT_TYPEID> AbilityToUnitMap;
+static std::unordered_map<sc2::ABILITY_ID, sc2::UPGRADE_ID> AbilityToUpgradeMap;
 
 Action::Action(sc2::ActionInterface* action_): m_action(action_) {
 }
@@ -186,14 +187,36 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
     return Units(m_observer->GetUnits(alliance_, filter_));
 }
 
-size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
+size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished, bool count_tech_alias) const {
+    // TODO: Add some nice solutions for buildings that are the same but differ in ID depending on state
+    //       such as flying, burrowed, morphed, etc
     // As the API thinks of depots and lowered depots as different buildings, we handle this as a special case
     // (by actually counting how many supply depots you have when the type_ is TERRAN_SUPPLYDEPOT)
     if (type_ == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
         return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, with_not_finished)).size() +
                 m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
     }
+    // Same with Orbital Command, Planetary Fortress and Command Center
+    if (count_tech_alias && type_ == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, with_not_finished)).size() +
+            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, with_not_finished)).size() +
+            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, with_not_finished)).size();
+    }
+
     return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
+}
+
+const std::vector<sc2::UpgradeID>& Observer::GetUpgrades() const {
+    return m_observer->GetUpgrades();
+}
+
+bool Observer::HasUpgrade(sc2::UPGRADE_ID upgrade_id_) const {
+    for (auto& upgrade : GetUpgrades()) {
+        if (upgrade == upgrade_id_) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const sc2::GameInfo& Observer::GameInfo() const {
@@ -350,6 +373,13 @@ sc2::UNIT_TYPEID Observer::GetUnitConstructedFromAbility(sc2::ABILITY_ID id_) co
     return itr->second;
 }
 
+sc2::UPGRADE_ID Observer::GetUpgradeFromAbility(sc2::ABILITY_ID id_) const {
+    auto itr = AbilityToUpgradeMap.find(id_);
+    if (itr == AbilityToUpgradeMap.end())
+        return sc2::UPGRADE_ID::INVALID;
+    return itr->second;
+}
+
 sc2::Race Observer::GetCurrentRace() const {
     uint32_t id = m_observer->GetPlayerID();
     return m_observer->GetGameInfo().player_info[id - 1].race_actual;
@@ -374,6 +404,10 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
     int encodedHeight = info.terrain_height.data[static_cast<unsigned>(posi.x + ((info.height - 1) - posi.y) * info.width)];
     float decodedHeight = -100.0f + 200.0f * float(encodedHeight) / 255.0f;
     return decodedHeight;
+}
+
+sc2::Visibility Observer::GetVisibility(const sc2::Point2D& pos_) const {
+    return m_observer->GetVisibility(pos_);
 }
 
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
@@ -413,10 +447,16 @@ Interface::Interface(sc2::ActionInterface* action_,
 
 void Interface::Init() {
     // Make a mapping of ability -> unit, for abilities that construct units
-    auto typeDatas = m_observer->GetUnitTypeData();
-    for (auto& data : typeDatas) {
+    const auto& unit_datas = m_observer->GetUnitTypeData();
+    for (auto& data : unit_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUnitMap[data.ability_id] = data.unit_type_id;
+    }
+    // Make a mapping of ability -> upgrade
+    const auto& upgrade_datas = m_observer->GetUpgradeData();
+    for (auto& data : upgrade_datas) {
+        if (data.ability_id != sc2::ABILITY_ID::INVALID)
+            AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
 }
 

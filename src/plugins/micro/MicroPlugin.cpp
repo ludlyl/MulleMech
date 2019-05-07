@@ -2,11 +2,12 @@
 #include "DefaultUnit.h"
 #include "Marine.h"
 #include "Thor.h"
-#include "Hellion.h"
 #include "Reaper.h"
 #include "Battlecruiser.h"
 #include "Cyclone.h"
 #include "SiegeTank.h"
+#include "Widowmine.h"
+#include "Hub.h"
 #include "core/API.h"
 #include "Raven.h"
 
@@ -15,11 +16,10 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
     switch (unit->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_MARINE:
             return std::make_unique<Marine>(unit);
-        case sc2::UNIT_TYPEID::TERRAN_HELLION:
-            return std::make_unique<Hellion>(unit);
         case sc2::UNIT_TYPEID::TERRAN_REAPER:
             return std::make_unique<Reaper>(unit);
         case sc2::UNIT_TYPEID::TERRAN_SIEGETANK:
+        case sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED: // cannot spawn as this, but might as well have this case
             return std::make_unique<SiegeTank>(unit);
         case sc2::UNIT_TYPEID::TERRAN_BATTLECRUISER:
             return std::make_unique<Battlecruiser>(unit);
@@ -29,6 +29,9 @@ std::unique_ptr<MicroPlugin> MicroPlugin::MakePlugin(Unit* unit) {
             return std::make_unique<Cyclone>(unit);
         case sc2::UNIT_TYPEID::TERRAN_RAVEN:
             return std::make_unique<Raven>(unit);
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
+        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED: // cannot spawn as this, but might as well have this case
+            return std::make_unique<Widowmine>(unit);
         default:
             return std::make_unique<DefaultUnit>(unit);
     }
@@ -39,8 +42,19 @@ MicroPlugin::MicroPlugin(Unit* unit) :
 {
 }
 
-void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies, const Units& allies) {
+void MicroPlugin::OnCombatFrame(Unit* self, const Units& enemies,
+    const Units& allies, const sc2::Point2D& attackMovePos) {
     m_self = self;
+    m_attackMovePos = attackMovePos;
+
+    // Request scan logic
+    for (auto& enemy : enemies) {
+        if (self->CanAttack(enemy) == Unit::Attackable::need_scan) {
+            gHub->RequestScan(enemy->pos);
+            break;
+        }
+    }
+
     OnCombatStep(enemies, allies);
 }
 
@@ -65,6 +79,18 @@ void MicroPlugin::Attack(const Unit* target) {
     if (m_self && !IsAttacking(target)) {
         gAPI->action().Attack(m_self, target);
         m_target = target;
+        m_moving = false;
+    }
+}
+
+void MicroPlugin::AttackMove() {
+    AttackMove(m_attackMovePos);
+}
+
+void MicroPlugin::AttackMove(const sc2::Point2D& pos) {
+    if (m_self && !IsAttackMoving(pos)) {
+        gAPI->action().Attack(m_self, pos);
+        m_target = nullptr;
         m_moving = false;
     }
 }
@@ -105,3 +131,16 @@ bool MicroPlugin::IsAttacking(const Unit* target) const {
 bool MicroPlugin::IsMoving() const {
     return m_moving;
 }
+
+bool MicroPlugin::IsAttackMoving() const {
+    return m_self && !m_target &&
+        !m_self->GetPreviousStepOrders().empty() &&
+        m_self->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK;
+}
+
+bool MicroPlugin::IsAttackMoving(const sc2::Point2D& pos) const {
+    return IsAttackMoving() &&
+        sc2::DistanceSquared2D(pos, m_self->GetPreviousStepOrders().front().target_pos) <=
+        AttackMoveOutOfDateDistance * AttackMoveOutOfDateDistance;
+}
+

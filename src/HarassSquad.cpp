@@ -41,7 +41,7 @@ void HarassSquad::Update() {
     } else {
         SetEnemies(std::move(workers));
         for (auto& unit : GetUnits())
-            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits());
+            unit->Micro()->OnCombatFrame(unit, GetEnemies(), GetUnits(), GetAttackMovePoint());
     }
 }
 
