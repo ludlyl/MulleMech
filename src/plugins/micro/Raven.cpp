@@ -50,7 +50,27 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
     if(enemies.size()>4 && m_self->energy >= 100){
         const Unit* target = enemies.GetClosestUnit(m_self->pos);
 
-        Cast(sc2::ABILITY_ID::EFFECT_AUTOTURRET, target->pos);
+        sc2::Point3D targetLocation = target->pos;
+
+        int xChance = rand() % 2 + 1;
+        int yChance = rand() % 2 + 1;
+
+        if(xChance == 1){
+            targetLocation.x += target->radius;
+        }
+        else{
+            targetLocation.x -= target->radius;
+        }
+
+        if(yChance == 1){
+            targetLocation.y += target->radius;
+        }
+        else{
+            targetLocation.y -= target->radius;
+        }
+
+
+        Cast(sc2::ABILITY_ID::EFFECT_AUTOTURRET, targetLocation);
     }
 
 }
