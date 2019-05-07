@@ -72,7 +72,7 @@ float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
     const auto& training = builder_->GetTrainingOrders();
     float demand = std::accumulate(training.begin(), training.end(), 0.0f, CalcDemand());
 
-    // Assume buildings currently producing will produce the same unit again, and include that in demand
+    // Assume buildings currently producing will produce the same unit(s) two more times, and include that in demand
     auto units = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
     for (auto& unit : units) {
         for (auto& order : unit->GetPreviousStepOrders()) {
@@ -81,8 +81,10 @@ float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
                 continue;
 
             auto constructed_unit_data = gAPI->observer().GetUnitTypeData(constructed_unit_type);
-            if (constructed_unit_data.food_provided == 0)
-                demand += constructed_unit_data.food_required;
+            if (constructed_unit_data.food_provided == 0) {
+                // Might be more optimal to multiply demand with some (arbitrary) modifier instead of doing * 2 here
+                demand += constructed_unit_data.food_required * 2;
+            }
         }
     }
 
