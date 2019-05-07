@@ -17,10 +17,12 @@
 #include <vector>
 
 namespace {
-constexpr float maximum_resource_distance = 10.0f;  // Resources further than this => doesn't belong to this base
-constexpr int steps_between_balance = 20;           // How often we recalculate SCV balance
-constexpr int req_imbalance_to_transfer = 2;        // How many SCVs imbalance we must have before transferring any
-constexpr int maximum_workers = 70;                 // Never go above this number of workers
+constexpr float maximum_resource_distance = 10.0f;          // Resources further than this => doesn't belong to this base
+constexpr int steps_between_balance = 20;                   // How often we recalculate SCV balance
+constexpr int req_imbalance_to_transfer = 2;                // How many SCVs imbalance we must have before transferring any
+constexpr int maximum_workers = 70;                         // Never go above this number of workers
+constexpr float vespene_to_minerals_stop_ratio = 3.f;       // If we have this much more vespene than minerals and have at least vespene_minimum_for_stop_threshold vespene we stop gathering gas
+constexpr int vespene_minimum_for_stop_threshold = 1200;    // If we have less gas than this we don't stop mining no matter what
 
 // Counts both for town halls and refineries
 int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
@@ -86,6 +88,17 @@ void SecureMineralsIncome(Builder* builder_) {
 
 void SecureVespeneIncome() {
     Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
+
+    float minerals = gAPI->observer().GetMinerals();
+    float vespene = gAPI->observer().GetVespene();
+
+    // Put all gas workers on mineral mining if we have too much gas compared to minerals
+    if (vespene >= vespene_minimum_for_stop_threshold && (vespene / minerals) >= vespene_to_minerals_stop_ratio) {
+        for (auto& worker : gas_workers) {
+            worker->AsWorker()->Mine();
+        }
+        return;
+    }
 
     // We move max one for each refinery in each call to this function
     for (const auto& expansion : gHub->GetExpansions()) {
