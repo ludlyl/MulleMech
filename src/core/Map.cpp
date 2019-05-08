@@ -189,6 +189,7 @@ Expansions CalculateExpansionLocations() {
     Expansions expansions;
 
     // Manually register our starting location (and remove its mineral line from consideration)
+    //TODO: add turret placement here too
     auto ccs = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER), sc2::Unit::Alliance::Self);
     if (!ccs.empty()) {
         for (auto itr = mineral_lines.begin(); itr != mineral_lines.end(); ++itr) {
@@ -246,6 +247,20 @@ Expansions CalculateExpansionLocations() {
         // Add Expansion entry
         auto p = line.town_hall_location.value();
         expansions.emplace_back(std::make_shared<Expansion>(sc2::Point3D(p.x, p.y, line.Height())));
+    }
+
+    //
+    for (auto& m : mineral_lines) {
+        for (auto& exp : expansions) {
+            if (sc2::DistanceSquared3D(exp->town_hall_location, m.mineral_patches.at(2)) < 15.0f) {
+                auto pointBehindMinerals = GetCenterBehindMinerals(exp->town_hall_location);
+                exp->turretPositions.emplace_back(pointBehindMinerals);
+
+                /*auto point = m.Center();
+                std::cout << "is Buildable? " << false << "\n";
+                exp->turretPositions.emplace_back(point);*/
+            }
+        }
     }
 
     CalculateGroundDistances(expansions);

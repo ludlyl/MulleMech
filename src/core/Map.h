@@ -24,6 +24,7 @@ struct Expansion {
     sc2::Unit::Alliance alliance;
     std::unordered_map<std::shared_ptr<Expansion>, float> ground_distances;
     Unit* town_hall;
+    std::vector<sc2::Point3D> turretPositions;
 
     // Returns: walk distance to other expansion
     float distanceTo(const std::shared_ptr<Expansion>& other_) const {
