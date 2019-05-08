@@ -1,7 +1,3 @@
-// The MIT License (MIT)
-//
-// Copyright (c) 2017-2018 Alexander Kurbatov
-
 #include "Miner.h"
 #include "Hub.h"
 #include "core/API.h"
@@ -16,171 +12,6 @@
 #include <numeric>
 #include <vector>
 
-namespace {
-constexpr float maximum_resource_distance = 10.0f;          // Resources further than this => doesn't belong to this base
-constexpr int steps_between_balance = 20;                   // How often we recalculate SCV balance
-constexpr int req_imbalance_to_transfer = 2;                // How many SCVs imbalance we must have before transferring any
-constexpr int maximum_workers = 70;                         // Never go above this number of workers
-constexpr float vespene_to_minerals_stop_ratio = 3.f;       // If we have this much more vespene than minerals and have at least vespene_minimum_for_stop_threshold vespene we stop gathering gas
-constexpr int vespene_minimum_for_stop_threshold = 1200;    // If we have less gas than this we don't stop mining no matter what
-
-// Counts both for town halls and refineries
-int IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
-    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
-        IsRefinery()}), sc2::Unit::Alliance::Self);
-
-    int needed = 0;
-    for (auto& structure : gatherStructures) {
-        if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < maximum_resource_distance)
-            needed += structure->ideal_harvesters;
-    }
-    return needed;
-}
-
-void SecureMineralsIncome(Builder* builder_) {
-    // Cut SCV production on the following playstyles
-    switch (gReasoner->GetPlayStyle()) {
-        case PlayStyle::all_in:
-        case PlayStyle::very_defensive:
-            return;
-        default:
-            break;
-    }
-
-    std::vector<Order> orders;
-    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
-    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
-    auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
-    int optimal_workers = 0;
-
-    // Calculate Optimal Workers
-    for (auto& cc : command_centers)
-        optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
-    for (auto& refinery : refineries)
-        optimal_workers += refinery->ideal_harvesters;
-    optimal_workers = std::min(optimal_workers, maximum_workers);                       // Don't make too many, though
-
-    if (num_workers >= optimal_workers)
-        return;
-
-    // Schedule training at our Command Centers
-    for (auto& cc : command_centers) {
-        if (num_workers++ >= optimal_workers)
-            break;
-
-        if (cc->build_progress != 1.0f)
-            continue;
-
-        if (!cc->IsIdle())
-            continue;
-
-        if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
-            continue;
-
-        orders.emplace_back(gAPI->observer().GetUnitTypeData(gHub->GetCurrentWorkerType()), cc);
-    }
-
-    if (orders.empty())
-        return;
-
-    builder_->ScheduleTrainingOrders(orders, true);
-}
-
-void SecureVespeneIncome() {
-    Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
-
-    float minerals = gAPI->observer().GetMinerals();
-    float vespene = gAPI->observer().GetVespene();
-
-    // Put all gas workers on mineral mining if we have too much gas compared to minerals
-    if (vespene >= vespene_minimum_for_stop_threshold && (minerals == 0 || (vespene / minerals) >= vespene_to_minerals_stop_ratio)) {
-        for (auto& worker : gas_workers) {
-            worker->AsWorker()->Mine();
-        }
-        return;
-    }
-
-    // We move max one for each refinery in each call to this function
-    for (const auto& expansion : gHub->GetExpansions()) {
-        if (expansion->alliance == sc2::Unit::Alliance::Self) {
-            for (const auto& refinery : expansion->refineries) {
-                if (refinery->assigned_harvesters < refinery->ideal_harvesters) {
-                    // NOTE: Home base is updated in Worker::GatherVespene()
-                    auto worker = GetClosestFreeWorker(refinery->pos);
-                    if (worker) {
-                        worker->GatherVespene(refinery);
-                    }
-                    // Makes sure that we never have more than 3 workers on gas.
-                } else if (refinery->assigned_harvesters > refinery->ideal_harvesters) {
-                    for (auto it = gas_workers.begin(); it != gas_workers.end(); it++) {
-                        if (refinery->tag == (*it)->GetPreviousStepOrders().front().target_unit_tag) {
-                            (*it)->AsWorker()->Mine();
-                            gas_workers.erase(it);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-float SaveEnergy() {
-    // If Reasoner wants detection, save as much energy as possible
-    auto needed_unitclasses = gReasoner->GetNeededUnitClasses();
-    if (std::find(needed_unitclasses.begin(), needed_unitclasses.end(), UnitClass::detection) != needed_unitclasses.end())
-        return std::numeric_limits<float>::max();
-
-    // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
-    constexpr int minutes_per_scan_increase = 4;
-    float passed_minutes = gAPI->observer().GetGameLoop() / (API::StepsPerSecond * 60.0f);
-    return API::OrbitalScanCost * (static_cast<int>(passed_minutes) / minutes_per_scan_increase);
-}
-
-void CallDownMULE() {
-    auto orbitals = gAPI->observer().GetUnits(
-        IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
-    std::vector<float> usable_energy; // orbitals[i]'s usable energy is in usable_energy[i]
-
-    if (orbitals.empty())
-        return;
-
-    // It is important that orbitals are always in the same order, so we end up actually saving
-    // (sorting by memory address is okay, as a Unit's memory does not get moved around)
-    std::sort(orbitals.begin(), orbitals.end());
-
-    // Calculate the usable energy for each orbital
-    usable_energy.resize(orbitals.size());
-    for (std::size_t i = 0; i < orbitals.size(); ++i)
-        usable_energy[i] = orbitals[i]->energy;
-
-    // Distribute the reserved energy uniformly
-    float save_energy = std::min(SaveEnergy(), orbitals.size() * 200.0f);
-    while (save_energy > 0.0f) {
-        for (std::size_t i = 0; i < orbitals.size() && save_energy > 0.0f; ++i) {
-            usable_energy[i] -= API::OrbitalScanCost;
-            save_energy -= API::OrbitalScanCost;
-        }
-    }
-
-    // Call down mules
-    auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(),
-        sc2::Unit::Alliance::Neutral);
-
-    for (std::size_t i = 0; i < orbitals.size(); ++i) {
-        if (usable_energy[i] < API::OrbitalMuleCost && orbitals[i]->energy < 200.0f)
-            continue;
-
-        auto mineral_target = mineral_patches.GetClosestUnit(orbitals[i]->pos);
-        if (!mineral_target)
-            continue;
-
-        gAPI->action().Cast(orbitals[i], sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
-    }
-}
-
-}  // namespace
-
 void Miner::OnStep(Builder* builder_) {
     // Make all unemployed workers mine
     // Note: Mine also updates the home base of the worker
@@ -189,7 +20,7 @@ void Miner::OnStep(Builder* builder_) {
         unit->AsWorker()->Mine();
     }
 
-    if (gAPI->observer().GetGameLoop() % steps_between_balance == 0)
+    if (gAPI->observer().GetGameLoop() % StepsBetweenBalance == 0)
         BalanceWorkers();
     SecureMineralsIncome(builder_);
     SecureVespeneIncome();
@@ -246,18 +77,204 @@ void Miner::OnUnitIdle(Unit* unit_, Builder*) {
         }
 
         case sc2::UNIT_TYPEID::TERRAN_MULE: {
-            // Send MULE to closest mineral patch of our Starting Location on idle
-            // TODO: Maybe send it to nearest mineral patch of a base belonging to us?
-            auto units = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
-            auto mineral_target = units.GetClosestUnit(gAPI->observer().StartingLocation());
-            if (!mineral_target)
-                break;
+            // Send MULE to closest mineral patch of closest base we own with mineral left
+            float distance_to_closest_town_hall_with_minerals = std::numeric_limits<float>::max();
+            Unit* closest_town_hall_with_minerals = nullptr;
+            for (auto& expansion : gHub->GetExpansions()) {
+                if (expansion->alliance == sc2::Unit::Alliance::Self && expansion->town_hall->ideal_harvesters > 0) {
+                    float distance_to_town_hall = sc2::DistanceSquared2D(unit_->pos, expansion->town_hall->pos);
+                    if (distance_to_town_hall < distance_to_closest_town_hall_with_minerals) {
+                        distance_to_closest_town_hall_with_minerals = distance_to_town_hall;
+                        closest_town_hall_with_minerals = expansion->town_hall;
+                    }
+                }
+            }
 
-            gAPI->action().Cast(unit_, sc2::ABILITY_ID::SMART, mineral_target);
+            if (closest_town_hall_with_minerals) {
+                auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
+                auto mineral_target = mineral_patches.GetClosestUnit(closest_town_hall_with_minerals->pos);
+
+                if (mineral_target) {
+                    gAPI->action().Cast(unit_, sc2::ABILITY_ID::SMART, mineral_target);
+                }
+            }
             break;
         }
         default:
             break;
+    }
+}
+
+int Miner::IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
+    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
+                                                                                              IsRefinery()}), sc2::Unit::Alliance::Self);
+
+    int needed = 0;
+    for (auto& structure : gatherStructures) {
+        if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < MaximumResourceDistance)
+            needed += structure->ideal_harvesters;
+    }
+    return needed;
+}
+
+void Miner::SecureMineralsIncome(Builder* builder_) {
+    // Cut SCV production on the following playstyles
+    switch (gReasoner->GetPlayStyle()) {
+        case PlayStyle::all_in:
+        case PlayStyle::very_defensive:
+            return;
+        default:
+            break;
+    }
+
+    std::vector<Order> orders;
+    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
+    int optimal_workers = 0;
+
+    // Calculate Optimal Workers
+    for (auto& cc : command_centers)
+        optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
+    for (auto& refinery : refineries)
+        optimal_workers += refinery->ideal_harvesters;
+    optimal_workers = std::min(optimal_workers, MaximumWorkers);                       // Don't make too many, though
+
+    if (num_workers >= optimal_workers)
+        return;
+
+    // Schedule training at our Command Centers
+    for (auto& cc : command_centers) {
+        if (num_workers++ >= optimal_workers)
+            break;
+
+        if (cc->build_progress != 1.0f)
+            continue;
+
+        if (!cc->IsIdle())
+            continue;
+
+        if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
+            continue;
+
+        orders.emplace_back(gAPI->observer().GetUnitTypeData(gHub->GetCurrentWorkerType()), cc);
+    }
+
+    if (orders.empty())
+        return;
+
+    builder_->ScheduleTrainingOrders(orders, true);
+}
+
+void Miner::SecureVespeneIncome() {
+    float minerals = gAPI->observer().GetMinerals();
+    float vespene = gAPI->observer().GetVespene();
+
+    if (m_vespene_gathering_stopped) {
+        if (vespene <= VespeneStartThreshold || (minerals == 0 || (vespene / minerals) <= VespeneToMineralsStartRatio)) {
+            m_vespene_gathering_stopped = false;
+        } else {
+            // This code is needed to bring out the workers that was inside
+            // the gas when m_vespene_gathering_stopped was set to true
+
+            // As it's not really a problem that we keep 1 worker in gas
+            // it is is a bit unnecessary costly to execute this on every step
+            // when we have stopped mining gas though, that's why it's uncommented as of now.
+            // If this is uncommented the "gas_workers" definition should be moved up to the top of this function
+
+            //Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
+            /*for (auto& worker : gas_workers) {
+                worker->AsWorker()->Mine();
+            }*/
+        }
+    // Put all gas workers on mineral mining if we have too much gas compared to minerals
+    } else if (vespene >= VespeneMinimumForStopThreshold && (minerals == 0 || (vespene / minerals) >= VespeneToMineralsStopRatio)) {
+        Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
+        m_vespene_gathering_stopped = true;
+        for (auto& worker : gas_workers) {
+            worker->AsWorker()->Mine();
+        }
+    }
+
+    if (m_vespene_gathering_stopped)
+        return;
+
+    Units gas_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::gathering_vespene), sc2::Unit::Alliance::Self);
+
+    // We move max one for each refinery in each call to this function
+    for (const auto& expansion : gHub->GetExpansions()) {
+        if (expansion->alliance == sc2::Unit::Alliance::Self) {
+            for (const auto& refinery : expansion->refineries) {
+                if (refinery->assigned_harvesters < refinery->ideal_harvesters) {
+                    // NOTE: Home base is updated in Worker::GatherVespene()
+                    auto worker = GetClosestFreeWorker(refinery->pos);
+                    if (worker) {
+                        worker->GatherVespene(refinery);
+                    }
+                    // Makes sure that we never have more than 3 workers on gas.
+                } else if (refinery->assigned_harvesters > refinery->ideal_harvesters) {
+                    for (auto it = gas_workers.begin(); it != gas_workers.end(); it++) {
+                        if (refinery->tag == (*it)->GetPreviousStepOrders().front().target_unit_tag) {
+                            (*it)->AsWorker()->Mine();
+                            gas_workers.erase(it);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+float Miner::SaveEnergy() {
+    // If Reasoner wants detection, save as much energy as possible
+    auto needed_unit_classes = gReasoner->GetNeededUnitClasses();
+    if (std::find(needed_unit_classes.begin(), needed_unit_classes.end(), UnitClass::detection) != needed_unit_classes.end())
+        return std::numeric_limits<float>::max();
+
+    // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
+    constexpr int minutes_per_scan_increase = 4;
+    float passed_minutes = gAPI->observer().GetGameLoop() / (API::StepsPerSecond * 60.0f);
+    return API::OrbitalScanCost * (static_cast<int>(passed_minutes) / minutes_per_scan_increase);
+}
+
+void Miner::CallDownMULE() {
+    auto orbitals = gAPI->observer().GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND), sc2::Unit::Alliance::Self);
+    std::vector<float> usable_energy; // orbitals[i]'s usable energy is in usable_energy[i]
+
+    if (orbitals.empty())
+        return;
+
+    // It is important that orbitals are always in the same order, so we end up actually saving
+    // (sorting by memory address is okay, as a Unit's memory does not get moved around)
+    std::sort(orbitals.begin(), orbitals.end());
+
+    // Calculate the usable energy for each orbital
+    usable_energy.resize(orbitals.size());
+    for (std::size_t i = 0; i < orbitals.size(); ++i)
+        usable_energy[i] = orbitals[i]->energy;
+
+    // Distribute the reserved energy uniformly
+    float save_energy = std::min(SaveEnergy(), orbitals.size() * 200.0f);
+    while (save_energy > 0.0f) {
+        for (std::size_t i = 0; i < orbitals.size() && save_energy > 0.0f; ++i) {
+            usable_energy[i] -= API::OrbitalScanCost;
+            save_energy -= API::OrbitalScanCost;
+        }
+    }
+
+    // Call down mules
+    auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
+
+    for (std::size_t i = 0; i < orbitals.size(); ++i) {
+        if (usable_energy[i] < API::OrbitalMuleCost && orbitals[i]->energy < 200.0f)
+            continue;
+
+        auto mineral_target = mineral_patches.GetClosestUnit(orbitals[i]->pos);
+        if (!mineral_target)
+            continue;
+
+        gAPI->action().Cast(orbitals[i], sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
     }
 }
 
@@ -321,7 +338,7 @@ void Miner::BalanceWorkers() {
 
     // If ideal difference is >= 2 of top and bottom guy => balance workers
     int diff = sorted_expansions.rbegin()->first - sorted_expansions.begin()->first;
-    if (diff >= req_imbalance_to_transfer) {
+    if (diff >= ReqImbalanceToTransfer) {
         int move = static_cast<int>(std::ceil(diff / 2.0f));
         int moved = move;
         while (move--) {

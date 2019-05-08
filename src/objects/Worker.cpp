@@ -77,11 +77,11 @@ void Worker::Mine() {
     }
 
     if (m_home_base) {
-        auto visibleMinerals = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
-        auto mineralTarget = visibleMinerals.GetClosestUnit(m_home_base->town_hall->pos);
+        auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
+        auto mineral_target = mineral_patches.GetClosestUnit(m_home_base->town_hall->pos);
 
-        if (mineralTarget) {
-            gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineralTarget);
+        if (mineral_target) {
+            gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineral_target);
             m_job = Job::gathering_minerals;
         }
     }
