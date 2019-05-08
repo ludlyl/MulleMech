@@ -93,7 +93,7 @@ void SecureVespeneIncome() {
     float vespene = gAPI->observer().GetVespene();
 
     // Put all gas workers on mineral mining if we have too much gas compared to minerals
-    if (vespene >= vespene_minimum_for_stop_threshold && (vespene / minerals) >= vespene_to_minerals_stop_ratio) {
+    if (vespene >= vespene_minimum_for_stop_threshold && (minerals == 0 || (vespene / minerals) >= vespene_to_minerals_stop_ratio)) {
         for (auto& worker : gas_workers) {
             worker->AsWorker()->Mine();
         }
