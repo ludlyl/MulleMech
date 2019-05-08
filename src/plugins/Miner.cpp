@@ -269,8 +269,9 @@ void Miner::SplitWorkersOf(const std::shared_ptr<Expansion>& expansion_) {
     Expansions our_active_expansions;
     // Would it be good to reserve e.g. gHub->GetExpansions().size() - 1? If so that should be done in hub too
 
+    // We ignore mined out bases
     for (auto& expo : gHub->GetExpansions()) {
-        if (expo->alliance == sc2::Unit::Alliance::Self && expo != expansion_) {
+        if (expo->alliance == sc2::Unit::Alliance::Self && expo != expansion_ && expo->town_hall->ideal_harvesters > 0) {
             our_active_expansions.emplace_back(expo);
         }
     }
