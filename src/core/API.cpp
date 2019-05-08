@@ -5,9 +5,11 @@
 #include "API.h"
 #include "Converter.h"
 #include "Helpers.h"
+#include "Historican.h"
 #include "plugins/micro/MicroPlugin.h"
 
 #include <sc2api/sc2_map_info.h>
+#include <ctime>
 
 namespace API {
 
@@ -120,7 +122,14 @@ Control::Control(sc2::ControlInterface* control_): m_control(control_) {
 }
 
 void Control::SaveReplay() {
-    m_control->SaveReplay("LastReplay.SC2Replay");
+    char time_buf[128] = { 0 };
+    auto timestamp = std::time(nullptr);
+    std::strftime(time_buf, 128, "%Y%m%d__%H_%S", std::localtime(&timestamp));
+    std::string replay_name("MulleMech_" + std::string(time_buf) + ".SC2Replay");
+    if (m_control->SaveReplay(replay_name))
+        gHistory.info() << "Replay saved to " << replay_name << std::endl;
+    else
+        gHistory.info() << "Failed saving replay!" << std::endl;
 }
 
 Debug::Debug(sc2::DebugInterface* debug_): m_debug(debug_) {
@@ -408,6 +417,10 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
 
 sc2::Visibility Observer::GetVisibility(const sc2::Point2D& pos_) const {
     return m_observer->GetVisibility(pos_);
+}
+
+const std::vector<sc2::PlayerResult>& Observer::GetResults() const {
+    return m_observer->GetResults();
 }
 
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {
