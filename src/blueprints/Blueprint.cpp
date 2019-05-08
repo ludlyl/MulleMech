@@ -67,6 +67,9 @@ std::shared_ptr<bp::Blueprint> bp::Blueprint::Plot(sc2::ABILITY_ID ability_) {
         case sc2::ABILITY_ID::MORPH_PLANETARYFORTRESS:
             return std::make_shared<Mutation>();
 
+        case sc2::ABILITY_ID::BUILD_MISSILETURRET:
+            return std::make_shared<Unit>(sc2::UNIT_TYPEID::TERRAN_MISSILETURRET);
+
         // Upgrades
         // NOTE (alkurbatov): Yes, this is weird from the first glance
         // but anyway the code required for research is completely the same. :)
