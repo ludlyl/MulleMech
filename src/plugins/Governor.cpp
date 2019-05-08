@@ -145,6 +145,25 @@ void Governor::OnStep(Builder* builder_) {
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
         }
+
+        auto unit_classes = gReasoner->GetNeededUnitClasses();
+        for (UnitClass unit_class : unit_classes) {
+            switch (unit_class) {
+                case UnitClass::detection:
+                case UnitClass::anti_air: {
+                    int num_of_turrets = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_MISSILETURRET);
+                    Units set_of_ccs = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+                    if (!gAPI->observer().GetUnits(IsEngineeringBay(), sc2::Unit::Alliance::Self).empty() &&
+                            num_of_turrets / set_of_ccs.size() < 1) {
+                        m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_MISSILETURRET);
+                    }
+                    break;
+                }
+                case UnitClass::buffer:
+                    break;
+            }
+        }
+
     }
 }
 

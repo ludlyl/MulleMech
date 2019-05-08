@@ -131,6 +131,20 @@ std::optional<sc2::Point3D> BuildingPlacer::ReserveBuildingSpace(const Order& or
         margin = DefaultBuildingMargin;
     }
 
+    if (order_.unit_type_id == sc2::UNIT_TYPEID::TERRAN_MISSILETURRET) {
+        Expansions expansions;
+        for (auto& exp : expansions) {
+            if (exp->turretPositions.empty()) {
+                continue;
+            }
+            for (auto& pos : exp->turretPositions) {
+                if (gAPI->query().CanBePlaced(order_, pos)) {
+                    return pos;
+                }
+            }
+        }
+    }
+
     for (const auto& expansion : gHub->GetExpansions()) {
         const auto& closest_region = gOverseerMap->getNearestRegion(expansion->town_hall_location); // Is this costly?
         auto& wrapped_region = regions[closest_region->getId() - 1]; // Might be bad to assume that the regions remain unchanged
