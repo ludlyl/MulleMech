@@ -53,14 +53,22 @@ void SecureMineralsIncome(Builder* builder_) {
     std::vector<Order> orders;
     auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
+    // As this doesn't count workers inside refineries we add those down below (in the refineries loop)
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
+
     int optimal_workers = 0;
 
     // Calculate Optimal Workers
+    // (and increase num of workers with 1 for each active refinery,
+    //  this is needed as if the workers are inside the refinery they are removed from the game)
     for (auto& cc : command_centers)
         optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
-    for (auto& refinery : refineries)
+    for (auto& refinery : refineries) {
         optimal_workers += refinery->ideal_harvesters;
+        if (refinery->assigned_harvesters > 0) {
+            num_workers++;
+        }
+    }
     optimal_workers = std::min(optimal_workers, maximum_workers);                       // Don't make too many, though
 
     if (num_workers >= optimal_workers)
