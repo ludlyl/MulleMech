@@ -247,9 +247,6 @@ bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
 
 
 bool IsRefinery::operator()(const sc2::Unit& unit_) const {
-    if (unit_.build_progress != 1.0f)
-        return false;
-
     return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR ||
         unit_.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR ||
         unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
@@ -284,6 +281,19 @@ bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
     if (IsWorker()(unit_)) {
         Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
         if (worker && worker->GetJob() == m_job) {
+            return true;
+        }
+    }
+    return false;
+}
+
+IsWorkerWithHomeBase::IsWorkerWithHomeBase(const std::shared_ptr<Expansion>& home_base_) : m_home_base(home_base_) {
+}
+
+bool IsWorkerWithHomeBase::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetHomeBase() == m_home_base) {
             return true;
         }
     }
