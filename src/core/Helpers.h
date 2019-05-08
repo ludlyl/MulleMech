@@ -75,6 +75,10 @@ struct IsGeyser {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsEngineeringBay {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsVisibleUndepletedGeyser {
     // NOTE (alkurbatov): All the geysers has non-zero vespene contents while
     // the geysers covered by the fog of war don't have such parameter

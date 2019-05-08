@@ -234,6 +234,15 @@ bool IsGeyser::operator()(const sc2::Unit& unit_) const {
     }
 }
 
+bool IsEngineeringBay::operator()(const sc2::Unit& unit_) const {
+    switch (unit_.unit_type.ToType()) {
+        case sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool IsVisibleUndepletedGeyser::operator()(const sc2::Unit& unit_) const {
     return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
 }
