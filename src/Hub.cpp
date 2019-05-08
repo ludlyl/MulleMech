@@ -71,8 +71,8 @@ void Hub::OnUnitCreated(Unit* unit_) {
     } else if (IsRefinery()(*unit_)) {
         // Would it be better to use GetClosestExpansion?
         for (auto& i : m_expansions) {
-            for (const auto& geyser : i->geysers) {
-                if (unit_->pos.x == geyser->pos.x && unit_->pos.y == geyser->pos.y) {
+            for (const auto& geyser_position : i->geysers_positions) {
+                if (unit_->pos.x == geyser_position.x && unit_->pos.y == geyser_position.y) {
                     i->refineries.emplace_back(unit_);
                     return;
                 }

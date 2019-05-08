@@ -184,7 +184,7 @@ void CalculateGeysers(Expansions& expansions){
                 closest = exp;
             }
         }
-        closest->geysers.emplace_back(geyser);
+        closest->geysers_positions.emplace_back(geyser->pos);
     }
 }
 
