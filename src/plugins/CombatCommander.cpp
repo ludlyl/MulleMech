@@ -162,11 +162,13 @@ void CombatCommander::DefenseCheck() {
     }
 
     auto enemyGroups = GroupEnemiesInBase();
+    std::size_t enemyCount = 0;
     if (enemyGroups.empty())
         return;
 
     for (auto& group : enemyGroups) {
         bool dealtWith = false;
+        enemyCount += group.size();
 
         // Update enemy list if we have a squad dealing with them already
         for (auto& squad : m_defenseSquads) {
@@ -188,6 +190,11 @@ void CombatCommander::DefenseCheck() {
     for (auto& defSquad : m_defenseSquads) {
         auto defenders = GenerateDefenseFor(std::move(defSquad.GetUnits()), defSquad.GetEnemies());
         defSquad.SetUnits(std::move(defenders));
+    }
+
+    // Move mainsquad to fighting as well if it's just idling
+    if (!m_mainSquad->GetUnits().empty() && m_mainSquad->IsTaskFinished() && enemyCount >= DefendWithMainSquadThreshold) {
+        m_mainSquad->TakeOver(enemyGroups[0].CalculateCircle().first);
     }
 }
 

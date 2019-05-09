@@ -54,4 +54,5 @@ private:
     static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
     static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
     static constexpr float DefenseResourcesOveredo = 1.25f; // Spend this much more resources on defense comapred to enemy
+    static constexpr int DefendWithMainSquadThreshold = 10; // If enemy has this many units => involve entire mainsquad
 };
