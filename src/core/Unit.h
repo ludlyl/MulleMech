@@ -21,6 +21,12 @@ class Unit : public sc2::Unit {
 public:
     enum class Attackable { yes, no, need_scan };
 
+    enum class BuildingRepairPhase {
+        not_repairing,
+        repairing
+    };
+    BuildingRepairPhase m_repairPhase = BuildingRepairPhase::not_repairing;
+
     // TODO: Make "Make" function and constructor private (and same for worker) so only API can create new Unit objects
     static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
     Unit(const sc2::Unit& unit);

@@ -15,7 +15,8 @@ public:
         gathering_vespene,
         building,
         scouting,
-        fighting // i.e. the worker is in a combat squad
+        fighting, // i.e. the worker is in a combat squad
+        repair
     };
 
     explicit Worker(const sc2::Unit& unit_);
@@ -43,6 +44,8 @@ public:
     void SetAsScout();
 
     void SetAsFighter();
+
+    void SetAsRepairer(const Unit* unit);
 
     // Will always return unemployed for enemy workers
     Job GetJob() const { return m_job; }

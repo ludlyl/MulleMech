@@ -93,6 +93,26 @@ struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
+struct IsUpgradedTownHall {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsPlanetaryFortress {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsOrbitalCommand {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsRepairWorker {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
+struct IsHasrvestingMineralsWorker {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 struct IsIdleUnit {
     explicit IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_idle_ = true);
 

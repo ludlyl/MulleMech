@@ -255,6 +255,42 @@ bool IsRefinery::operator()(const sc2::Unit& unit_) const {
         unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
 }
 
+bool IsRepairWorker::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetJob() == Worker::Job::repair) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsHasrvestingMineralsWorker::operator()(const sc2::Unit& unit_) const {
+    if (IsWorker()(unit_)) {
+        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
+        if (worker && worker->GetJob() == Worker::Job::gathering_minerals) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsUpgradedTownHall::operator()(const sc2::Unit& unit_) const {
+    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS;
+}
+
+bool IsPlanetaryFortress::operator()(const sc2::Unit& unit_) const {
+    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS;
+}
+
+bool IsOrbitalCommand::operator()(const sc2::Unit& unit_) const {
+    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
+           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING;
+}
+
+
 IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_idle) :
         m_type(type_), m_count_non_full_reactor_as_idle(count_non_full_reactor_as_idle) {
 }
