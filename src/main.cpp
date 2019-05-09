@@ -59,6 +59,7 @@ struct Options {
     std::string ServerAddress;
     std::string OpponentId;
     bool ComputerOpponent;
+    std::string PlayLocalMap;
     sc2::Difficulty ComputerDifficulty;
     sc2::Race ComputerRace;
 };
@@ -70,6 +71,7 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
             {"-o", "--StartPort", "Starting server port", false},
             {"-l", "--LadderServer", "Ladder server address", false},
             {"-x", "--OpponentId", "PlayerId of opponent", false},
+            {"-p", "--PlayLocalMap", "If we play only on this PC using specified map", false},
             {"-c", "--ComputerOpponent", "If we set up a computer opponent", false},
             {"-a", "--ComputerRace", "Race of computer oppent", false},
             {"-d", "--ComputerDifficulty", "Difficulty of computer opponent", false}
@@ -91,8 +93,8 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
 
     arg_parser.Get("LadderServer", options_->ServerAddress);
 
-    std::string CompOpp;
-    if (arg_parser.Get("ComputerOpponent", CompOpp)) {
+    std::string dummy;
+    if (arg_parser.Get("ComputerOpponent", dummy)) {
         options_->ComputerOpponent = true;
         std::string CompRace;
 
@@ -102,7 +104,10 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
         std::string CompDiff;
         if (arg_parser.Get("ComputerDifficulty", CompDiff))
             options_->ComputerDifficulty = convert::StringToDifficulty(CompDiff);
-    }
+    } else
+        options_->ComputerOpponent = false;
+
+    arg_parser.Get("PlayLocalMap", options_->PlayLocalMap);
 }
 
 }  // namespace
@@ -121,7 +126,7 @@ int main(int argc, char* argv[]) {
     if (options.ComputerOpponent) {
         num_agents = 1;
         coordinator.SetParticipants({
-            CreateParticipant(sc2::Race::Random, &bot),
+            CreateParticipant(sc2::Race::Terran, &bot),
             CreateComputer(options.ComputerRace, options.ComputerDifficulty)
             });
     } else {
@@ -129,12 +134,17 @@ int main(int argc, char* argv[]) {
         coordinator.SetParticipants({CreateParticipant(sc2::Race::Terran, &bot)});
     }
 
-    std::cout << "Connecting to port " << options.GamePort << std::endl;
-    coordinator.Connect(options.GamePort);
-    coordinator.SetupPorts(num_agents, options.StartPort, false);
-    coordinator.JoinGame();
-    coordinator.SetTimeoutMS(10000);
-    std::cout << " Successfully joined game" << std::endl;
+    if (options.PlayLocalMap.empty()) {
+        std::cout << "Connecting to port " << options.GamePort << std::endl;
+        coordinator.Connect(options.GamePort);
+        coordinator.SetupPorts(num_agents, options.StartPort, false);
+        coordinator.JoinGame();
+        coordinator.SetTimeoutMS(10000);
+        std::cout << " Successfully joined game" << std::endl;
+    } else {
+        coordinator.LaunchStarcraft();
+        coordinator.StartGame(options.PlayLocalMap);
+    }
 
     while (coordinator.Update()) {
     }
