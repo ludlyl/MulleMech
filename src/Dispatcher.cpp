@@ -81,10 +81,20 @@ void Dispatcher::OnGameStart() {
 }
 
 void Dispatcher::OnGameEnd() {
-    gHistory.info() << "Game over!" <<std::endl;
-
     for (const auto& i : m_plugins)
         i->OnGameEnd();
+
+    gAPI->control().SaveReplay();
+
+    // NOTE: Do not change output without modifying the test script "testing.py"
+    auto results = gAPI->observer().GetResults();
+    if (results.size() == 2 && results[0].result == sc2::Win && results[1].result == sc2::Loss) {
+        gHistory.info() << "Game over! Winning player id: {" << results[0].player_id << "}" << std::endl;
+    } else if (results.size() == 2 && results[0].result == sc2::Loss && results[1].result == sc2::Win) {
+        gHistory.info() << "Game over! Winning player id: {" << results[1].player_id << "}" << std::endl;
+    } else {
+        gHistory.info() << "Game over! No winner!" << std::endl;
+    }
 }
 
 void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {

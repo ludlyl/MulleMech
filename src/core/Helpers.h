@@ -88,7 +88,6 @@ struct IsFoggyResource {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-// I.e. IsFinishedRefinery
 struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -114,6 +113,15 @@ struct IsWorkerWithJob {
 
 private:
     Worker::Job m_job;
+};
+
+struct IsWorkerWithHomeBase {
+    explicit IsWorkerWithHomeBase(const std::shared_ptr<Expansion>& home_base_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    const std::shared_ptr<Expansion>& m_home_base;
 };
 
 struct IsWorkerWithUnstartedConstructionOrderFor {

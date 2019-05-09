@@ -65,7 +65,7 @@ Expansions IntelligenceHolder::GetKnownEnemyExpansions() const {
 
     for (auto& expo : gHub->GetExpansions()) {
         if (expo->alliance == sc2::Unit::Alliance::Enemy)
-            expos.push_back(expo);
+            expos.emplace_back(expo);
     }
 
     // Sort bases by how far they are (walkable distance) from the main, with the assumption
