@@ -9,6 +9,4 @@
 
 struct Diagnosis : Plugin {
     void OnStep(Builder*) final;
-
-    void OnGameEnd() final;
 };

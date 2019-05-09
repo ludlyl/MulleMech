@@ -71,7 +71,10 @@ void Dispatcher::OnGameStart() {
     m_plugins.emplace_back(new CombatCommander());
     m_plugins.emplace_back(new ChatterBox());
     m_plugins.emplace_back(new Scouting());
+
+#ifdef DEBUG
     m_plugins.emplace_back(new Diagnosis());
+#endif
 
     for (const auto& i : m_plugins)
         i->OnGameStart(m_builder.get());
@@ -80,6 +83,8 @@ void Dispatcher::OnGameStart() {
 void Dispatcher::OnGameEnd() {
     for (const auto& i : m_plugins)
         i->OnGameEnd();
+
+    gAPI->control().SaveReplay();
 
     // NOTE: Do not change output without modifying the test script "testing.py"
     auto results = gAPI->observer().GetResults();

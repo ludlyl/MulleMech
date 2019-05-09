@@ -10,6 +10,8 @@
 
 #include <sc2api/sc2_map_info.h>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace API {
 
@@ -122,10 +124,11 @@ Control::Control(sc2::ControlInterface* control_): m_control(control_) {
 }
 
 void Control::SaveReplay() {
-    char time_buf[128] = { 0 };
+    std::stringstream ss;
     auto timestamp = std::time(nullptr);
-    std::strftime(time_buf, 128, "%Y%m%d__%H_%S", std::localtime(&timestamp));
-    std::string replay_name("MulleMech_" + std::string(time_buf) + ".SC2Replay");
+    auto localtime = *std::localtime(&timestamp);
+    ss << "MulleMech_" << std::put_time(&localtime, "%Y%m%d__%H_%S") << ".SC2Replay";
+    auto replay_name = ss.str();
     if (m_control->SaveReplay(replay_name))
         gHistory.info() << "Replay saved to " << replay_name << std::endl;
     else

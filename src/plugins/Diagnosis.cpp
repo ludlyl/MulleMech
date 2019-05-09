@@ -32,7 +32,3 @@ void Diagnosis::OnStep(Builder* builder_) {
 
     gAPI->debug().SendDebug();
 }
-
-void Diagnosis::OnGameEnd() {
-    gAPI->control().SaveReplay();
-}
