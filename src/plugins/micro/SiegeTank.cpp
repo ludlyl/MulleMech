@@ -35,7 +35,8 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
             }
         // Unsiege if there aren't any units we can hit while being sieged
         } else if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
-            if (m_unsiegeCooldown > 0) {
+            // Unsiege cooldown (does not apply if we're melee attacked)
+            if (closest_target_distance > SiegeMinRange && m_unsiegeCooldown > 0) {
                 m_unsiegeCooldown -= 1 / API::StepsPerSecond;
                 return; // May not unsiege yet
             }
