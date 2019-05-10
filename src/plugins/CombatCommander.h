@@ -35,9 +35,8 @@ private:
     void AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources);
 
     sc2::Point3D GetArmyIdlePosition() const;
-    std::vector<sc2::Point2D> GetListOfMapPoints();
+    std::vector<sc2::Point2D> GetListOfAttackPoints();
     void UpdateAttackTarget();
-    bool PointIsReachable(sc2::Point2D point);
 
     // Returns true if it's unsafe to just run to the main squad
     bool ShouldReinforce(const Unit* unit) const;
@@ -51,12 +50,14 @@ private:
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
-    static constexpr float PointDistance = 10.0f;           // Supposed to approximately match units' vision radius
-    static constexpr float SearchEnemyPadding = 25.0f;      // Defend this far from our buildings
-    static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
-    static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
-    static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
-    static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
-    static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
-    static constexpr float DefenseResourcesOveredo = 1.25f; // Spend this much more resources on defense comapred to enemy
+    // Supposed to approximately match units' vision radius
+    // (all workers have a vision radius of 8 and most other units have either the same or higher radius)
+    static constexpr int ApproximateUnitVisionRadius = 8.0f;
+    static constexpr float SearchEnemyPadding = 25.0f;          // Defend this far from our buildings
+    static constexpr int AttackOnSupply = 190;                  // Applicable under PlayStyle::normal
+    static constexpr float IdleDistance = 10.0f;                // Idle this far from a Command Center
+    static constexpr int HarassOnCount = 4;                     // Send harass squad with this many units
+    static constexpr int ReinforceOnCount = 6;                  // Send reinforce squads with this many units
+    static constexpr float ReinforceSquadDist = 50.0f;          // Use ReinforceSquad if main squad is this far away
+    static constexpr float DefenseResourcesOveredo = 1.25f;     // Spend this much more resources on defense compared to enemy
 };

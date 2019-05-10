@@ -6,19 +6,22 @@
 #include "IntelligenceHolder.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Timer.h"
+
 #include <sc2api/sc2_common.h>
+
 #include <algorithm>
 
 CombatCommander::CombatCommander() :
     m_mainSquad(std::make_shared<OffenseSquad>()),
     m_mainAttackTarget(gAPI->observer().GameInfo().enemy_start_locations.front()),
+    m_playStyle(PlayStyle::normal),
     m_changedPlayStyle(true)
 {
 
 }
 
 void CombatCommander::OnStep(Builder*){
-
     for (auto& squad : m_defenseSquads)
         squad.OnStep();
     
@@ -42,12 +45,12 @@ void CombatCommander::OnStep(Builder*){
         }
     }
 
-    if(m_mainSquad->IsTaskFinished()){
+    if (!m_mainSquad->GetUnits().empty() && m_mainSquad->IsTaskFinished()) {
         UpdateAttackTarget();
     }
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
-    if(newPlayStyle != m_playStyle){
+    if (newPlayStyle != m_playStyle) {
         m_changedPlayStyle = true;
         m_playStyle = newPlayStyle;
     }
@@ -118,45 +121,54 @@ void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
 }
 
-void CombatCommander::UpdateAttackTarget(){
+void CombatCommander::UpdateAttackTarget() {
     Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
-    if(!expos.empty()){
-        m_mainAttackTarget = expos.front()->town_hall_location;
-    }else{
-        if(m_attackTargets.empty()){
-            m_attackTargets = GetListOfMapPoints();
-        } else {
-            m_attackTargets.pop_back(); 
+    if (false && !expos.empty()) {
+        m_mainAttackTarget = expos.back()->town_hall_location;
+    } else {
+        if (m_attackTargets.empty()) {
+            m_attackTargets = GetListOfAttackPoints();
         }
-        m_mainAttackTarget = m_attackTargets.back();
+        if (!m_attackTargets.empty()) {
+            m_mainAttackTarget = m_attackTargets.back();
+            m_attackTargets.pop_back();
+        }
     }
 }
 
-std::vector<sc2::Point2D> CombatCommander::GetListOfMapPoints(){
-    std::vector<sc2::Point2D> points;
-    float mapHeightLimit = gAPI->observer().GameInfo().height - PointDistance;
-    float mapWidthLimit = gAPI->observer().GameInfo().width - PointDistance;
-    float x = PointDistance, y = PointDistance;
-    while(x < mapWidthLimit){
-        while(y < mapHeightLimit){
-            sc2::Point2D point = sc2::Point2D(x,y);
-            if(PointIsReachable(point)){
-                points.push_back(point);
-            }
-            y += PointDistance;
+std::vector<sc2::Point2D> CombatCommander::GetListOfAttackPoints() {
+    // Get a ground unit in the main squad
+    // TODO: Support if we only have air units (just using an air unit here is not enough)
+    Unit* ground_unit = nullptr;
+    for (auto& unit : m_mainSquad->GetUnits()) {
+        if (!unit->is_flying) {
+            ground_unit = unit;
         }
-        x += PointDistance;
     }
+    if (!ground_unit) {
+        return {};
+    }
+
+    Timer clock;
+    clock.Start();
+
+    std::vector<sc2::Point2D> points;
+    sc2::Point2D point;
+    int mapHeightLimit = gAPI->observer().GameInfo().height - ApproximateUnitVisionRadius;
+    int mapWidthLimit = gAPI->observer().GameInfo().width - ApproximateUnitVisionRadius;
+    for (int x = ApproximateUnitVisionRadius; x < mapWidthLimit; x+= ApproximateUnitVisionRadius) {
+        for (int y = ApproximateUnitVisionRadius; y < mapHeightLimit; y+= ApproximateUnitVisionRadius) {
+             point.x = x;
+             point.y = y;
+             points.push_back(point);
+        }
+    }
+    RemovePointsUnreachableByUnit(ground_unit, points);
+
+    auto duration = clock.Finish();
+    gHistory.info(LogChannel::combat) << "Calculate list of map (attack) points took: " << duration << " ms" << std::endl;
 
     return points;
-}
-
-bool CombatCommander::PointIsReachable(sc2::Point2D point){
-    sc2::Point3D point3D = gAPI->observer().StartingLocation();
-    float x = point3D.x, y = point3D.y;
-    sc2::Point2D point2D = sc2::Point2D(x, y);
-    return (gOverseerMap->getTile(point)->getTileTerrain() == Overseer::path
-            && gAPI->query().PathingDistance(point, point2D) != 0.0f);
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
