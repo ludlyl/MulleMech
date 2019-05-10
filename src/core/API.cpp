@@ -5,9 +5,13 @@
 #include "API.h"
 #include "Converter.h"
 #include "Helpers.h"
+#include "Historican.h"
 #include "plugins/micro/MicroPlugin.h"
 
 #include <sc2api/sc2_map_info.h>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 namespace API {
 
@@ -120,7 +124,15 @@ Control::Control(sc2::ControlInterface* control_): m_control(control_) {
 }
 
 void Control::SaveReplay() {
-    m_control->SaveReplay("LastReplay.SC2Replay");
+    std::stringstream ss;
+    auto timestamp = std::time(nullptr);
+    auto localtime = *std::localtime(&timestamp);
+    ss << "MulleMech_" << std::put_time(&localtime, "%Y%m%d__%H_%S") << ".SC2Replay";
+    auto replay_name = ss.str();
+    if (m_control->SaveReplay(replay_name))
+        gHistory.info() << "Replay saved to " << replay_name << std::endl;
+    else
+        gHistory.info() << "Failed saving replay!" << std::endl;
 }
 
 Debug::Debug(sc2::DebugInterface* debug_): m_debug(debug_) {
@@ -187,13 +199,22 @@ Units Observer::GetUnits(const sc2::Filter& filter_,
     return Units(m_observer->GetUnits(alliance_, filter_));
 }
 
-size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished) const {
+size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished, bool count_tech_alias) const {
+    // TODO: Add some nice solutions for buildings that are the same but differ in ID depending on state
+    //       such as flying, burrowed, morphed, etc
     // As the API thinks of depots and lowered depots as different buildings, we handle this as a special case
     // (by actually counting how many supply depots you have when the type_ is TERRAN_SUPPLYDEPOT)
     if (type_ == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
         return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, with_not_finished)).size() +
                 m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
     }
+    // Same with Orbital Command, Planetary Fortress and Command Center
+    if (count_tech_alias && type_ == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
+        return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, with_not_finished)).size() +
+            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, with_not_finished)).size() +
+            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, with_not_finished)).size();
+    }
+
     return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
 }
 
@@ -399,6 +420,10 @@ float Observer::TerrainHeight(const sc2::Point2D& pos_) const
 
 sc2::Visibility Observer::GetVisibility(const sc2::Point2D& pos_) const {
     return m_observer->GetVisibility(pos_);
+}
+
+const std::vector<sc2::PlayerResult>& Observer::GetResults() const {
+    return m_observer->GetResults();
 }
 
 Query::Query(sc2::QueryInterface* query_): m_query(query_) {

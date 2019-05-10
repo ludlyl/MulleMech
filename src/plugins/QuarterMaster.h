@@ -13,4 +13,7 @@ struct QuarterMaster : Plugin {
 private:
     float CalcEstimatedDemand(Builder* builder_);
     float CalcEstimatedSupply(Builder* builder_);
+
+    // How many times we will count the currently produced unit(s) to expected supply demand
+    static constexpr float ProductionSupplyDemandMultiplier = 2.f;
 };
