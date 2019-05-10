@@ -63,10 +63,6 @@ struct Hub {
     sc2::UNIT_TYPEID m_current_worker_type;
 
     uint32_t m_lastStepScan;
-
-    // This is a very arbitrary number used for checking if an scv is currently constructing a specific refinery
-    // (by taking the refinery's position + its radius + this value and seeing if the scv is inside that distance)
-    static constexpr float RefineryConstructionToScvExtraDistance = 0.25f;
 };
 
 extern std::unique_ptr<Hub> gHub;

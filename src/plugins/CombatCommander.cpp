@@ -3,14 +3,18 @@
 #include "BuildingPlacer.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "IntelligenceHolder.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Timer.h"
+
 #include <sc2api/sc2_common.h>
+
 #include <algorithm>
 
 CombatCommander::CombatCommander() :
     m_mainSquad(std::make_shared<OffenseSquad>()),
-    m_mainAttackTarget(gAPI->observer().GameInfo().enemy_start_locations.front()),
+    m_playStyle(PlayStyle::normal),
     m_changedPlayStyle(true)
 {
 
@@ -41,7 +45,7 @@ void CombatCommander::OnStep(Builder*){
     }
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
-    if(newPlayStyle != m_playStyle){
+    if (newPlayStyle != m_playStyle) {
         m_changedPlayStyle = true;
         m_playStyle = newPlayStyle;
     }
@@ -71,8 +75,10 @@ void CombatCommander::OnStep(Builder*){
 }
 
 void CombatCommander::PlayNormal(){
-    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply)
+    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply) {
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
+    }
 }
 
 void CombatCommander::PlayAllIn(){
@@ -83,6 +89,7 @@ void CombatCommander::PlayAllIn(){
         m_defenseSquads.clear();
         if (!m_harassSquad.IsSent())
             m_mainSquad->Absorb(m_harassSquad);
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
     }
 }
@@ -110,6 +117,56 @@ void CombatCommander::PlayGreedy(){ // TODO
 
 void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
+}
+
+void CombatCommander::UpdateMainAttackTarget() {
+    Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
+    if (!expos.empty()) {
+        m_mainAttackTarget = expos.back()->town_hall_location;
+    } else {
+        if (m_attackTargets.empty()) {
+            m_attackTargets = GetListOfAttackPoints();
+        }
+        if (!m_attackTargets.empty()) {
+            m_mainAttackTarget = m_attackTargets.back();
+            m_attackTargets.pop_back();
+        }
+    }
+}
+
+std::vector<sc2::Point2D> CombatCommander::GetListOfAttackPoints() {
+    // Get a ground unit in the main squad
+    // TODO: Support if we only have air units (just using an air unit here is not enough)
+    Unit* ground_unit = nullptr;
+    for (auto& unit : m_mainSquad->GetUnits()) {
+        if (!unit->is_flying) {
+            ground_unit = unit;
+        }
+    }
+    if (!ground_unit) {
+        return {};
+    }
+
+    Timer clock;
+    clock.Start();
+
+    std::vector<sc2::Point2D> points;
+    sc2::Point2D point;
+    int mapHeightLimit = gAPI->observer().GameInfo().height - ApproximateUnitVisionRadius;
+    int mapWidthLimit = gAPI->observer().GameInfo().width - ApproximateUnitVisionRadius;
+    for (int x = ApproximateUnitVisionRadius; x < mapWidthLimit; x+= ApproximateUnitVisionRadius) {
+        for (int y = ApproximateUnitVisionRadius; y < mapHeightLimit; y+= ApproximateUnitVisionRadius) {
+             point.x = x;
+             point.y = y;
+             points.push_back(point);
+        }
+    }
+    RemovePointsUnreachableByUnit(ground_unit, points);
+
+    auto duration = clock.Finish();
+    gHistory.info(LogChannel::combat) << "Calculate list of map (attack) points took: " << duration << " ms" << std::endl;
+
+    return points;
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {

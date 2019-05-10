@@ -271,4 +271,58 @@ Expansions CalculateExpansionLocations() {
     return expansions;
 }
 
+bool IsPointReachable(const Unit* unit_, const sc2::Point2D& point) {
+    if (!gOverseerMap->valid(point)) {
+        return false;
+    }
+
+    const auto& tile = gOverseerMap->getTile(point);
+    if (tile->getTileTerrain() == Overseer::TileTerrain::buildAndPath ||
+        tile->getTileTerrain() == Overseer::TileTerrain::path ||
+        (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::build) ||
+        (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::flyOnly)) {
+        float distance = gAPI->query().PathingDistance(unit_, point);
+        if (distance != 0.0f) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void RemovePointsUnreachableByUnit(const Unit* unit_, std::vector<sc2::Point2D>& points_) {
+    std::vector<sc2::QueryInterface::PathingQuery> queries;
+
+    for (auto itr = points_.begin(); itr != points_.end();) {
+        if (!gOverseerMap->valid(*itr)) {
+            itr = points_.erase(itr);
+            continue;
+        }
+
+        const auto& tile = gOverseerMap->getTile(*itr);
+        if (tile->getTileTerrain() == Overseer::TileTerrain::buildAndPath ||
+            tile->getTileTerrain() == Overseer::TileTerrain::path ||
+            (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::build) ||
+            (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::flyOnly)) {
+            sc2::QueryInterface::PathingQuery query;
+            query.start_unit_tag_ = unit_->tag;
+            query.end_ = *itr;
+            queries.emplace_back(query);
+            itr++;
+        } else {
+            itr = points_.erase(itr);
+        }
+    }
+
+    const auto& result = gAPI->query().PathingDistances(queries);
+    size_t i = 0;
+    for (auto itr = points_.begin(); itr != points_.end(); i++) {
+        if (result.at(i) == 0) {
+            itr = points_.erase(itr);
+        } else {
+            itr++;
+        }
+    }
+}
+
 std::unique_ptr<Overseer::MapImpl> gOverseerMap;

@@ -41,5 +41,8 @@ typedef std::vector<std::shared_ptr<Expansion>> Expansions;
 // Better version than the built in
 Expansions CalculateExpansionLocations();
 
+bool IsPointReachable(const Unit* unit_, const sc2::Point2D& point);
+void RemovePointsUnreachableByUnit(const Unit* unit_, std::vector<sc2::Point2D>& points_);
+
 extern std::unique_ptr<Overseer::MapImpl> gOverseerMap;
 

@@ -9,6 +9,8 @@
 // Things we have learned about our opponent
 class IntelligenceHolder {
 public:
+    void OnGameStart();
+
     void OnUnitEnterVision(Unit* unit_);
 
     void OnUnitDestroyed(Unit* unit_);
@@ -26,6 +28,9 @@ public:
 
     int GetKnownEnemyExpansionCount() const;
 
+    // By ground distance
+    std::shared_ptr<Expansion> GetEnemyBaseFurthestFrom(const std::shared_ptr<Expansion>& expansion_);
+
     void MarkEnemyExpansion(Unit* unit_);
 
     // Get all enemy units that we currently have intel on (dead units are cleared in the Update function)
@@ -36,6 +41,7 @@ public:
 
 private:
     std::shared_ptr<Expansion> m_enemy_main_base = nullptr;
+    bool m_enemy_main_base_destroyed = false; // Needed to not "recalculate" which would be the enemies main if it has been destroyed
     Units m_enemyUnits;
 };
 

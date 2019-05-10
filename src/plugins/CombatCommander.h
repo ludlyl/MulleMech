@@ -36,6 +36,8 @@ private:
         int needed_remaining_resources, int our_value, int their_value);
 
     sc2::Point3D GetArmyIdlePosition() const;
+    std::vector<sc2::Point2D> GetListOfAttackPoints();
+    void UpdateMainAttackTarget();
 
     // Returns true if it's unsafe to just run to the main squad
     bool ShouldReinforce(const Unit* unit) const;
@@ -45,16 +47,20 @@ private:
     std::shared_ptr<OffenseSquad> m_mainSquad;              // Shared with reinforce squads
     HarassSquad m_harassSquad;
     sc2::Point2D m_mainAttackTarget;
+    std::vector<sc2::Point2D> m_attackTargets;
     PlayStyle m_playStyle;
     bool m_changedPlayStyle;
 
-    static constexpr float SearchEnemyPadding = 25.0f;      // Defend this far from our buildings
-    static constexpr int AttackOnSupply = 190;              // Applicable under PlayStyle::normal
-    static constexpr float IdleDistance = 10.0f;            // Idle this far from a Command Center
-    static constexpr int HarassOnCount = 4;                 // Send harass squad with this many units
-    static constexpr int ReinforceOnCount = 6;              // Send reinforce squads with this many units
-    static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
-    static constexpr float DefenseResourcesOveredo = 1.25f; // Spend this much more resources on defense comapred to enemy
-    static constexpr float DefendWithAllValueRatio = 0.25f; // If enemy value to our value ratio is this or above => involve entire mainsquad
-    static constexpr float DefendWithSCVValueRatio = 1.5f;  // Our value times this value must be less than enemy value to pull SCVs
+    // Supposed to approximately match units' vision radius
+    // (all workers have a vision radius of 8 and most other units have either the same or higher radius)
+    static constexpr int ApproximateUnitVisionRadius = 8;
+    static constexpr float SearchEnemyPadding = 25.0f;          // Defend this far from our buildings
+    static constexpr int AttackOnSupply = 190;                  // Applicable under PlayStyle::normal
+    static constexpr float IdleDistance = 10.0f;                // Idle this far from a Command Center
+    static constexpr int HarassOnCount = 4;                     // Send harass squad with this many units
+    static constexpr int ReinforceOnCount = 6;                  // Send reinforce squads with this many units
+    static constexpr float ReinforceSquadDist = 50.0f;          // Use ReinforceSquad if main squad is this far away
+    static constexpr float DefenseResourcesOveredo = 1.25f;     // Spend this much more resources on defense compared to enemy
+    static constexpr float DefendWithAllValueRatio = 0.25f;     // If enemy value to our value ratio is this or above => involve entire mainsquad
+    static constexpr float DefendWithSCVValueRatio = 1.5f;      // Our value times this value must be less than enemy value to pull SCVs
 };
