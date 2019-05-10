@@ -162,13 +162,11 @@ void CombatCommander::DefenseCheck() {
     }
 
     auto enemyGroups = GroupEnemiesInBase();
-    std::size_t enemyCount = 0;
     if (enemyGroups.empty())
         return;
 
     for (auto& group : enemyGroups) {
         bool dealtWith = false;
-        enemyCount += group.size();
 
         // Update enemy list if we have a squad dealing with them already
         for (auto& squad : m_defenseSquads) {
