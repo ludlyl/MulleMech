@@ -189,6 +189,22 @@ void CombatCommander::DefenseCheck() {
         auto defenders = GenerateDefenseFor(std::move(defSquad.GetUnits()), defSquad.GetEnemies());
         defSquad.SetUnits(std::move(defenders));
     }
+
+    // Move mainsquad to fighting as well if it's just idling
+    if (!m_mainSquad->GetUnits().empty() && m_mainSquad->IsTaskFinished()) {
+        float ourValue = 0;
+        float theirValue = 0;
+        for (auto& group : enemyGroups) {
+            for (auto& enemy : group)
+                theirValue += enemy->GetValue();
+        }
+        for (auto& unit : gAPI->observer().GetUnits(IsCombatUnit(), sc2::Unit::Alliance::Self))
+            ourValue += unit->GetValue();
+
+        if (ourValue != 0 && theirValue / ourValue >= DefendWithAllValueRatio) {
+            m_mainSquad->TakeOver(enemyGroups[0].CalculateCircle().first);
+        }
+    }
 }
 
 void CombatCommander::OnUnitCreated(Unit* unit_){
