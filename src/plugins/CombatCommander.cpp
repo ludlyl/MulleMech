@@ -123,7 +123,7 @@ void CombatCommander::PlayScout(){ // TODO
 
 void CombatCommander::UpdateAttackTarget() {
     Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
-    if (false && !expos.empty()) {
+    if (!expos.empty()) {
         m_mainAttackTarget = expos.back()->town_hall_location;
     } else {
         if (m_attackTargets.empty()) {
