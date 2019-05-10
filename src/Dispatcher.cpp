@@ -64,6 +64,8 @@ void Dispatcher::OnGameStart() {
     gHistory.info() << "Map calculations took: " << duration << " ms" << std::endl;
     gHistory.info() << "Tiles in start region: " << gOverseerMap->getNearestRegion(gAPI->observer().StartingLocation())->getTilePositions().size() << std::endl;
 
+    gIntelligenceHolder->OnGameStart();
+
     m_plugins.emplace_back(new Governor());
     m_plugins.emplace_back(new Miner());
     m_plugins.emplace_back(new QuarterMaster());
