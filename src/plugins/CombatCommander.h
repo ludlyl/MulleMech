@@ -36,7 +36,7 @@ private:
 
     sc2::Point3D GetArmyIdlePosition() const;
     std::vector<sc2::Point2D> GetListOfAttackPoints();
-    void UpdateAttackTarget();
+    void UpdateMainAttackTarget();
 
     // Returns true if it's unsafe to just run to the main squad
     bool ShouldReinforce(const Unit* unit) const;
@@ -52,7 +52,7 @@ private:
 
     // Supposed to approximately match units' vision radius
     // (all workers have a vision radius of 8 and most other units have either the same or higher radius)
-    static constexpr int ApproximateUnitVisionRadius = 8.0f;
+    static constexpr int ApproximateUnitVisionRadius = 8;
     static constexpr float SearchEnemyPadding = 25.0f;          // Defend this far from our buildings
     static constexpr int AttackOnSupply = 190;                  // Applicable under PlayStyle::normal
     static constexpr float IdleDistance = 10.0f;                // Idle this far from a Command Center

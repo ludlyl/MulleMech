@@ -14,7 +14,6 @@
 
 CombatCommander::CombatCommander() :
     m_mainSquad(std::make_shared<OffenseSquad>()),
-    m_mainAttackTarget(gAPI->observer().GameInfo().enemy_start_locations.front()),
     m_playStyle(PlayStyle::normal),
     m_changedPlayStyle(true)
 {
@@ -43,10 +42,6 @@ void CombatCommander::OnStep(Builder*){
                 itr->Send();
             ++itr;
         }
-    }
-
-    if (m_mainSquad->Size() > 0 && m_mainSquad->IsTaskFinished()) {
-        UpdateAttackTarget();
     }
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
@@ -80,8 +75,10 @@ void CombatCommander::OnStep(Builder*){
 }
 
 void CombatCommander::PlayNormal(){
-    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply)
+    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply) {
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
+    }
 }
 
 void CombatCommander::PlayAllIn(){
@@ -92,6 +89,7 @@ void CombatCommander::PlayAllIn(){
         m_defenseSquads.clear();
         if (!m_harassSquad.IsSent())
             m_mainSquad->Absorb(m_harassSquad);
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
     }
 }
@@ -121,7 +119,7 @@ void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
 }
 
-void CombatCommander::UpdateAttackTarget() {
+void CombatCommander::UpdateMainAttackTarget() {
     Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
     if (!expos.empty()) {
         m_mainAttackTarget = expos.back()->town_hall_location;
