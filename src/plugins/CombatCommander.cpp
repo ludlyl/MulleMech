@@ -45,7 +45,7 @@ void CombatCommander::OnStep(Builder*){
         }
     }
 
-    if (!m_mainSquad->GetUnits().empty() && m_mainSquad->IsTaskFinished()) {
+    if (m_mainSquad->Size() > 0 && m_mainSquad->IsTaskFinished()) {
         UpdateAttackTarget();
     }
 
