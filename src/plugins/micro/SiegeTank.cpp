@@ -6,6 +6,8 @@
 SiegeTank::SiegeTank(Unit* unit)
         : MicroPlugin(unit)
 {
+    m_currentMaxRange = SiegeMaxRange + sc2::GetRandomScalar() * RangeRNG;
+    m_unsiegeCooldown = 0;
 }
 
 void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
@@ -20,9 +22,12 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
         auto closest_target = ground_enemies.GetClosestUnit(m_self->pos);
         float closest_target_distance = Distance2D(m_self->pos, closest_target->pos);
         // Siege if within siege range and not on top of unit
-        if (closest_target_distance <= siegeMaxRange && closest_target_distance > siegeMinRange + 1) {
+        if (closest_target_distance <= m_currentMaxRange && closest_target_distance > SiegeMinRange + 1) {
             if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANK) {
                 Cast(sc2::ABILITY_ID::MORPH_SIEGEMODE);
+                m_unsiegeCooldown = SiegeLockdownMin + (SiegeLockdownMax - SiegeLockdownMin) * sc2::GetRandomFraction();
+                float new_max = SiegeMaxRange + sc2::GetRandomScalar() * RangeRNG;
+                m_currentMaxRange = std::max(m_currentMaxRange, new_max);
             } else { // In siege mode
                 // Request Scan if we cannot see our target
                 if (closest_target->display_type == sc2::Unit::Snapshot || !closest_target->IsInVision)
@@ -30,18 +35,27 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
             }
         // Unsiege if there aren't any units we can hit while being sieged
         } else if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
+            // Unsiege cooldown (does not apply if we're melee attacked)
+            if (closest_target_distance > SiegeMinRange && m_unsiegeCooldown > 0) {
+                m_unsiegeCooldown -= 1 / API::StepsPerSecond;
+                return; // May not unsiege yet
+            }
+
             bool enemy_in_sieged_shooting_range = false;
             float distance_to_enemy;
             for (const auto& enemy : ground_enemies) {
                 distance_to_enemy = Distance2D(m_self->pos, enemy->pos);
-                if (distance_to_enemy >= siegeMinRange && distance_to_enemy <= siegeMaxRange) {
+                if (distance_to_enemy >= SiegeMinRange && distance_to_enemy <= m_currentMaxRange) {
                     enemy_in_sieged_shooting_range = true;
                     break;
                 }
             }
 
-            if (!enemy_in_sieged_shooting_range)
+            if (!enemy_in_sieged_shooting_range) {
                 Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
+                m_currentMaxRange -= RangeReduction;
+                m_currentMaxRange = std::min(m_currentMaxRange, SiegeMaxRange);
+            }
         } else {
             AttackMove();
         }
