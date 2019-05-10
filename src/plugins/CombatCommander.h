@@ -32,7 +32,8 @@ private:
     // enemies:   group of enemies to defend against
     Units GenerateDefenseFor(Units defenders, const Units& enemies);
 
-    void AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources);
+    void AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources,
+        int needed_remaining_resources, int our_value, int their_value);
 
     sc2::Point3D GetArmyIdlePosition() const;
 
@@ -55,4 +56,5 @@ private:
     static constexpr float ReinforceSquadDist = 50.0f;      // Use ReinforceSquad if main squad is this far away
     static constexpr float DefenseResourcesOveredo = 1.25f; // Spend this much more resources on defense comapred to enemy
     static constexpr float DefendWithAllValueRatio = 0.25f; // If enemy value to our value ratio is this or above => involve entire mainsquad
+    static constexpr float DefendWithSCVValueRatio = 1.5f;  // Our value times this value must be less than enemy value to pull SCVs
 };
