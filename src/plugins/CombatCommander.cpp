@@ -252,8 +252,11 @@ void CombatCommander::DefenseCheck() {
         float ourValue = 0;
         float theirValue = 0;
         for (auto& group : enemyGroups) {
-            for (auto& enemy : group)
-                theirValue += enemy->GetValue();
+            for (auto& enemy : group) {
+                if (IsCombatUnit()(*enemy)) {
+                    theirValue += enemy->GetValue();
+                }
+            }
         }
         for (auto& unit : gAPI->observer().GetUnits(IsCombatUnit(), sc2::Unit::Alliance::Self))
             ourValue += unit->GetValue();
@@ -319,6 +322,10 @@ Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies)
     int our_value = 0;
     int their_value = 0;
 
+    // TODO: We take into account non combat units here too, that can lead to some pretty bad scenarios
+    //  (we build a refinery near the enemy and all of a sudden pull our scv:s as we count in his
+    //  overlords and buildings in the enemy unit value). Other the other hand we should kill
+    //  non combat units close to our base to so just checking IsCombatUnit is not enough of a solution
     // Total resources we need for defense
     for (auto& enemy : enemies) {
         auto value = enemy->GetValue();
