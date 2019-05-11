@@ -65,7 +65,7 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
 }
 
 void SiegeTank::OnCombatEnded() {
-    if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_SIEGETANKSIEGED) {
-        Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
-    }
+    // As the tank might be in the process of sieging,
+    // just checking type = TERRAN_SIEGETANKSIEGED before calling this doesn't work
+    Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
 }
