@@ -163,7 +163,7 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
                 needToWait = true;
                 break;
             case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
-                gAPI->action().Cast(unit, sc2::ABILITY_ID::BURROWUP_WIDOWMINE);
+                gAPI->action().Cast(unit, sc2::ABILITY_ID::BURROWUP);
                 needToWait = true;
                 break;
             default:

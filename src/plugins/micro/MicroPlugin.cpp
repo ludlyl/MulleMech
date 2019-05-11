@@ -86,7 +86,10 @@ void MicroPlugin::AttackMove() {
 
 void MicroPlugin::AttackMove(const sc2::Point2D& pos) {
     if (m_self && !IsAttackMoving(pos)) {
-        gAPI->action().Attack(m_self, pos);
+        if (!CanCast(sc2::ABILITY_ID::ATTACK_ATTACK))
+            gAPI->action().Cast(m_self, sc2::ABILITY_ID::ATTACK, pos); // called Scan Attack in-game
+        else
+            gAPI->action().Attack(m_self, pos);
         m_target = nullptr;
         m_moving = false;
     }
