@@ -28,6 +28,7 @@ struct IsUnit {
     float m_build_progress;
 };
 
+// Includes "combat buildings" (cannon, turrets etc.)
 struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };

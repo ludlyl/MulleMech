@@ -49,6 +49,8 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER:
        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
+       case sc2::UNIT_TYPEID::TERRAN_BUNKER:
+       case sc2::UNIT_TYPEID::TERRAN_MISSILETURRET:
 
        case sc2::UNIT_TYPEID::ZERG_BANELING:
        case sc2::UNIT_TYPEID::ZERG_BANELINGBURROWED:
@@ -72,6 +74,10 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::ZERG_BROODLING:
        case sc2::UNIT_TYPEID::ZERG_LOCUSTMP:
        case sc2::UNIT_TYPEID::ZERG_LOCUSTMPFLYING:
+       case sc2::UNIT_TYPEID::ZERG_SPORECRAWLER:
+       case sc2::UNIT_TYPEID::ZERG_SPORECRAWLERUPROOTED:
+       case sc2::UNIT_TYPEID::ZERG_SPINECRAWLER:
+       case sc2::UNIT_TYPEID::ZERG_SPINECRAWLERUPROOTED:
 
        case sc2::UNIT_TYPEID::PROTOSS_ADEPT:
        case sc2::UNIT_TYPEID::PROTOSS_ADEPTPHASESHIFT:
@@ -91,6 +97,7 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::PROTOSS_TEMPEST:
        case sc2::UNIT_TYPEID::PROTOSS_VOIDRAY:
        case sc2::UNIT_TYPEID::PROTOSS_ZEALOT:
+       case sc2::UNIT_TYPEID::PROTOSS_PHOTONCANNON:
             return true;
 
        default:
@@ -144,15 +151,8 @@ bool IsBuilding::operator()(const sc2::Unit& unit_) const {
 }
 
 bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
-    // NOTE: All units except overlord, larva & eggs require food,
-    // thus we can use that to assume what is a building and what's not
     auto data = gAPI->observer().GetUnitTypeData(type_);
-    return data.food_required == 0 && !IsTemporaryUnit()(type_) &&
-           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORD &&
-           type_ != sc2::UNIT_TYPEID::ZERG_OVERSEER &&
-           type_ != sc2::UNIT_TYPEID::ZERG_OVERLORDTRANSPORT &&
-           type_ != sc2::UNIT_TYPEID::ZERG_LARVA &&
-           type_ != sc2::UNIT_TYPEID::ZERG_EGG;
+    return std::find(data.attributes.begin(), data.attributes.end(), sc2::Attribute::Structure) != data.attributes.end();
 }
 
 bool IsBuildingWithSupportForAddon::operator()(const sc2::Unit& unit_) const {
