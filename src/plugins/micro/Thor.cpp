@@ -43,13 +43,14 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
             // (or might even have a negative effect if we keep switching back and forth to often)
             // As it seems possible to switch mode even if we are currently in the process
             // of switching mode it might be good to call this outside of if if check
-            SwitchAntiAirWeaponIfNeeded(enemies);
-            AttackMove();
+            if (!SwitchAntiAirWeaponIfNeeded(enemies)) {
+                AttackMove();
+            }
         }
     }
 }
 
-void Thor::SwitchAntiAirWeaponIfNeeded(const Units& enemies) {
+bool Thor::SwitchAntiAirWeaponIfNeeded(const Units& enemies) {
     // An improvement here would be to have different limits for different kinds of units
     // (e.g. if there are 30 vikings we probably want to use explosive mode)
     // Might also want to consider how close the units are to each other
@@ -71,10 +72,13 @@ void Thor::SwitchAntiAirWeaponIfNeeded(const Units& enemies) {
     if (light_flying_units_in_proximity.size() >= ExplosiveModeActivationThreshold) {
         if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_THORAP) {
             Cast(sc2::ABILITY_ID::MORPH_THOREXPLOSIVEMODE);
+            return true;
         }
     } else if (light_flying_units_in_proximity.size() <= ExplosiveModeActivationThreshold) {
         if (m_self->unit_type == sc2::UNIT_TYPEID::TERRAN_THOR) {
             Cast(sc2::ABILITY_ID::MORPH_THORHIGHIMPACTMODE);
+            return true;
         }
     }
+    return false;
 }

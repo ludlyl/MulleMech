@@ -9,7 +9,8 @@ public:
     void OnCombatStep(const Units& enemies, const Units& allies) override;
 
 private:
-    void SwitchAntiAirWeaponIfNeeded(const Units& enemies);
+    // Returns true if the mood was switched
+    bool SwitchAntiAirWeaponIfNeeded(const Units& enemies);
 
     // How many light flying units that have to be in proximity for explosive anti air mode to be activated
     // (there are more requirements for modes to be switched too)
