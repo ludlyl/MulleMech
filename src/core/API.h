@@ -133,7 +133,7 @@ struct Observer {
     //returns Vespene/min
     float GetVespeneIncomeRate() const;
 
-    sc2::UnitTypeData GetUnitTypeData(sc2::UNIT_TYPEID id_) const;
+    sc2::UnitTypeData* GetUnitTypeData(sc2::UNIT_TYPEID id_) const;
 
     sc2::UpgradeData GetUpgradeData(sc2::UPGRADE_ID id_) const;
 

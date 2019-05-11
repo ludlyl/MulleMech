@@ -14,8 +14,8 @@ void Thor::OnCombatStep(const Units& enemies, const Units& allies) {
         Units massive_targets_in_range; // Or rather: Massive targets and immortals
         for (auto& enemy : enemies) {
             const auto& enemy_type_data = enemy->GetTypeData();
-            if ((std::find(enemy_type_data.attributes.begin(), enemy_type_data.attributes.end(), sc2::Attribute::Massive) !=
-                 enemy_type_data.attributes.end() || enemy->unit_type == sc2::UNIT_TYPEID::PROTOSS_IMMORTAL)) {
+            if ((std::find(enemy_type_data->attributes.begin(), enemy_type_data->attributes.end(), sc2::Attribute::Massive) !=
+                 enemy_type_data->attributes.end() || enemy->unit_type == sc2::UNIT_TYPEID::PROTOSS_IMMORTAL)) {
                 if ((enemy->is_flying && sc2::Distance2D(m_self->pos, enemy->pos) <= HighImpactPayloadRange) ||
                     (!enemy->is_flying && sc2::Distance2D(m_self->pos, enemy->pos) <= GroundAttackRange)) {
                     massive_targets_in_range.push_back(enemy);
@@ -62,8 +62,8 @@ bool Thor::SwitchAntiAirWeaponIfNeeded(const Units& enemies) {
     for (auto& enemy : enemies) {
         const auto& enemy_type_data = enemy->GetTypeData();
         if (!IsTemporaryUnit()(*enemy) && enemy->is_flying &&
-            std::find(enemy_type_data.attributes.begin(), enemy_type_data.attributes.end(), sc2::Attribute::Light) !=
-            enemy_type_data.attributes.end() && sc2::Distance2D(m_self->pos, enemy->pos) <= LightFlyingProximityRange) {
+            std::find(enemy_type_data->attributes.begin(), enemy_type_data->attributes.end(), sc2::Attribute::Light) !=
+            enemy_type_data->attributes.end() && sc2::Distance2D(m_self->pos, enemy->pos) <= LightFlyingProximityRange) {
             light_flying_units_in_proximity.push_back(enemy);
         }
     }

@@ -141,12 +141,12 @@ void Builder::OnUnitDestroyed(Unit* unit_) {
 }
 
 void Builder::ScheduleNonsequentialConstruction(sc2::UNIT_TYPEID id_, Unit *assignee_) {
-    Order order(gAPI->observer().GetUnitTypeData(id_), assignee_);
+    Order order(*gAPI->observer().GetUnitTypeData(id_), assignee_);
     m_nonsequential_construction_orders.push_back(std::move(order));
 }
 
 void Builder::ScheduleSequentialConstruction(sc2::UNIT_TYPEID id_, bool urgent, Unit *assignee_) {
-    Order order(gAPI->observer().GetUnitTypeData(id_), assignee_);
+    Order order(*gAPI->observer().GetUnitTypeData(id_), assignee_);
 
     if (urgent) {
         m_sequential_construction_orders.emplace_front(order);
@@ -192,9 +192,9 @@ void Builder::ScheduleTraining(sc2::UNIT_TYPEID id_, bool urgent, Unit* assignee
         auto itr = m_training_orders.begin();
         while (itr != m_training_orders.end() && itr->unit_type_id == sc2::UNIT_TYPEID::TERRAN_SCV)
             ++itr;
-        m_training_orders.emplace(itr, data, assignee_);
+        m_training_orders.emplace(itr, *data, assignee_);
     } else {
-        m_training_orders.emplace_back(data, assignee_);
+        m_training_orders.emplace_back(*data, assignee_);
     }
 }
 

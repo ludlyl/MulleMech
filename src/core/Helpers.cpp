@@ -131,7 +131,7 @@ bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
 
 bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
     auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
-    for (const auto& weapon : data.weapons) {
+    for (const auto& weapon : data->weapons) {
         if (weapon.type == sc2::Weapon::TargetType::Air || weapon.type == sc2::Weapon::TargetType::Any) {
             return true;
         }
@@ -152,7 +152,7 @@ bool IsBuilding::operator()(const sc2::Unit& unit_) const {
 
 bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     auto data = gAPI->observer().GetUnitTypeData(type_);
-    return std::find(data.attributes.begin(), data.attributes.end(), sc2::Attribute::Structure) != data.attributes.end();
+    return std::find(data->attributes.begin(), data->attributes.end(), sc2::Attribute::Structure) != data->attributes.end();
 }
 
 bool IsBuildingWithSupportForAddon::operator()(const sc2::Unit& unit_) const {
@@ -360,7 +360,7 @@ bool HasAddon::operator()(const sc2::Unit& unit_) const {
     auto addonType = addonAsUnit->unit_type.ToType();
     // The second part (after the or) is needed for the function to return true
     // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
-    return addonType == m_addon_type || addonAsUnit->GetTypeData().tech_alias.front() == m_addon_type;
+    return addonType == m_addon_type || addonAsUnit->GetTypeData()->tech_alias.front() == m_addon_type;
 }
 
 MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
@@ -468,7 +468,7 @@ sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
 }
 
 std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::UnitTypeID id_) {
-    return GetAllStructureTechRequirements(gAPI->observer().GetUnitTypeData(id_));
+    return GetAllStructureTechRequirements(*gAPI->observer().GetUnitTypeData(id_));
 }
 
 std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitTypeData& data_) {
