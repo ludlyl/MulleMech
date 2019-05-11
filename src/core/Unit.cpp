@@ -69,6 +69,15 @@ sc2::UnitTypeData Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
 }
 
+bool Unit::HasAttribute(sc2::Attribute attribute) const {
+    auto data = GetTypeData();
+    for (auto& attr : data.attributes) {
+        if (attr == attribute)
+            return true;
+    }
+    return false;
+}
+
 Unit * Unit::GetAttachedAddon() const {
     return gAPI->observer().GetUnit(this->add_on_tag);
 }

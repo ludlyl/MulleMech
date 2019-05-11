@@ -44,6 +44,8 @@ public:
 
     sc2::UnitTypeData GetTypeData() const;
 
+    bool HasAttribute(sc2::Attribute attribute) const;
+
     // Returns nullptr if the unit doesn't have any addon attached
     // (uses API::Observer::GetUnit so returning a const Unit* isn't needed, but might want to do that anyway?)
     Unit* GetAttachedAddon() const;
