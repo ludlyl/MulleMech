@@ -48,6 +48,8 @@ void Governor::OnStep(Builder* builder_) {
         break;
     }
 
+    TrainSituational(builder_);
+
     if (minerals < 50)
        return;
     //TODO add priority flag for factory production
@@ -338,9 +340,11 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                      gHistory.info() << "Schedule double Medivac training" << std::endl;
                      return;
                  }
-                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
-                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
-                 gHistory.info() << "Schedule double Hellion training" << std::endl;
+                 else if (anti_air) {
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                     gHistory.info() << "Schedule double Viking training" << std::endl;
+                 }
              }
              else { //case of no addon
                  if (num_of_hellbats != 0 &&
@@ -418,4 +422,17 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
     total_consumption.first = mineral_consumption;
     total_consumption.second = vespene_consumption;
     return total_consumption;
+}
+
+void Governor::TrainSituational(Builder* builder_) {
+    auto unit_classes = gReasoner->GetNeededUnitClasses();
+    if (std::find(unit_classes.begin(), unit_classes.end(), UnitClass::anti_air) != unit_classes.end()) {
+        auto idle_starports = gAPI->observer().GetUnits(IsIdleUnit(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR, false));
+        int wanted = idle_starports.size() * 2;
+        int queued_vikings = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER);
+        int queued_medivacs = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_MEDIVAC);
+        wanted -= queued_medivacs;
+        while (wanted-- > queued_vikings)
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false);
+    }
 }

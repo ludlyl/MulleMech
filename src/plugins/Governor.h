@@ -36,6 +36,9 @@ private:
     //Used the put all commandcenters in the planner queue at the top of the list
     void PrioritizeCommandCenter();
 
+    // For production buildings that are kept idle except in some cases
+    void TrainSituational(Builder* builder_);
+
     std::list<sc2::UNIT_TYPEID> m_planner_queue;
     BuildOrderStage m_build_order_stage = BuildOrderStage::Early;
 
