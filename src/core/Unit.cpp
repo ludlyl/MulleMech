@@ -71,11 +71,7 @@ sc2::UnitTypeData* Unit::GetTypeData() const {
 
 bool Unit::HasAttribute(sc2::Attribute attribute) const {
     auto data = GetTypeData();
-    for (auto& attr : data->attributes) {
-        if (attr == attribute)
-            return true;
-    }
-    return false;
+    return std::find(data->attributes.begin(), data->attributes.end(), attribute) != data->attributes.end();
 }
 
 Unit * Unit::GetAttachedAddon() const {
