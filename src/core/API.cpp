@@ -171,6 +171,10 @@ Observer::Observer(const sc2::ObservationInterface* observer_):
     m_observer(observer_) {
 }
 
+void Observer::OnUpgradeCompleted() {
+    m_unitDataCache.clear();
+}
+
 Unit* Observer::GetUnit(sc2::Tag tag_) const {
     auto unit = m_observer->GetUnit(tag_);
     if (!unit)
@@ -267,15 +271,13 @@ float Observer::GetVespeneIncomeRate() const {
     return m_observer->GetScore().score_details.collection_rate_vespene;
 }
 
-sc2::UnitTypeData* Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
-    static std::unordered_map<sc2::UNIT_TYPEID, std::unique_ptr<sc2::UnitTypeData>> data_cache;
-
-    auto itr = data_cache.find(id_);
-    if (itr != data_cache.end())
+sc2::UnitTypeData* Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) {
+    auto itr = m_unitDataCache.find(id_);
+    if (itr != m_unitDataCache.end())
         return itr->second.get();
 
-    data_cache.emplace(id_, std::make_unique<sc2::UnitTypeData>());
-    sc2::UnitTypeData* data = data_cache.find(id_)->second.get();
+    m_unitDataCache.emplace(id_, std::make_unique<sc2::UnitTypeData>());
+    sc2::UnitTypeData* data = m_unitDataCache.find(id_)->second.get();
 
     *data = m_observer->GetUnitTypeData()[convert::ToUnitTypeID(id_)];
 
@@ -472,37 +474,17 @@ Interface::Interface(sc2::ActionInterface* action_,
 
 void Interface::Init() {
     // Make a mapping of ability -> unit, for abilities that construct units
-    const auto& unit_datas = m_observer->GetUnitTypeData();
+    const auto& unit_datas = m_observer.m_observer->GetUnitTypeData();
     for (auto& data : unit_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUnitMap[data.ability_id] = data.unit_type_id;
     }
     // Make a mapping of ability -> upgrade
-    const auto& upgrade_datas = m_observer->GetUpgradeData();
+    const auto& upgrade_datas = m_observer.m_observer->GetUpgradeData();
     for (auto& data : upgrade_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
-}
-
-Action Interface::action() const {
-    return Action(m_action);
-}
-
-Control Interface::control() const {
-    return Control(m_control);
-}
-
-Debug Interface::debug() const {
-    return Debug(m_debug);
-}
-
-Observer Interface::observer() const {
-    return Observer(m_observer);
-}
-
-Query Interface::query() const {
-    return Query(m_query);
 }
 
 Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
@@ -533,6 +515,10 @@ void Interface::OnStep() {
             itr->second->UpdateAPIData(*unit);
         }
     }
+}
+
+void Interface::OnUpgradeCompleted() {
+    m_observer.OnUpgradeCompleted();
 }
 
 }  // namespace API

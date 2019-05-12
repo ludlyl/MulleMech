@@ -55,7 +55,7 @@ struct Action {
 
     void SendMessage(const std::string& text_);
 
- private:
+private:
     sc2::ActionInterface* m_action;
 };
 
@@ -64,7 +64,7 @@ struct Control {
 
     void SaveReplay();
 
- private:
+private:
     sc2::ControlInterface* m_control;
 };
 
@@ -85,7 +85,7 @@ struct Debug {
 
     void SendDebug() const;
 
- private:
+private:
     sc2::DebugInterface* m_debug;
 };
 
@@ -133,7 +133,7 @@ struct Observer {
     //returns Vespene/min
     float GetVespeneIncomeRate() const;
 
-    sc2::UnitTypeData* GetUnitTypeData(sc2::UNIT_TYPEID id_) const;
+    sc2::UnitTypeData* GetUnitTypeData(sc2::UNIT_TYPEID id_);
 
     sc2::UpgradeData GetUpgradeData(sc2::UPGRADE_ID id_) const;
 
@@ -155,9 +155,13 @@ struct Observer {
 
     const std::vector<sc2::PlayerResult>& GetResults() const;
 
- private:
-     friend struct Interface;
+private:
+    void OnUpgradeCompleted();
+
+    friend struct Interface;
     const sc2::ObservationInterface* m_observer;
+
+    std::unordered_map<sc2::UNIT_TYPEID, std::unique_ptr<sc2::UnitTypeData>> m_unitDataCache;
 };
 
 struct Query {
@@ -185,15 +189,15 @@ struct Interface {
         const sc2::ObservationInterface* observer_,
         sc2::QueryInterface* query_);
 
-    Action action() const;
+    Action& action() { return m_action; }
 
-    Control control() const;
+    Control& control() { return m_control; }
 
-    Debug debug() const;
+    Debug& debug() { return m_debug; }
 
-    Observer observer() const;
+    Observer& observer() { return m_observer; }
 
-    Query query() const;
+    Query& query() { return m_query; }
 
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
     Unit* WrapUnit(const sc2::Unit* unit_);
@@ -202,12 +206,14 @@ struct Interface {
 
     void OnStep();
 
- private:
-    sc2::ActionInterface* m_action;
-    sc2::ControlInterface* m_control;
-    sc2::DebugInterface* m_debug;
-    const sc2::ObservationInterface* m_observer;
-    sc2::QueryInterface* m_query;
+    void OnUpgradeCompleted();
+
+private:
+    Action m_action;
+    Control m_control;
+    Debug m_debug;
+    Observer m_observer;
+    Query m_query;
     std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unitObjects;
 };
 
