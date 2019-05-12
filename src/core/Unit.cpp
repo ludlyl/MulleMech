@@ -4,29 +4,29 @@
 #include "objects/Worker.h"
 #include "plugins/micro/MicroPlugin.h"
 
-Unit::Unit(const sc2::Unit& unit) : sc2::Unit(unit), IsInVision(true) {
-    if (unit.alliance == Unit::Alliance::Self) {
+Unit::Unit(const sc2::Unit& unit_) : sc2::Unit(unit_), IsInVision(true) {
+    if (unit_.alliance == Unit::Alliance::Self) {
         m_micro = MicroPlugin::MakePlugin(this);
     }
 }
 
-bool Unit::operator==(const Unit& other) const {
-    return tag == other.tag;
+bool Unit::operator==(const Unit& other_) const {
+    return tag == other_.tag;
 }
 
 MicroPlugin* Unit::Micro() {
     return m_micro.get();
 }
 
-std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit) {
-    switch (unit.unit_type.ToType()) {
+std::unique_ptr<Unit> Unit::Make(const sc2::Unit& unit_) {
+    switch (unit_.unit_type.ToType()) {
         case sc2::UNIT_TYPEID::PROTOSS_PROBE:
         case sc2::UNIT_TYPEID::TERRAN_SCV:
         case sc2::UNIT_TYPEID::ZERG_DRONE:
-            return std::make_unique<Worker>(unit);
+            return std::make_unique<Worker>(unit_);
 
         default:
-            return std::make_unique<Unit>(unit);
+            return std::make_unique<Unit>(unit_);
     }
 }
 
@@ -73,19 +73,19 @@ Unit * Unit::GetAttachedAddon() const {
     return gAPI->observer().GetUnit(this->add_on_tag);
 }
 
-Unit::Attackable Unit::CanAttack(const Unit* other) const {
+Unit::Attackable Unit::CanAttack(const Unit* other_) const {
     auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
 
     bool has_wep_type = false;
     for (auto& weapon : our_data.weapons) {
-        if (sc2::Distance3D(pos, other->pos) < weapon.range)
+        if (sc2::Distance3D(pos, other_->pos) < weapon.range)
             continue;
 
         if (weapon.type == sc2::Weapon::TargetType::Any)
             has_wep_type = true;
-        else if (weapon.type == sc2::Weapon::TargetType::Ground && !other->is_flying)
+        else if (weapon.type == sc2::Weapon::TargetType::Ground && !other_->is_flying)
             has_wep_type = true;
-        else if (weapon.type == sc2::Weapon::TargetType::Air && other->is_flying)
+        else if (weapon.type == sc2::Weapon::TargetType::Air && other_->is_flying)
             has_wep_type = true;
 
         if (has_wep_type)
@@ -95,7 +95,7 @@ Unit::Attackable Unit::CanAttack(const Unit* other) const {
     if (!has_wep_type)
         return Attackable::no;
 
-    if (other->cloak == sc2::Unit::Cloaked)
+    if (other_->cloak == sc2::Unit::Cloaked)
         return Attackable::need_scan;
 
     return Attackable::yes;

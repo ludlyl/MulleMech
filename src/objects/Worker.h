@@ -16,7 +16,7 @@ public:
         building,
         scouting,
         fighting, // i.e. the worker is in a combat squad
-        repair
+        repairing
     };
 
     explicit Worker(const sc2::Unit& unit_);
@@ -29,6 +29,8 @@ public:
 
     // Overload for continuing an already started construction
     void Build(const Unit* building_);
+
+    void Repair(const Unit* target_);
 
     void GatherVespene(const Unit* target_);
 
@@ -44,8 +46,6 @@ public:
     void SetAsScout();
 
     void SetAsFighter();
-
-    void SetAsRepairer(const Unit* unit);
 
     // Will always return unemployed for enemy workers
     Job GetJob() const { return m_job; }

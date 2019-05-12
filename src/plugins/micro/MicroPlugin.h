@@ -44,11 +44,11 @@ protected:
 
     bool HasBuff(sc2::BUFF_ID buff);
 
-    void Cast(sc2::ABILITY_ID ability);
+    void Cast(sc2::ABILITY_ID ability, bool queue = false);
 
-    void Cast(sc2::ABILITY_ID ability, const Unit* target);
+    void Cast(sc2::ABILITY_ID ability, const Unit* target, bool queue = false);
 
-    void Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point);
+    void Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point, bool queue = false);
 
     bool IsAttacking(const Unit* target) const;
 

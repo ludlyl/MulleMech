@@ -5,6 +5,10 @@
 #include "RepairMan.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Map.h"
+#include "Hub.h"
+
+#include <cmath>
 
 void RepairMan::OnStep(Builder*) {
     // Cancel constructions under start hp
@@ -19,95 +23,76 @@ void RepairMan::OnStep(Builder*) {
         }
     }
 
-    Units buildings = gAPI->observer().GetUnits(IsBuilding(), sc2::Unit::Alliance::Self);
+    // Reparation logic
 
-    for (Unit* unit : buildings) {
-        // i.e only handle fully constructed buildings/workers
-        if (unit->build_progress < 1.0f) {
-            continue;
-        }
+    // Note: All finished terran buildings are mechanical (and thereby repairable)
+    Units damaged_buildings = gAPI->observer().GetUnits(
+            MultiFilter(MultiFilter::Selector::And, {IsFinishedBuilding(), IsDamaged()}), sc2::Unit::Alliance::Self);
 
-        //TODO: more cases
-        /*if (littleHP) {
-            //do this
-        }
-        if (mediumMuch) {
-            //do this
-        }
-        if (alot) {
-            //do this
-        }*/
+    if (!damaged_buildings.empty()) {
+        auto repairing_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::repairing), sc2::Unit::Alliance::Self);
+        // This is only needed as we do not cache the free workers. If we start to cache them this can be removed
+        auto free_workers = GetFreeWorkers();
 
-        // i.e repair Planetary fortress with all close mineral harvesting workers
-        if (unit->health < 1500 && IsPlanetaryFortress()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
-            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                 {IsWithinDist(unit->pos, 15.0f), IsHasrvestingMineralsWorker()}));
-            if (!workers.empty()) {
-                unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
-                for (Unit* worker : workers) {
-                    //if (FreeWorkerExists()) {
-                    worker->AsWorker()->SetAsRepairer(unit);
-                }
+        // TODO: Do not send units to buildings with a lot of enemy units nearby
+        //  (the scvs are currently just sent to their deaths)
+        for (auto& building : damaged_buildings) {
+            if (free_workers.empty()) {
+                break;
             }
-        }
 
-        // repair Orbital Command (on ground or flying) if it is dropping health
-        if (unit->health < 1499 && IsOrbitalCommand()(*unit) && unit->m_repairPhase == Unit::BuildingRepairPhase::not_repairing) {
-            unit->m_repairPhase = Unit::BuildingRepairPhase::repairing;
-            repairMen = 3;
-            for (int i = 0; i < repairMen; i++) {
-                if (!FreeWorkerExists()) {
+            int number_of_currently_repairing_scvs = CountRepairingScvs(repairing_workers, building);
+            for (; number_of_currently_repairing_scvs < DefaultRepairingScvCount; number_of_currently_repairing_scvs++) {
+                // Would probably be faster to just sort free_workers based on their distance
+                // to the building at the start of the damaged_buildings loop and use pop_back
+                const auto& worker = free_workers.GetClosestUnit(building->pos);
+                if (worker) {
+                    worker->AsWorker()->Repair(building);
+                    free_workers.remove(worker);
+                } else {
                     break;
                 }
-                auto worker = GetClosestFreeWorker(unit->pos);
-                worker->AsWorker()->SetAsRepairer(unit);
             }
-        }
-    }
 
-    for (Unit* unit : buildings) {
-        // checks if building has full health after repairing
-        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && unit->health + std::numeric_limits<float>::epsilon() >= unit->health_max) {
-            // Get close repair workers
-            auto workers = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                 {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()}));
-            // Release workers if there is any
-            if (!workers.empty()) {
-                for (Unit *repairer : workers) {
-                    repairer->AsWorker()->SetAsUnemployed();
-                }
-            }
-            // Set building as not repairing
-            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
-        }
+            // Check if the building is a "combat building" (i.e. a turret, bunker or pf)
+            if (!free_workers.empty() && IsCombatUnit()(*building)) {
+                int maximum_repair_count = GetMaximumScvRepairCountFor(free_workers.front(), building);
 
-        //if somehow there is buildings in repair-mode but no repairers
-        if (unit->m_repairPhase == Unit::BuildingRepairPhase::repairing && ((gAPI->observer().GetUnits(IsRepairWorker())).size()) < 1) {
-            unit->m_repairPhase = Unit::BuildingRepairPhase::not_repairing;
-        }
+                if (number_of_currently_repairing_scvs < maximum_repair_count) {
+                    const auto& closest_region = gOverseerMap->getNearestRegion(building->pos); // Is this costly?
+                    const auto& closest_expansion = gHub->GetClosestExpansion(closest_region->getMidPoint());
+                    if (closest_expansion->alliance == sc2::Unit::Alliance::Self) {
+                        Units free_workers_with_expansion_as_home_base;
+                        for (auto& worker : free_workers) {
+                            if (worker->AsWorker()->GetHomeBase() == closest_expansion) {
+                                free_workers_with_expansion_as_home_base.push_back(worker);
+                            }
+                        }
 
-        // i.e handle idle repairers
-        Units repairers = gAPI->observer().GetUnits(IsRepairWorker());
-        if (!repairers.empty() && unit->m_repairPhase == Unit::BuildingRepairPhase::repairing) {
-            for (Unit *repairer : repairers) {
-                if (repairer->IsIdle()) {
-                    repairer->AsWorker()->SetAsRepairer(unit);
+                        for (; number_of_currently_repairing_scvs < maximum_repair_count; number_of_currently_repairing_scvs++) {
+                            // Do we "have" to the the closest unit in this scenario? Most workers will be pretty close anyway
+                            const auto& worker = free_workers_with_expansion_as_home_base.GetClosestUnit(building->pos);
+                            if (worker) {
+                                worker->AsWorker()->Repair(building);
+                                free_workers.remove(worker);
+                                free_workers_with_expansion_as_home_base.remove(worker);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+}
 
-    // recover if repairers mystically stops repairing but still are repairer for a certain building
-    for (Unit* unit : buildings) {
-        for (Unit* repairer : (gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                     {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})))) {
-            if (unit->health < unit->health_max && IsOrbitalCommand()(*unit)) {
-                repairer->AsWorker()->SetAsRepairer(unit);
-            }
+void RepairMan::OnUnitIdle(Unit* unit_, Builder*) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV) {
+        if (unit_->AsWorker()->GetJob() == Worker::Job::repairing) {
+            unit_->AsWorker()->SetAsUnemployed();
         }
     }
-
-    // FIXME (alkuratov): Put buildings repair code here.
 }
 
 void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
@@ -169,17 +154,27 @@ void RepairMan::AddQueuedUpgradesBackIntoBuildingQueue(const Unit* unit_, Builde
     }
 }
 
-std::size_t RepairMan::CountRepairMen(Unit* unit) {
-    std::size_t nOfRepairMen = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                     {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})).size();
-    return nOfRepairMen;
+int RepairMan::GetMaximumScvRepairCountFor(Unit* scv_, Unit* unit_) const {
+    // TODO: Make this "support" flying units (i.e. implement some basic kind of circle packing)
+
+    // The formula that is used to determine how many circles of radius r
+    // that can be wrapped around a circle of radius R is:
+    // pi / (arcsin(r/(r+R)))
+
+    auto scv_radius = static_cast<double>(scv_->radius);
+    auto unit_radius = static_cast<double>(unit_->radius);
+
+    return static_cast<int>(std::floor(M_PI / (std::asin(scv_radius / (scv_radius + unit_radius)))));
 }
 
-bool RepairMan::IsAnyRepairersNearby(Unit* unit) {
-    std::size_t nOfRepairMen = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-                                                                     {IsWithinDist(unit->pos, 15.0f), IsRepairWorker()})).size();
-    if (nOfRepairMen > 0) {
-        return true;
+int RepairMan::CountRepairingScvs(const Units& scvs, Unit* unit_) const {
+    int count = 0;
+    for (auto& scv : scvs) {
+        if (!scv->GetPreviousStepOrders().empty() &&
+            scv->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::EFFECT_REPAIR &&
+            scv->GetPreviousStepOrders().front().target_unit_tag == unit_->tag) {
+            count++;
+        }
     }
-    return false;
+    return count;
 }

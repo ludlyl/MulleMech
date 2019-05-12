@@ -31,6 +31,13 @@ void Worker::Build(const Unit* building_) {
     m_job = Job::building;
 }
 
+void Worker::Repair(const Unit* target_) {
+    // TODO: Assert here if the target unit doesn't have the mechanical attribute
+    assert(alliance == sc2::Unit::Alliance::Self);
+    gAPI->action().Cast(this, sc2::ABILITY_ID::EFFECT_REPAIR, target_);
+    m_job = Job::repairing;
+}
+
 void Worker::GatherVespene(const Unit* target_) {
     assert(alliance == sc2::Unit::Alliance::Self);
     gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_);
@@ -100,11 +107,4 @@ void Worker::SetAsScout() {
 void Worker::SetAsFighter() {
     assert(alliance == sc2::Unit::Alliance::Self);
     m_job = Job::fighting;
-}
-
-void Worker::SetAsRepairer(const Unit* lowHPBuilding) {
-    assert(alliance == sc2::Unit::Alliance::Self);
-    // TODO: possibly a data race can occur if another thread try to assign another task for same unit before this code is fully executed.
-    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, lowHPBuilding);
-    m_job = Job::repair;
 }

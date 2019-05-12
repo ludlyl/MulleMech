@@ -21,18 +21,12 @@ class Unit : public sc2::Unit {
 public:
     enum class Attackable { yes, no, need_scan };
 
-    enum class BuildingRepairPhase {
-        not_repairing,
-        repairing
-    };
-    BuildingRepairPhase m_repairPhase = BuildingRepairPhase::not_repairing;
-
     // TODO: Make "Make" function and constructor private (and same for worker) so only API can create new Unit objects
-    static std::unique_ptr<Unit> Make(const sc2::Unit& unit);
-    Unit(const sc2::Unit& unit);
+    static std::unique_ptr<Unit> Make(const sc2::Unit& unit_);
+    Unit(const sc2::Unit& unit_);
     Unit(const Unit&) = delete;
     virtual ~Unit() = default;
-    bool operator==(const Unit& other) const;
+    bool operator==(const Unit& other_) const;
 
     // I.e. is sc2::Unit::orders empty and m_order_queued_in_current_step = false
     bool IsIdle() const;
@@ -54,14 +48,18 @@ public:
     // (uses API::Observer::GetUnit so returning a const Unit* isn't needed, but might want to do that anyway?)
     Unit* GetAttachedAddon() const;
 
-    Attackable CanAttack(const Unit* other) const;
+    Attackable CanAttack(const Unit* other_) const;
 
     bool CanAttackFlying() const;
 
     // A single number corresponding to the resource value of this unit
     int GetValue() const;
 
-    bool IsInVision; // False if unit is no longer visible to us (either dead or in fog of war)
+    // False if unit is no longer visible to us.
+    // NOTE: This only says if the unit can be seen at all. Some units in the fog
+    // (i.e. above a ramp) can be seen and IsInVision = true for them
+    // The name of this variable should probably be changed to clarify this
+    bool IsInVision;
 
 private:
     // Makes sc2::Unit::orders private, this isn't a very pretty solution but as sc2::Unit::orders
