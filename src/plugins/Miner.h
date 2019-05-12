@@ -36,6 +36,9 @@ private:
 
     static void CallDownMULE();
 
+    // Set the home base of all workers at the supplied expansion to nullptr if there are no other active expansions
+    static void ClearWorkersHomeBaseIfNoActiveExpansion(const std::shared_ptr<Expansion>& expansion_);
+
     // This should only be called when "evacuating" a base or when a base has died
     static void SplitWorkersOf(const std::shared_ptr<Expansion>& expansion_);
 
