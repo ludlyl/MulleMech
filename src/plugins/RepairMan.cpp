@@ -7,8 +7,17 @@
 #include "core/Helpers.h"
 
 void RepairMan::OnStep(Builder*) {
-    if (gAPI->observer().GetCurrentRace() != sc2::Race::Terran)
-        return;
+    // Cancel constructions under start hp
+    // A optimization would be to save ongoing constructions instead
+    // TODO: Maybe this should be made more intelligent? I.e. don't cancel a building if the threat is killed
+    //  or the scv is building at a faster speed than it's losing hp, if the building very soon is finished,
+    //  cancel it before this percentage if the enemy units risks killing it in 1 step
+    Units ongoing_constructions = gAPI->observer().GetUnits(IsUnfinishedBuilding(), sc2::Unit::Alliance::Self);
+    for (auto& building : ongoing_constructions) {
+        if (building->health / building->health_max <= BuildingMinHealthCancelRatio) {
+            gAPI->action().Cast(building, sc2::ABILITY_ID::CANCEL);
+        }
+    }
 
     // FIXME (alkuratov): Put buildings repair code here.
 }
