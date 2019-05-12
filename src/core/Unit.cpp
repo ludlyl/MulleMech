@@ -69,9 +69,9 @@ sc2::UnitTypeData* Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
 }
 
-bool Unit::HasAttribute(sc2::Attribute attribute) const {
+bool Unit::HasAttribute(sc2::Attribute attribute_) const {
     auto data = GetTypeData();
-    return std::find(data->attributes.begin(), data->attributes.end(), attribute) != data->attributes.end();
+    return std::find(data->attributes.begin(), data->attributes.end(), attribute_) != data->attributes.end();
 }
 
 Unit * Unit::GetAttachedAddon() const {

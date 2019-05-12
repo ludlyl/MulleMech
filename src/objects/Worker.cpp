@@ -32,7 +32,8 @@ void Worker::Build(const Unit* building_) {
 }
 
 void Worker::Repair(const Unit* target_) {
-    // TODO: Assert here if the target unit doesn't have the mechanical attribute
+    // Calling a non const method inside an assert is not very good (can lead to bugs that only show up in release builds)
+    assert(HasAttribute(sc2::Attribute::Mechanical));
     assert(alliance == sc2::Unit::Alliance::Self);
     gAPI->action().Cast(this, sc2::ABILITY_ID::EFFECT_REPAIR, target_);
     m_job = Job::repairing;
