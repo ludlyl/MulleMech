@@ -150,6 +150,10 @@ bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
 }
 
+bool IsUnfinishedBuilding::operator()(const sc2::Unit& unit_) const {
+    return IsBuilding()(unit_) && unit_.build_progress < 1.0f;
+}
+
 bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     auto data = gAPI->observer().GetUnitTypeData(type_);
     return std::find(data.attributes.begin(), data.attributes.end(), sc2::Attribute::Structure) != data.attributes.end();

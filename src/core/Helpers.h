@@ -48,6 +48,10 @@ struct IsBuilding {
     bool operator()(sc2::UNIT_TYPEID type_) const;
 };
 
+struct IsUnfinishedBuilding {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 // I.e. is it a barracks, factory or starport
 struct IsBuildingWithSupportForAddon {
     bool operator()(const sc2::Unit& type_) const;
