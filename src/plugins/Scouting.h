@@ -28,15 +28,8 @@ private:
     // - Look for hidden pylons (cannon rush) in our base vs Protoss
     void ConsiderDefensiveScouting();
 
-    // Mid and Late game Scouting
-    // Use Scans over known base locations with priority of main base & natural to try to
-    // determine tech opponent has. Try to scan locations that were least recently scanned.
-    void TechScout();
-
-    // Mid and Late game Scouting
-    // Send inexpensive units (e.g. marine) to locations we think the enemy might expand to
-    // but we have not yet seen him do so.
-    void ExpansionScout();
+    // Send SCV around scouting mid-game
+    void MidGameScout();
 
     // Attempt to scout around a main base; queues all movement commands at once
     void ScoutBase(Unit* unit, sc2::Point2D base);

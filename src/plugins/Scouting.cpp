@@ -14,9 +14,15 @@ void Scouting::OnStep(Builder*) {
 
     ConsiderDefensiveScouting();
 
-    // Use timer based for tech scouting & expansion scouting?
-    // TechScout();
-    // ExpansionScout();
+    if (m_scoutPhase == ScvScoutPhase::finished && m_offensiveScv == nullptr) {
+        if (gReasoner->GetPlayStyle() == PlayStyle::scout)
+            MidGameScout();
+    } else if (m_scoutPhase == ScvScoutPhase::finished && m_offensiveScv != nullptr) {
+        if (m_offensiveScv->GetPreviousStepOrders().empty()) {
+            m_offensiveScv->SetAsUnemployed();
+            m_offensiveScv = nullptr;
+        }
+    }
 }
 
 void Scouting::OnUnitIdle(Unit* unit, Builder*) {
@@ -152,8 +158,29 @@ void Scouting::ConsiderDefensiveScouting() {
     }
 }
 
-void Scouting::TechScout() {
-}
+void Scouting::MidGameScout() {
+    // Method: Scout two probable expansions then main base
+    // Note: This could break if the SCV is blocked and his queued path is cancelled,
+    // but that doesn't sound like it's too important to consider.
 
-void Scouting::ExpansionScout() {
+    std::vector<sc2::Point2D> scout_points;
+    auto likely_expansions = gReasoner->GetLikelyEnemyExpansions();
+    for (std::size_t i = 0; i < 2 && i < likely_expansions.size(); ++i)
+        scout_points.push_back(likely_expansions[i]->town_hall_location);
+
+    if (auto main_base = gIntelligenceHolder->GetEnemyMainBase())
+        scout_points.push_back(main_base->town_hall_location);
+
+    if (scout_points.empty())
+        return;
+
+    auto worker = GetClosestFreeWorker(scout_points[0]);
+    if (!worker)
+        return;
+
+    m_offensiveScv = worker;
+    worker->SetAsScout();
+    gAPI->action().MoveTo(worker, scout_points[0]);
+    for (std::size_t i = 1; i < scout_points.size(); ++i)
+        gAPI->action().MoveTo(worker, scout_points[i], true);
 }
