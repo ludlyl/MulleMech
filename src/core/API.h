@@ -153,6 +153,8 @@ struct Observer {
 
     sc2::Visibility GetVisibility(const sc2::Point2D& pos_) const;
 
+    const std::vector<sc2::PlayerResult>& GetResults() const;
+
  private:
      friend struct Interface;
     const sc2::ObservationInterface* m_observer;

@@ -9,6 +9,14 @@
 
 #include <limits>
 
+void IntelligenceHolder::OnGameStart() {
+    // If there is only one enemy starting location, set the main base to that location
+    if (gAPI->observer().GameInfo().enemy_start_locations.size() == 1) {
+        m_enemy_main_base = gHub->GetClosestExpansion(gAPI->observer().GameInfo().enemy_start_locations.front());
+        m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
+    }
+}
+
 void IntelligenceHolder::OnUnitEnterVision(Unit* unit_) {
     if (unit_->alliance == sc2::Unit::Alliance::Enemy) {
         if (!IsTemporaryUnit()(*unit_) && !m_enemyUnits.contains(unit_)) {
@@ -26,10 +34,14 @@ void IntelligenceHolder::OnUnitDestroyed(Unit* unit_) {
          if (IsTownHall()(*unit_)) {
             for (const auto& i : gHub->GetExpansions()) {
                 if (unit_ == i->town_hall) {
-                    // We currently don't support making the enemy's main neutral
-                    if (i != m_enemy_main_base) {
-                        i->alliance = sc2::Unit::Alliance::Neutral;
+                    // Special case for if we destroyed the enemies main
+                    if (i == m_enemy_main_base) {
+                        m_enemy_main_base_destroyed = true;
+                        // Set new enemy main to the base furthest from our own starting position
+                        // (the function returns nullptr if there are no enemy bases left)
+                        m_enemy_main_base = GetEnemyBaseFurthestFrom(gHub->GetClosestExpansion(gAPI->observer().StartingLocation()));
                     }
+                    i->alliance = sc2::Unit::Alliance::Neutral;
                     i->town_hall = nullptr;
                     gHistory.info() << "Enemy lost region: (" << unit_->pos.x << ", " << unit_->pos.y << ")" << std::endl;
                     break;
@@ -41,12 +53,6 @@ void IntelligenceHolder::OnUnitDestroyed(Unit* unit_) {
 }
 
 std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyMainBase() {
-    // If the main base isn't already set and there is only one enemy starting location, set the main base to that location
-    if (!m_enemy_main_base && gAPI->observer().GameInfo().enemy_start_locations.size() == 1) {
-        m_enemy_main_base = gHub->GetClosestExpansion(gAPI->observer().GameInfo().enemy_start_locations.front());
-        m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
-    }
-
     return m_enemy_main_base;
 }
 
@@ -65,7 +71,7 @@ Expansions IntelligenceHolder::GetKnownEnemyExpansions() const {
 
     for (auto& expo : gHub->GetExpansions()) {
         if (expo->alliance == sc2::Unit::Alliance::Enemy)
-            expos.push_back(expo);
+            expos.emplace_back(expo);
     }
 
     // Sort bases by how far they are (walkable distance) from the main, with the assumption
@@ -96,24 +102,27 @@ int IntelligenceHolder::GetKnownEnemyExpansionCount() const {
     return count;
 }
 
-void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
-    assert(IsTownHall()(*unit_));
-
-    // If the main base isn't already set (and the main doesn't get set by calling GetEnemyMainBase()),
-    // calculate which starting location is closest to the found expansion (town hall) and set the enemy main to that base
-    if (!m_enemy_main_base && !GetEnemyMainBase()) {
-        float shortest_distance = std::numeric_limits<float>::max();
-        sc2::Point2D main_pos;
-        for (const auto& possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
-            float distance = sc2::Distance2D(unit_->pos, possible_start);
-            if (distance < shortest_distance) {
-                shortest_distance = distance;
-                main_pos = possible_start;
+std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBaseFurthestFrom(const std::shared_ptr<Expansion>& expansion_) {
+    float longest_distance = 0.f;
+    const std::shared_ptr<Expansion>* enemy_base = nullptr;
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Enemy) {
+            float distance = expansion_->distanceTo(expo);
+            if (distance > longest_distance) {
+                longest_distance = distance;
+                enemy_base = &expo;
             }
         }
-        m_enemy_main_base = gHub->GetClosestExpansion(main_pos);
-        m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
     }
+    if (enemy_base) {
+        return *enemy_base;
+    } else {
+        return nullptr;
+    }
+}
+
+void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
+    assert(IsTownHall()(*unit_));
 
     auto exp = gHub->GetClosestExpansion(unit_->pos);
     if (exp->alliance == sc2::Unit::Alliance::Neutral) {
@@ -128,6 +137,27 @@ void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
         } else if (sc2::DistanceSquared2D(unit_->pos, exp->town_hall_location) <
                    sc2::DistanceSquared2D(exp->town_hall->pos, exp->town_hall_location)) {
             exp->town_hall = unit_;
+        }
+    }
+
+    if (!m_enemy_main_base) {
+        // If the main base isn't already set and has never been destroyed calculate which starting
+        // location is closest to the found expansion (town hall) and set the enemy main to that base
+        if (!m_enemy_main_base_destroyed) {
+            float shortest_distance = std::numeric_limits<float>::max();
+            sc2::Point2D main_pos;
+            for (const auto& possible_start : gAPI->observer().GameInfo().enemy_start_locations) {
+                float distance = sc2::Distance2D(unit_->pos, possible_start);
+                if (distance < shortest_distance) {
+                    shortest_distance = distance;
+                    main_pos = possible_start;
+                }
+            }
+            m_enemy_main_base = gHub->GetClosestExpansion(main_pos);
+            m_enemy_main_base->alliance = sc2::Unit::Alliance::Enemy;
+        // If the enemies main isn't set and has been destroyed, just set the found expansion to be the new enemy main
+        } else {
+            m_enemy_main_base = exp;
         }
     }
 }

@@ -171,6 +171,23 @@ std::vector<MineralLine> GetMineralLines() {
     return mineral_lines;
 }
 
+void CalculateGeysers(Expansions& expansions){
+    auto geysers = gAPI->observer().GetUnits(IsGeyser(), sc2::Unit::Alliance::Neutral);
+
+    // Not all bases has 2 geysers, so we can't just do GetClosestUnit(exp.pos)
+    for (auto& geyser : geysers) {
+        // This is pretty inefficient
+        auto closest = expansions[0];
+        for (auto& exp : expansions) {
+            if (sc2::DistanceSquared2D(geyser->pos, exp->town_hall_location) <
+                sc2::DistanceSquared2D(geyser->pos, closest->town_hall_location)) {
+                closest = exp;
+            }
+        }
+        closest->geysers_positions.emplace_back(geyser->pos);
+    }
+}
+
 }  // namespace
 
 Expansion::Expansion(const sc2::Point3D& town_hall_location_):
@@ -249,8 +266,63 @@ Expansions CalculateExpansionLocations() {
     }
 
     CalculateGroundDistances(expansions);
+    CalculateGeysers(expansions);
 
     return expansions;
+}
+
+bool IsPointReachable(const Unit* unit_, const sc2::Point2D& point) {
+    if (!gOverseerMap->valid(point)) {
+        return false;
+    }
+
+    const auto& tile = gOverseerMap->getTile(point);
+    if (tile->getTileTerrain() == Overseer::TileTerrain::buildAndPath ||
+        tile->getTileTerrain() == Overseer::TileTerrain::path ||
+        (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::build) ||
+        (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::flyOnly)) {
+        float distance = gAPI->query().PathingDistance(unit_, point);
+        if (distance != 0.0f) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void RemovePointsUnreachableByUnit(const Unit* unit_, std::vector<sc2::Point2D>& points_) {
+    std::vector<sc2::QueryInterface::PathingQuery> queries;
+
+    for (auto itr = points_.begin(); itr != points_.end();) {
+        if (!gOverseerMap->valid(*itr)) {
+            itr = points_.erase(itr);
+            continue;
+        }
+
+        const auto& tile = gOverseerMap->getTile(*itr);
+        if (tile->getTileTerrain() == Overseer::TileTerrain::buildAndPath ||
+            tile->getTileTerrain() == Overseer::TileTerrain::path ||
+            (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::build) ||
+            (unit_->is_flying && tile->getTileTerrain() == Overseer::TileTerrain::flyOnly)) {
+            sc2::QueryInterface::PathingQuery query;
+            query.start_unit_tag_ = unit_->tag;
+            query.end_ = *itr;
+            queries.emplace_back(query);
+            itr++;
+        } else {
+            itr = points_.erase(itr);
+        }
+    }
+
+    const auto& result = gAPI->query().PathingDistances(queries);
+    size_t i = 0;
+    for (auto itr = points_.begin(); itr != points_.end(); i++) {
+        if (result.at(i) == 0) {
+            itr = points_.erase(itr);
+        } else {
+            itr++;
+        }
+    }
 }
 
 std::unique_ptr<Overseer::MapImpl> gOverseerMap;

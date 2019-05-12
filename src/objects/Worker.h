@@ -55,5 +55,5 @@ public:
 
 private:
     Job m_job = Job::unemployed;
-    std::shared_ptr<Expansion> m_homeBase = nullptr;
+    std::shared_ptr<Expansion> m_home_base = nullptr;
 };

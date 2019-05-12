@@ -43,28 +43,47 @@ void Worker::GatherVespene(const Unit* target_) {
 
 void Worker::SetHomeBase(std::shared_ptr<Expansion> base) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    m_homeBase = std::move(base);
+    m_home_base = std::move(base);
 }
 
 std::shared_ptr<Expansion> Worker::GetHomeBase() const {
-    return m_homeBase;
+    return m_home_base;
 }
 
 void Worker::Mine() {
     assert(alliance == sc2::Unit::Alliance::Self);
-    // TODO: Change this to check all mineral patches (not just the visible ones)
-    auto visibleMinerals = gAPI->observer().GetUnits(IsVisibleMineralPatch(), sc2::Unit::Alliance::Neutral);
+    if (m_home_base) {
+        assert(m_home_base->alliance == sc2::Unit::Alliance::Self &&
+               m_home_base->town_hall && m_home_base->town_hall->is_alive);
+    }
 
-    sc2::Point2D pos;
-    if (m_homeBase)
-        pos = m_homeBase->town_hall_location;
-    else
-        pos = gAPI->observer().StartingLocation();
+    // Calculate new home base if the worker doesn't have one or if the current one doesn't have any minerals left
+    if (!m_home_base || m_home_base->town_hall->ideal_harvesters == 0) {
+        float distance_to_closest_town_hall_with_minerals = std::numeric_limits<float>::max();
+        const std::shared_ptr<Expansion>* closest_base_with_minerals = nullptr;
+        for (auto& expansion : gHub->GetExpansions()) {
+            if (expansion->alliance == sc2::Unit::Alliance::Self && expansion->town_hall->ideal_harvesters > 0) {
+                float distance_to_town_hall = sc2::DistanceSquared2D(this->pos,  expansion->town_hall->pos);
+                if (distance_to_town_hall < distance_to_closest_town_hall_with_minerals) {
+                    distance_to_closest_town_hall_with_minerals = distance_to_town_hall;
+                    closest_base_with_minerals = &expansion;
+                }
+            }
+        }
 
-    auto mineralTarget = visibleMinerals.GetClosestUnit(pos);
-    if (mineralTarget) {
-        gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineralTarget);
-        m_job = Job::gathering_minerals;
+        if (closest_base_with_minerals) {
+            m_home_base = *closest_base_with_minerals;
+        }
+    }
+
+    if (m_home_base) {
+        auto mineral_patches = gAPI->observer().GetUnits(IsMineralPatch(), sc2::Unit::Alliance::Neutral);
+        auto mineral_target = mineral_patches.GetClosestUnit(m_home_base->town_hall->pos);
+
+        if (mineral_target) {
+            gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, mineral_target);
+            m_job = Job::gathering_minerals;
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #include "Historican.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Map.h"
 
 Squad::Squad() {
     static int globalId = 0;
@@ -108,9 +109,24 @@ void Squad::UpdateMovement() {
                 gHistory.debug(LogChannel::combat) << SquadName() << " approach finished, idling" << std::endl;
             } else if (GetSpreadRadius() > RegroupRadius) {
                 // If we get too spread out -> regroup
-                RegroupAt(GetCenter());
+                // We only regroup if the the center position of the squad is reachable
+                // Might be worth regrouping at e.g. the middle most ground unit if this fails or something like that
+                Unit* regroup_unit = nullptr;
+                for (auto& unit : m_units) {
+                    if (!unit->is_flying) {
+                        regroup_unit = unit;
+                    }
+                }
+                if (!regroup_unit && !m_units.empty()) {
+                    // As more units can be added to the squad while it tries to regroup doing,
+                    // using a flying unit to check if the regroup position is reachable isn't really safe
+                    regroup_unit = m_units.front();
+                }
+                if (regroup_unit && IsPointReachable(regroup_unit, GetCenter())) {
+                    RegroupAt(GetCenter());
+                }
             } else {
-                // TODO: Slightly unncessary to reissue the movement command each step
+                // TODO: Slightly unnecessary to reissue the movement command each step
                 IssueMoveCommand(m_approachPos);
             }
             break;
@@ -125,7 +141,7 @@ void Squad::UpdateMovement() {
                     gHistory.debug(LogChannel::combat) << SquadName() << " regroup finished, idling" << std::endl;
                 }
             } else {
-                // TODO: Slightly unncessary to reissue the movement command each step
+                // TODO: Slightly unnecessary to reissue the movement command each step
                 IssueMoveCommand(m_regroupPos);
             }
             break;
@@ -147,7 +163,7 @@ void Squad::IssueMoveCommand(const sc2::Point2D& position) {
                 needToWait = true;
                 break;
             case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
-                gAPI->action().Cast(unit, sc2::ABILITY_ID::BURROWUP_WIDOWMINE);
+                gAPI->action().Cast(unit, sc2::ABILITY_ID::BURROWUP);
                 needToWait = true;
                 break;
             default:

@@ -25,4 +25,6 @@ private:
     std::size_t CountRepairMen(Unit* unit);
 
     bool IsAnyRepairersNearby(Unit* unit);
+
+    static constexpr float BuildingMinHealthCancelRatio = 0.05f; // If health / max health is <= this the building is canceled
 };

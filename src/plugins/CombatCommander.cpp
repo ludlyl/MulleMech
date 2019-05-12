@@ -3,14 +3,18 @@
 #include "BuildingPlacer.h"
 #include "Historican.h"
 #include "Hub.h"
+#include "IntelligenceHolder.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Timer.h"
+
 #include <sc2api/sc2_common.h>
+
 #include <algorithm>
 
 CombatCommander::CombatCommander() :
     m_mainSquad(std::make_shared<OffenseSquad>()),
-    m_mainAttackTarget(gAPI->observer().GameInfo().enemy_start_locations.front()),
+    m_playStyle(PlayStyle::normal),
     m_changedPlayStyle(true)
 {
 
@@ -41,7 +45,7 @@ void CombatCommander::OnStep(Builder*){
     }
 
     PlayStyle newPlayStyle = gReasoner->GetPlayStyle();
-    if(newPlayStyle != m_playStyle){
+    if (newPlayStyle != m_playStyle) {
         m_changedPlayStyle = true;
         m_playStyle = newPlayStyle;
     }
@@ -71,8 +75,10 @@ void CombatCommander::OnStep(Builder*){
 }
 
 void CombatCommander::PlayNormal(){
-    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply)
+    if (m_mainSquad->IsTaskFinished() && m_mainSquad->Size() > 0 && gAPI->observer().GetFoodUsed() >= AttackOnSupply) {
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
+    }
 }
 
 void CombatCommander::PlayAllIn(){
@@ -83,6 +89,7 @@ void CombatCommander::PlayAllIn(){
         m_defenseSquads.clear();
         if (!m_harassSquad.IsSent())
             m_mainSquad->Absorb(m_harassSquad);
+        UpdateMainAttackTarget();
         m_mainSquad->TakeOver(m_mainAttackTarget);
     }
 }
@@ -110,6 +117,56 @@ void CombatCommander::PlayGreedy(){ // TODO
 
 void CombatCommander::PlayScout(){ // TODO
     PlayNormal();
+}
+
+void CombatCommander::UpdateMainAttackTarget() {
+    Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
+    if (!expos.empty()) {
+        m_mainAttackTarget = expos.back()->town_hall_location;
+    } else {
+        if (m_attackTargets.empty()) {
+            m_attackTargets = GetListOfAttackPoints();
+        }
+        if (!m_attackTargets.empty()) {
+            m_mainAttackTarget = m_attackTargets.back();
+            m_attackTargets.pop_back();
+        }
+    }
+}
+
+std::vector<sc2::Point2D> CombatCommander::GetListOfAttackPoints() {
+    // Get a ground unit in the main squad
+    // TODO: Support if we only have air units (just using an air unit here is not enough)
+    Unit* ground_unit = nullptr;
+    for (auto& unit : m_mainSquad->GetUnits()) {
+        if (!unit->is_flying) {
+            ground_unit = unit;
+        }
+    }
+    if (!ground_unit) {
+        return {};
+    }
+
+    Timer clock;
+    clock.Start();
+
+    std::vector<sc2::Point2D> points;
+    sc2::Point2D point;
+    int mapHeightLimit = gAPI->observer().GameInfo().height - ApproximateUnitVisionRadius;
+    int mapWidthLimit = gAPI->observer().GameInfo().width - ApproximateUnitVisionRadius;
+    for (int x = ApproximateUnitVisionRadius; x < mapWidthLimit; x+= ApproximateUnitVisionRadius) {
+        for (int y = ApproximateUnitVisionRadius; y < mapHeightLimit; y+= ApproximateUnitVisionRadius) {
+             point.x = x;
+             point.y = y;
+             points.push_back(point);
+        }
+    }
+    RemovePointsUnreachableByUnit(ground_unit, points);
+
+    auto duration = clock.Finish();
+    gHistory.info(LogChannel::combat) << "Calculate list of map (attack) points took: " << duration << " ms" << std::endl;
+
+    return points;
 }
 
 std::vector<Units> CombatCommander::GroupEnemiesInBase() {
@@ -189,6 +246,25 @@ void CombatCommander::DefenseCheck() {
         auto defenders = GenerateDefenseFor(std::move(defSquad.GetUnits()), defSquad.GetEnemies());
         defSquad.SetUnits(std::move(defenders));
     }
+
+    // Move mainsquad to fighting as well if it's just idling
+    if (!m_mainSquad->GetUnits().empty() && m_mainSquad->IsTaskFinished()) {
+        float ourValue = 0;
+        float theirValue = 0;
+        for (auto& group : enemyGroups) {
+            for (auto& enemy : group) {
+                if (IsCombatUnit()(*enemy)) {
+                    theirValue += enemy->GetValue();
+                }
+            }
+        }
+        for (auto& unit : gAPI->observer().GetUnits(IsCombatUnit(), sc2::Unit::Alliance::Self))
+            ourValue += unit->GetValue();
+
+        if (ourValue != 0 && theirValue / ourValue >= DefendWithAllValueRatio) {
+            m_mainSquad->TakeOver(enemyGroups[0].CalculateCircle().first);
+        }
+    }
 }
 
 void CombatCommander::OnUnitCreated(Unit* unit_){
@@ -243,13 +319,21 @@ void CombatCommander::OnUnitCreated(Unit* unit_){
 Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies) {
     int needed_remaining_resources = 0;
     int needed_antiair_resources = 0;
+    int our_value = 0;
+    int their_value = 0;
 
+    // TODO: We take into account non combat units here too, that can lead to some pretty bad scenarios
+    //  (we build a refinery near the enemy and all of a sudden pull our scv:s as we count in his
+    //  overlords and buildings in the enemy unit value). Other the other hand we should kill
+    //  non combat units close to our base to so just checking IsCombatUnit is not enough of a solution
     // Total resources we need for defense
     for (auto& enemy : enemies) {
+        auto value = enemy->GetValue();
+        their_value += value;
         if (enemy->is_flying)
-            needed_antiair_resources += enemy->GetValue();
+            needed_antiair_resources += value;
         else
-            needed_remaining_resources += enemy->GetValue();
+            needed_remaining_resources += value;
     }
 
     needed_antiair_resources *= DefenseResourcesOveredo;
@@ -257,10 +341,12 @@ Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies)
 
     // Subtract current defenders
     for (auto& defender : defenders) {
+        auto value = defender->GetValue();
+        our_value += value;
         if (defender->CanAttackFlying())
-            needed_antiair_resources -= defender->GetValue();
+            needed_antiair_resources -= value;
         else
-            needed_remaining_resources -= defender->GetValue();
+            needed_remaining_resources -= value;
     }
 
     if (needed_antiair_resources <= 0) {
@@ -270,12 +356,14 @@ Units CombatCommander::GenerateDefenseFor(Units defenders, const Units& enemies)
     }
 
     // Grab new units
-    AddDefenders(defenders, enemies.CalculateCircle().first, needed_antiair_resources, needed_remaining_resources);
+    AddDefenders(defenders, enemies.CalculateCircle().first, needed_antiair_resources,
+        needed_remaining_resources, our_value, their_value);
 
     return defenders;
 }
 
-void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources, int needed_remaining_resources) {
+void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& location, int needed_antiair_resources,
+    int needed_remaining_resources, int our_value, int their_value) {
     // Prefer close units
     Units sorted_mainsquad = m_mainSquad->GetUnits(); // make a copy for the purpose of sorting
     std::sort(sorted_mainsquad.begin(), sorted_mainsquad.end(), ClosestToPoint2D(location));
@@ -286,7 +374,9 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
             break;
 
         if ((*itr)->CanAttackFlying()) {
-            needed_antiair_resources -= (*itr)->GetValue();
+            auto value = (*itr)->GetValue();
+            needed_antiair_resources -= value;
+            our_value += value;
             defenders.push_back(*itr);
             m_mainSquad->RemoveUnit(*itr);
             itr = sorted_mainsquad.erase(itr);
@@ -300,18 +390,21 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
     for (auto itr = sorted_mainsquad.begin(); itr != sorted_mainsquad.end(); ) {
         if (needed_remaining_resources <= 0)
             break;
-        needed_remaining_resources -= (*itr)->GetValue();
+        auto value = (*itr)->GetValue();
+        needed_remaining_resources -= value;
+        our_value += value;
         defenders.push_back(*itr);
         m_mainSquad->RemoveUnit(*itr);
         itr = sorted_mainsquad.erase(itr);
     }
 
     // Use SCVs as a last resort
-    while (needed_remaining_resources > 0) {
+    auto scv_pull_value = their_value - our_value * DefendWithSCVValueRatio;
+    while (scv_pull_value > 0) {
         auto worker = GetClosestFreeWorker(location);
         if (!worker)
             break;
-        needed_remaining_resources -= (worker)->GetValue();
+        scv_pull_value -= worker->GetValue() * DefendWithSCVValueRatio;
         defenders.push_back(worker);
         worker->SetAsFighter();
     }

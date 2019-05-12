@@ -51,6 +51,7 @@ public:
     Unit* back() { return m_wrappedUnits.back(); }
     const Unit* back() const { return m_wrappedUnits.back(); }
     void push_back(Unit* unit) { m_wrappedUnits.push_back(unit); }
+    void pop_back() { m_wrappedUnits.pop_back(); }
     void clear() { m_wrappedUnits.clear(); }
     T::iterator erase(T::iterator it) { return m_wrappedUnits.erase(it); }
     T::iterator erase(T::iterator a, T::iterator b) { return m_wrappedUnits.erase(a, b); }

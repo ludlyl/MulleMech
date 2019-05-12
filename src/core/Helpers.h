@@ -28,6 +28,7 @@ struct IsUnit {
     float m_build_progress;
 };
 
+// Includes "combat buildings" (cannon, turrets etc.)
 struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -45,6 +46,10 @@ struct IsAntiAirUnit {
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+struct IsUnfinishedBuilding {
+    bool operator()(const sc2::Unit& unit_) const;
 };
 
 // I.e. is it a barracks, factory or starport
@@ -88,7 +93,6 @@ struct IsFoggyResource {
     bool operator()(const sc2::Unit& unit_) const;
 };
 
-// I.e. IsFinishedRefinery
 struct IsRefinery {
     bool operator()(const sc2::Unit& unit_) const;
 };
@@ -134,6 +138,15 @@ struct IsWorkerWithJob {
 
 private:
     Worker::Job m_job;
+};
+
+struct IsWorkerWithHomeBase {
+    explicit IsWorkerWithHomeBase(const std::shared_ptr<Expansion>& home_base_);
+
+    bool operator()(const sc2::Unit& unit_) const;
+
+private:
+    const std::shared_ptr<Expansion>& m_home_base;
 };
 
 struct IsWorkerWithUnstartedConstructionOrderFor {
