@@ -19,12 +19,12 @@ void Governor::OnGameStart(Builder* builder_) {
 void Governor::OnStep(Builder* builder_) {
     int minerals = gAPI->observer().GetMinerals();
 
-    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).mineral_cost;
-    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
+    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION)->mineral_cost;
+    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION)->build_time;
 
-    int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
-    int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
-    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
+    int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->mineral_cost;
+    int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->vespene_cost;
+    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->build_time;
 
     PlayStyle playstyle = gReasoner->GetPlayStyle();
     float greed_modifier = 1.f;
@@ -48,6 +48,8 @@ void Governor::OnStep(Builder* builder_) {
         break;
     }
 
+    TrainSituational(builder_);
+
     if (minerals < 50)
        return;
     //TODO add priority flag for factory production
@@ -55,7 +57,7 @@ void Governor::OnStep(Builder* builder_) {
     auto it = m_planner_queue.begin();
     int planned_cost = 0;
     while (it != m_planner_queue.end()) {
-        planned_cost += gAPI->observer().GetUnitTypeData(m_planner_queue.front()).mineral_cost;
+        planned_cost += gAPI->observer().GetUnitTypeData(m_planner_queue.front())->mineral_cost;
         if (minerals < planned_cost)
             return;
         builder_->ScheduleConstructionInRecommendedQueue(m_planner_queue.front());
@@ -179,6 +181,8 @@ void Governor::AddMidGameBuildOrder(Builder* builder_) {
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
+    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR);
 
     // Armory Upgrades
     builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1);
@@ -336,9 +340,11 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                      gHistory.info() << "Schedule double Medivac training" << std::endl;
                      return;
                  }
-                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
-                 builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
-                 gHistory.info() << "Schedule double Hellion training" << std::endl;
+                 else if (anti_air) {
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
+                     gHistory.info() << "Schedule double Viking training" << std::endl;
+                 }
              }
              else { //case of no addon
                  if (num_of_hellbats != 0 &&
@@ -369,24 +375,24 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
     float vespene_consumption = 0; // Vespene/frame
 
 
-    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).mineral_cost;
-    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION).build_time;
+    int hellion_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION)->mineral_cost;
+    float hellion_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_HELLION)->build_time;
 
-    int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).mineral_cost;
-    int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).vespene_cost;
-    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK).build_time;
+    int tank_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->mineral_cost;
+    int tank_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->vespene_cost;
+    float tank_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SIEGETANK)->build_time;
 
-    int thor_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR).mineral_cost;
-    int thor_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR).vespene_cost;
-    float thor_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR).build_time;
+    int thor_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR)->mineral_cost;
+    int thor_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR)->vespene_cost;
+    float thor_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_THOR)->build_time;
 
-    int viking_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).mineral_cost;
-    int viking_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).vespene_cost;
-    float viking_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER).build_time;
+    int viking_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER)->mineral_cost;
+    int viking_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER)->vespene_cost;
+    float viking_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER)->build_time;
 
-    int banshee_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).mineral_cost;
-    int banshee_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).vespene_cost;
-    float banshee_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE).build_time;
+    int banshee_mineral = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE)->mineral_cost;
+    int banshee_vespene = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE)->vespene_cost;
+    float banshee_build_time = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_BANSHEE)->build_time;
 
 
     //Since we will never have a production building without an addon it's safe to calculate cost based on addons
@@ -416,4 +422,17 @@ std::pair<float, float> Governor::CurrentConsumption(Builder* builder_) {
     total_consumption.first = mineral_consumption;
     total_consumption.second = vespene_consumption;
     return total_consumption;
+}
+
+void Governor::TrainSituational(Builder* builder_) {
+    auto unit_classes = gReasoner->GetNeededUnitClasses();
+    if (std::find(unit_classes.begin(), unit_classes.end(), UnitClass::anti_air) != unit_classes.end()) {
+        auto idle_starports = gAPI->observer().GetUnits(IsIdleUnit(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR, false));
+        int wanted = idle_starports.size() * 2;
+        int queued_vikings = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER);
+        int queued_medivacs = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_MEDIVAC);
+        wanted -= queued_medivacs;
+        while (wanted-- > queued_vikings)
+            builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false);
+    }
 }

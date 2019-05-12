@@ -38,7 +38,7 @@ float CalcSupplies::operator()(float sum, const Unit* unit_) const {
         }
     }
 
-    return sum + gAPI->observer().GetUnitTypeData(unit_type).food_provided;
+    return sum + gAPI->observer().GetUnitTypeData(unit_type)->food_provided;
 }
 
 struct CalcDemand {
@@ -81,8 +81,8 @@ float QuarterMaster::CalcEstimatedDemand(Builder* builder_) {
                 continue;
 
             auto constructed_unit_data = gAPI->observer().GetUnitTypeData(constructed_unit_type);
-            if (constructed_unit_data.food_provided == 0) {
-                demand += constructed_unit_data.food_required * ProductionSupplyDemandMultiplier;
+            if (constructed_unit_data->food_provided == 0) {
+                demand += constructed_unit_data->food_required * ProductionSupplyDemandMultiplier;
             }
         }
     }
@@ -96,7 +96,7 @@ float QuarterMaster::CalcEstimatedSupply(Builder* builder_) {
     // CountScheduledStructures also counts scvs on their way to build the building
     // As we don't play zerg we do not have to check training orders
     float scheduled_supply_depots = builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT);
-    float supply_from_depot = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT).food_provided;
+    float supply_from_depot = gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT)->food_provided;
 
     return
         scheduled_supply_depots * supply_from_depot +

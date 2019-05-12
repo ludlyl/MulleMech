@@ -171,6 +171,10 @@ Observer::Observer(const sc2::ObservationInterface* observer_):
     m_observer(observer_) {
 }
 
+void Observer::OnUpgradeCompleted() {
+    m_unitDataCache.clear();
+}
+
 Unit* Observer::GetUnit(sc2::Tag tag_) const {
     auto unit = m_observer->GetUnit(tag_);
     if (!unit)
@@ -267,8 +271,15 @@ float Observer::GetVespeneIncomeRate() const {
     return m_observer->GetScore().score_details.collection_rate_vespene;
 }
 
-sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
-    sc2::UnitTypeData data = m_observer->GetUnitTypeData()[convert::ToUnitTypeID(id_)];
+sc2::UnitTypeData* Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) {
+    auto itr = m_unitDataCache.find(id_);
+    if (itr != m_unitDataCache.end())
+        return itr->second.get();
+
+    m_unitDataCache.emplace(id_, std::make_unique<sc2::UnitTypeData>());
+    sc2::UnitTypeData* data = m_unitDataCache.find(id_)->second.get();
+
+    *data = m_observer->GetUnitTypeData()[convert::ToUnitTypeID(id_)];
 
     switch (id_) {
         // NOTE (alkurbatov): Unfortunally SC2 API returns wrong mineral cost
@@ -277,66 +288,66 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
         // so we use a workaround.
         // See https://github.com/Blizzard/s2client-api/issues/191
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
-            data.mineral_cost = 150;
-            data.tech_requirement = sc2::UNIT_TYPEID::TERRAN_BARRACKS;
+            data->mineral_cost = 150;
+            data->tech_requirement = sc2::UNIT_TYPEID::TERRAN_BARRACKS;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_GREATERSPIRE:
-            data.mineral_cost = 100;
-            data.vespene_cost = 150;
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_HIVE;
+            data->mineral_cost = 100;
+            data->vespene_cost = 150;
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_HIVE;
             break;
 
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            data.mineral_cost = 150;
-            data.tech_requirement = sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY;
+            data->mineral_cost = 150;
+            data->tech_requirement = sc2::UNIT_TYPEID::TERRAN_ENGINEERINGBAY;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_BANELING:
-            data.mineral_cost = 25;
-            data.food_required = 0.0f;
-            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
+            data->mineral_cost = 25;
+            data->food_required = 0.0f;
+            data->tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ZERGLING);
             break;
 
         case sc2::UNIT_TYPEID::ZERG_BROODLORD:
-            data.mineral_cost = 150;
-            data.vespene_cost = 150;
-            data.food_required = 2.0f;
-            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_GREATERSPIRE;
+            data->mineral_cost = 150;
+            data->vespene_cost = 150;
+            data->food_required = 2.0f;
+            data->tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_CORRUPTOR);
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_GREATERSPIRE;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_LAIR:
-            data.mineral_cost = 150;
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL;
+            data->mineral_cost = 150;
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_SPAWNINGPOOL;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_OVERSEER:
-            data.mineral_cost = 50;
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_LAIR;
+            data->mineral_cost = 50;
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_LAIR;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_RAVAGER:
-            data.mineral_cost = 25;
-            data.vespene_cost = 75;
-            data.food_required = 1.0f;
-            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ROACH);
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_ROACHWARREN;
+            data->mineral_cost = 25;
+            data->vespene_cost = 75;
+            data->food_required = 1.0f;
+            data->tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_ROACH);
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_ROACHWARREN;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_HIVE:
-            data.mineral_cost = 200;
-            data.vespene_cost = 150;
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_INFESTATIONPIT;
+            data->mineral_cost = 200;
+            data->vespene_cost = 150;
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_INFESTATIONPIT;
             break;
 
         case sc2::UNIT_TYPEID::ZERG_LURKERMP:
-            data.mineral_cost = 50;
-            data.vespene_cost = 100;
-            data.ability_id = sc2::ABILITY_ID::MORPH_LURKER;
-            data.food_required = 1.0f;
-            data.tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
-            data.tech_requirement = sc2::UNIT_TYPEID::ZERG_LURKERDENMP;
+            data->mineral_cost = 50;
+            data->vespene_cost = 100;
+            data->ability_id = sc2::ABILITY_ID::MORPH_LURKER;
+            data->food_required = 1.0f;
+            data->tech_alias.emplace_back(sc2::UNIT_TYPEID::ZERG_HYDRALISK);
+            data->tech_requirement = sc2::UNIT_TYPEID::ZERG_LURKERDENMP;
             break;
 
         // NOTE (alkurbatov): By some reason all zerg buildings
@@ -353,14 +364,14 @@ sc2::UnitTypeData Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) const {
         case sc2::UNIT_TYPEID::ZERG_SPIRE:
         case sc2::UNIT_TYPEID::ZERG_SPORECRAWLER:
         case sc2::UNIT_TYPEID::ZERG_ULTRALISKCAVERN:
-            data.mineral_cost -= 50;
+            data->mineral_cost -= 50;
             break;
 
         // NOTE (alkurbatov): There is no sense in summoning protoss buildings
         // without a pylon.
         case sc2::UNIT_TYPEID::PROTOSS_FORGE:
         case sc2::UNIT_TYPEID::PROTOSS_GATEWAY:
-            data.tech_requirement = sc2::UNIT_TYPEID::PROTOSS_PYLON;
+            data->tech_requirement = sc2::UNIT_TYPEID::PROTOSS_PYLON;
             break;
 
         default:
@@ -463,37 +474,17 @@ Interface::Interface(sc2::ActionInterface* action_,
 
 void Interface::Init() {
     // Make a mapping of ability -> unit, for abilities that construct units
-    const auto& unit_datas = m_observer->GetUnitTypeData();
+    const auto& unit_datas = m_observer.m_observer->GetUnitTypeData();
     for (auto& data : unit_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUnitMap[data.ability_id] = data.unit_type_id;
     }
     // Make a mapping of ability -> upgrade
-    const auto& upgrade_datas = m_observer->GetUpgradeData();
+    const auto& upgrade_datas = m_observer.m_observer->GetUpgradeData();
     for (auto& data : upgrade_datas) {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
-}
-
-Action Interface::action() const {
-    return Action(m_action);
-}
-
-Control Interface::control() const {
-    return Control(m_control);
-}
-
-Debug Interface::debug() const {
-    return Debug(m_debug);
-}
-
-Observer Interface::observer() const {
-    return Observer(m_observer);
-}
-
-Query Interface::query() const {
-    return Query(m_query);
 }
 
 Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
@@ -524,6 +515,10 @@ void Interface::OnStep() {
             itr->second->UpdateAPIData(*unit);
         }
     }
+}
+
+void Interface::OnUpgradeCompleted() {
+    m_observer.OnUpgradeCompleted();
 }
 
 }  // namespace API

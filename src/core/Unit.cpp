@@ -65,8 +65,13 @@ const Worker* Unit::AsWorker() const {
     return nullptr;
 }
 
-sc2::UnitTypeData Unit::GetTypeData() const {
+sc2::UnitTypeData* Unit::GetTypeData() const {
     return gAPI->observer().GetUnitTypeData(this->unit_type);
+}
+
+bool Unit::HasAttribute(sc2::Attribute attribute) const {
+    auto data = GetTypeData();
+    return std::find(data->attributes.begin(), data->attributes.end(), attribute) != data->attributes.end();
 }
 
 Unit * Unit::GetAttachedAddon() const {
@@ -77,7 +82,7 @@ Unit::Attackable Unit::CanAttack(const Unit* other_) const {
     auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
 
     bool has_wep_type = false;
-    for (auto& weapon : our_data.weapons) {
+    for (auto& weapon : our_data->weapons) {
         if (sc2::Distance3D(pos, other_->pos) < weapon.range)
             continue;
 
@@ -104,7 +109,7 @@ Unit::Attackable Unit::CanAttack(const Unit* other_) const {
 bool Unit::CanAttackFlying() const {
     auto our_data = gAPI->observer().GetUnitTypeData(unit_type);
 
-    for (auto& weapon : our_data.weapons) {
+    for (auto& weapon : our_data->weapons) {
         if (weapon.type == sc2::Weapon::TargetType::Any || weapon.type == sc2::Weapon::TargetType::Air)
             return true;
     }
@@ -114,5 +119,5 @@ bool Unit::CanAttackFlying() const {
 
 int Unit::GetValue() const {
     auto type_data = GetTypeData();
-    return type_data.mineral_cost + static_cast<int>(type_data.vespene_cost * VespeneCostMod);
+    return type_data->mineral_cost + static_cast<int>(type_data->vespene_cost * VespeneCostMod);
 }
