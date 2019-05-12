@@ -30,7 +30,8 @@ void SiegeTank::OnCombatStep(const Units& enemies, const Units& allies) {
                 m_currentMaxRange = std::max(m_currentMaxRange, new_max);
             } else { // In siege mode
                 // Request Scan if we cannot see our target
-                if (closest_target->display_type == sc2::Unit::Snapshot || !closest_target->IsInVision)
+                auto visibility = gAPI->observer().GetVisibility(closest_target->pos);
+                if (closest_target->display_type == sc2::Unit::Snapshot || visibility == sc2::Visibility::Fogged)
                     gHub->RequestScan(closest_target->pos);
             }
         // Unsiege if there aren't any units we can hit while being sieged
