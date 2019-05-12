@@ -8,16 +8,16 @@
 
 void Scouting::OnStep(Builder*) {
     // Early game scouting: if food is >= 15 and we haven't yet found our enemy base
-    if (m_scoutPhase != ScvScoutPhase::finished) {
-        ScvOffensiveScout();
+    if (m_scoutPhaseEarlyGame != ScvScoutPhaseEarlyGame::finished) {
+        EarlyGameScout();
     }
 
     ConsiderDefensiveScouting();
 
-    if (m_scoutPhase == ScvScoutPhase::finished && m_offensiveScv == nullptr) {
+    if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::finished && m_offensiveScv == nullptr) {
         if (gReasoner->GetPlayStyle() == PlayStyle::scout)
             MidGameScout();
-    } else if (m_scoutPhase == ScvScoutPhase::finished && m_offensiveScv != nullptr) {
+    } else if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::finished && m_offensiveScv != nullptr) {
         if (m_offensiveScv->GetPreviousStepOrders().empty()) {
             m_offensiveScv->SetAsUnemployed();
             m_offensiveScv = nullptr;
@@ -44,12 +44,12 @@ void Scouting::OnUnitDestroyed(Unit* unit, Builder*) {
     }
 }
 
-void Scouting::ScvOffensiveScout() {
+void Scouting::EarlyGameScout() {
     // If our SCV dies during scouting; we consider that finished for now
     // TODO: This seems a bit fragile; maybe we should have code to try again if we never found our enemy,
     // or to determine our enemy's base location by where we were killed and/or the fact he wasn't at the other locations
-    if (m_scoutPhase != ScvScoutPhase::not_started && (!m_offensiveScv || !m_offensiveScv->is_alive)) {
-        m_scoutPhase = ScvScoutPhase::finished;
+    if (m_scoutPhaseEarlyGame != ScvScoutPhaseEarlyGame::not_started && (!m_offensiveScv || !m_offensiveScv->is_alive)) {
+        m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::finished;
         m_offensiveScv = nullptr;
         return;
     }
@@ -57,7 +57,7 @@ void Scouting::ScvOffensiveScout() {
     // Handle scout phases
 
     // NOT STARTED
-    if (m_scoutPhase == ScvScoutPhase::not_started && gAPI->observer().GetFoodUsed() >= 15) {
+    if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::not_started && gAPI->observer().GetFoodUsed() >= 15) {
         auto outermostExpansion = gHub->GetOurExpansions().back();
         if (outermostExpansion) {
             m_offensiveScv = GetClosestFreeWorker(outermostExpansion->town_hall_location);
@@ -70,7 +70,7 @@ void Scouting::ScvOffensiveScout() {
             gAPI->action().Stop(m_offensiveScv); // Why is this needed?
 
             // Add all potential enemy starting base locations to our scout plan
-            m_scoutPhase = ScvScoutPhase::approaching;
+            m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::approaching;
             auto locations = gAPI->observer().GameInfo().enemy_start_locations;
             m_unscoutedBases.insert(m_unscoutedBases.end(), locations.begin(), locations.end());
             assert(!m_unscoutedBases.empty() && "Must have at least one enemy start location");
@@ -80,14 +80,14 @@ void Scouting::ScvOffensiveScout() {
         }
     }
 
-    if (m_scoutPhase == ScvScoutPhase::not_started)
+    if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::not_started)
         return;
 
     // APPROACHING ENEMY BASE
-    if (m_scoutPhase == ScvScoutPhase::approaching && m_offensiveScv->IsIdle()) {
+    if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::approaching && m_offensiveScv->IsIdle()) {
         // If we found main base of enemy; go into exploring mode
         if (gIntelligenceHolder->GetEnemyMainBase()) {
-            m_scoutPhase = ScvScoutPhase::explore_enemy_base;
+            m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::explore_enemy_base;
             gHistory.debug(LogChannel::scouting) << "Found enemy main base!" << std::endl;
         }
         // Scout next base
@@ -108,7 +108,7 @@ void Scouting::ScvOffensiveScout() {
         }
     }
     // EXPLORING ENEMY BASE
-    else if (m_scoutPhase == ScvScoutPhase::explore_enemy_base && m_offensiveScv->IsIdle()) {
+    else if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::explore_enemy_base && m_offensiveScv->IsIdle()) {
         auto mainBase = gIntelligenceHolder->GetEnemyMainBase();
 
         // Scout the main base of the enemy
@@ -118,17 +118,17 @@ void Scouting::ScvOffensiveScout() {
         // If we haven't seen a natural expansion => go into check for natural state, which will execute
         // after our main base scout finishes
         if (gIntelligenceHolder->GetKnownEnemyExpansionCount() < 2)
-            m_scoutPhase = ScvScoutPhase::check_for_natural;
+            m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::check_for_natural;
     }
     // CHECKING FOR NATURAL
-    else if (m_scoutPhase == ScvScoutPhase::check_for_natural && m_offensiveScv->IsIdle()) {
+    else if (m_scoutPhaseEarlyGame == ScvScoutPhaseEarlyGame::check_for_natural && m_offensiveScv->IsIdle()) {
         auto likelyExpansions = gReasoner->GetLikelyEnemyExpansions();
         assert(!likelyExpansions.empty());
         gAPI->action().MoveTo(m_offensiveScv, likelyExpansions[0]->town_hall_location);
         gHistory.debug(LogChannel::scouting) << "Checking if the natural expansion has been started" << std::endl;
 
         // Alternate with scouting the main base
-        m_scoutPhase = ScvScoutPhase::explore_enemy_base;
+        m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::explore_enemy_base;
     }
 }
 

@@ -20,7 +20,7 @@ private:
     // Use an SCV to walk around the enemy's base to try to detect:
     // - Chosen tech
     // - Expand timing
-    void ScvOffensiveScout();
+    void EarlyGameScout();
 
     // Early game scouting
     // Defensive scouting for the early game. E.g.:
@@ -36,14 +36,14 @@ private:
 
     // DATA
 
-    enum class ScvScoutPhase {
+    enum class ScvScoutPhaseEarlyGame {
         not_started,
         approaching,
         explore_enemy_base,
         check_for_natural,
         finished
     };
-    ScvScoutPhase m_scoutPhase = ScvScoutPhase::not_started;
+    ScvScoutPhaseEarlyGame m_scoutPhaseEarlyGame = ScvScoutPhaseEarlyGame::not_started;
     Worker* m_offensiveScv = nullptr;
     Worker* m_defensiveScv = nullptr;
     std::vector<sc2::Point2D> m_unscoutedBases; // TODO: Should be last scouted timing => reuse for mid game expansion scouting
