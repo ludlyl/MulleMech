@@ -180,7 +180,7 @@ void BuildingPlacer::FreeReservedBuildingSpace(sc2::Point3D building_position_, 
         assert(IsBuildingWithSupportForAddon()(building_type_));
     }
 
-    auto ability_id = gAPI->observer().GetUnitTypeData(building_type_).ability_id;
+    auto ability_id = gAPI->observer().GetUnitTypeData(building_type_)->ability_id;
     auto radius = gAPI->observer().GetAbilityData(ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(building_position_.x - radius);
@@ -255,11 +255,11 @@ void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupatio
         return;
 
     // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
-    sc2::UnitTypeData type_data = unit_->GetTypeData();
-    if (!type_data.tech_alias.empty()) {
-        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    auto type_data = unit_->GetTypeData();
+    if (!type_data->tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data->tech_alias.front());
     }
-    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
+    float radius = gAPI->observer().GetAbilityData(type_data->ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);
@@ -283,11 +283,11 @@ void BuildingPlacer::RemoveBuildingFromOccupiedTiles(const Unit* unit_) {
         return;
 
     // This is needed to get e.g. get "supply depot" and not "supply depot lowered" (as that has the wrong ability id)
-    sc2::UnitTypeData type_data = unit_->GetTypeData();
-    if (!type_data.tech_alias.empty()) {
-        type_data = gAPI->observer().GetUnitTypeData(type_data.tech_alias.front());
+    auto type_data = unit_->GetTypeData();
+    if (!type_data->tech_alias.empty()) {
+        type_data = gAPI->observer().GetUnitTypeData(type_data->tech_alias.front());
     }
-    float radius = gAPI->observer().GetAbilityData(type_data.ability_id).footprint_radius;
+    float radius = gAPI->observer().GetAbilityData(type_data->ability_id).footprint_radius;
     // Should always be whole numbers
     int left_side_x = static_cast<int>(unit_->pos.x - radius);
     int bottom_side_y = static_cast<int>(unit_->pos.y - radius);

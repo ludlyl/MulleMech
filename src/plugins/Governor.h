@@ -36,12 +36,15 @@ private:
     //Used the put all commandcenters in the planner queue at the top of the list
     void PrioritizeCommandCenter();
 
+    // For production buildings that are kept idle except in some cases
+    void TrainSituational(Builder* builder_);
+
     std::list<sc2::UNIT_TYPEID> m_planner_queue;
     BuildOrderStage m_build_order_stage = BuildOrderStage::Early;
 
     static constexpr float ThorsToTanksRatio = 1.f / 3.f;
     static constexpr int OptimalNumOfRavens = 2;
-    static constexpr float MedivacsToHellbatsRatio = 1.f / 8.f;
+    static constexpr float MedivacsToHellbatsRatio = 1.f / 4.f;
     static constexpr float HellionProductionChance = 0.2f;
     static constexpr int MineralsBufferThreshold = 500;     // If we got this much buffer, move build order stage Early->Mid
 };

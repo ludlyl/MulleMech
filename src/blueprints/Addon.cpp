@@ -39,7 +39,7 @@ sc2::UNIT_TYPEID bp::Addon::GetParentStructureFromAbilityId(sc2::ABILITY_ID abil
 Unit* bp::Addon::GetValidAssignee(const Order* order_) {
     Unit* assignee = nullptr;
     // As doing "CanBePlaced" is bugged on add-ons, we use another 2x2 building to check it instead
-    Order supplyDepotOrder(gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+    Order supplyDepotOrder(*gAPI->observer().GetUnitTypeData(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
     auto buildingType = GetParentStructureFromAbilityId(order_->ability_id);
 
     if (!order_->assignee) {

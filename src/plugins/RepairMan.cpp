@@ -47,7 +47,7 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
         // Morphed buildings
         case sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND:
         case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
-            builder_->ScheduleSequentialConstruction(unit_->GetTypeData().tech_alias.front(), true);    // Parent
+            builder_->ScheduleSequentialConstruction(unit_->GetTypeData()->tech_alias.front(), true);    // Parent
             builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                     // Mutation
             return;
 

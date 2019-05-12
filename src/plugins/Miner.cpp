@@ -165,7 +165,7 @@ void Miner::SecureMineralsIncome(Builder* builder_) {
         if (builder_->CountScheduledTrainings(gHub->GetCurrentWorkerType()) > 0)
             continue;
 
-        orders.emplace_back(gAPI->observer().GetUnitTypeData(gHub->GetCurrentWorkerType()), cc);
+        orders.emplace_back(*gAPI->observer().GetUnitTypeData(gHub->GetCurrentWorkerType()), cc);
     }
 
     if (orders.empty())
