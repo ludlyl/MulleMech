@@ -15,7 +15,8 @@ public:
         gathering_vespene,
         building,
         scouting,
-        fighting // i.e. the worker is in a combat squad
+        fighting, // i.e. the worker is in a combat squad
+        repairing
     };
 
     explicit Worker(const sc2::Unit& unit_);
@@ -28,6 +29,8 @@ public:
 
     // Overload for continuing an already started construction
     void Build(const Unit* building_);
+
+    void Repair(const Unit* target_);
 
     void GatherVespene(const Unit* target_);
 

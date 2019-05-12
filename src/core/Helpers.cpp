@@ -25,6 +25,11 @@ bool IsUnit::operator()(const sc2::Unit& unit_) const {
         unit_.build_progress >= m_build_progress;
 }
 
+bool IsDamaged::operator()(const sc2::Unit& unit_) const {
+    // Epsilon shouldn (probably) not be needed here
+    return unit_.health < unit_.health_max * unit_.build_progress;
+}
+
 bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
     // TODO: Check hallucinations
 
@@ -51,6 +56,7 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
        case sc2::UNIT_TYPEID::TERRAN_WIDOWMINEBURROWED:
        case sc2::UNIT_TYPEID::TERRAN_BUNKER:
        case sc2::UNIT_TYPEID::TERRAN_MISSILETURRET:
+       case sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS:
 
        case sc2::UNIT_TYPEID::ZERG_BANELING:
        case sc2::UNIT_TYPEID::ZERG_BANELINGBURROWED:
@@ -148,6 +154,10 @@ bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
 
 bool IsBuilding::operator()(const sc2::Unit& unit_) const {
     return (*this)(unit_.unit_type);
+}
+
+bool IsFinishedBuilding::operator()(const sc2::Unit& unit_) const {
+    return IsBuilding()(unit_) && unit_.build_progress >= 1.0f;
 }
 
 bool IsUnfinishedBuilding::operator()(const sc2::Unit& unit_) const {

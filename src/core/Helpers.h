@@ -28,6 +28,10 @@ struct IsUnit {
     float m_build_progress;
 };
 
+struct IsDamaged {
+    bool operator()(const sc2::Unit& unit_) const;
+};
+
 // Includes "combat buildings" (cannon, turrets etc.)
 struct IsCombatUnit {
     bool operator()(const sc2::Unit& unit_) const;
@@ -46,6 +50,10 @@ struct IsAntiAirUnit {
 struct IsBuilding {
     bool operator()(const sc2::Unit& unit_) const;
     bool operator()(sc2::UNIT_TYPEID type_) const;
+};
+
+struct IsFinishedBuilding {
+    bool operator()(const sc2::Unit& unit_) const;
 };
 
 struct IsUnfinishedBuilding {

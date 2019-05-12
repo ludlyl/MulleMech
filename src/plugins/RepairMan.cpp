@@ -5,6 +5,10 @@
 #include "RepairMan.h"
 #include "core/API.h"
 #include "core/Helpers.h"
+#include "core/Map.h"
+#include "Hub.h"
+
+#include <cmath>
 
 void RepairMan::OnStep(Builder*) {
     // Cancel constructions under start hp
@@ -19,7 +23,76 @@ void RepairMan::OnStep(Builder*) {
         }
     }
 
-    // FIXME (alkuratov): Put buildings repair code here.
+    // Reparation logic
+
+    // Note: All finished terran buildings are mechanical (and thereby repairable)
+    Units damaged_buildings = gAPI->observer().GetUnits(
+            MultiFilter(MultiFilter::Selector::And, {IsFinishedBuilding(), IsDamaged()}), sc2::Unit::Alliance::Self);
+
+    if (!damaged_buildings.empty()) {
+        auto repairing_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::repairing), sc2::Unit::Alliance::Self);
+        // This is only needed as we do not cache the free workers. If we start to cache them this can be removed
+        auto free_workers = GetFreeWorkers();
+
+        // TODO: Do not send units to buildings with a lot of enemy units nearby
+        //  (the scvs are currently just sent to their deaths)
+        for (auto& building : damaged_buildings) {
+            if (free_workers.empty()) {
+                break;
+            }
+
+            int number_of_currently_repairing_scvs = CountRepairingScvs(repairing_workers, building);
+            for (; number_of_currently_repairing_scvs < DefaultRepairingScvCount; number_of_currently_repairing_scvs++) {
+                // Would probably be faster to just sort free_workers based on their distance
+                // to the building at the start of the damaged_buildings loop and use pop_back
+                const auto& worker = free_workers.GetClosestUnit(building->pos);
+                if (worker) {
+                    worker->AsWorker()->Repair(building);
+                    free_workers.remove(worker);
+                } else {
+                    break;
+                }
+            }
+
+            // Check if the building is a "combat building" (i.e. a turret, bunker or pf)
+            if (!free_workers.empty() && IsCombatUnit()(*building)) {
+                int maximum_repair_count = GetMaximumScvRepairCountFor(free_workers.front(), building);
+
+                if (number_of_currently_repairing_scvs < maximum_repair_count) {
+                    const auto& closest_region = gOverseerMap->getNearestRegion(building->pos); // Is this costly?
+                    const auto& closest_expansion = gHub->GetClosestExpansion(closest_region->getMidPoint());
+                    if (closest_expansion->alliance == sc2::Unit::Alliance::Self) {
+                        Units free_workers_with_expansion_as_home_base;
+                        for (auto& worker : free_workers) {
+                            if (worker->AsWorker()->GetHomeBase() == closest_expansion) {
+                                free_workers_with_expansion_as_home_base.push_back(worker);
+                            }
+                        }
+
+                        for (; number_of_currently_repairing_scvs < maximum_repair_count; number_of_currently_repairing_scvs++) {
+                            // Do we "have" to the the closest unit in this scenario? Most workers will be pretty close anyway
+                            const auto& worker = free_workers_with_expansion_as_home_base.GetClosestUnit(building->pos);
+                            if (worker) {
+                                worker->AsWorker()->Repair(building);
+                                free_workers.remove(worker);
+                                free_workers_with_expansion_as_home_base.remove(worker);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void RepairMan::OnUnitIdle(Unit* unit_, Builder*) {
+    if (unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV) {
+        if (unit_->AsWorker()->GetJob() == Worker::Job::repairing) {
+            unit_->AsWorker()->SetAsUnemployed();
+        }
+    }
 }
 
 void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
@@ -79,4 +152,29 @@ void RepairMan::AddQueuedUpgradesBackIntoBuildingQueue(const Unit* unit_, Builde
             builder_->ScheduleUpgrade(upgrade_id);
         }
     }
+}
+
+int RepairMan::GetMaximumScvRepairCountFor(Unit* scv_, Unit* unit_) const {
+    // TODO: Make this "support" flying units (i.e. implement some basic kind of circle packing)
+
+    // The formula that is used to determine how many circles of radius r
+    // that can be wrapped around a circle of radius R is:
+    // pi / (arcsin(r/(r+R)))
+
+    auto scv_radius = static_cast<double>(scv_->radius);
+    auto unit_radius = static_cast<double>(unit_->radius);
+
+    return static_cast<int>(std::floor(M_PI / (std::asin(scv_radius / (scv_radius + unit_radius)))));
+}
+
+int RepairMan::CountRepairingScvs(const Units& scvs, Unit* unit_) const {
+    int count = 0;
+    for (auto& scv : scvs) {
+        if (!scv->GetPreviousStepOrders().empty() &&
+            scv->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::EFFECT_REPAIR &&
+            scv->GetPreviousStepOrders().front().target_unit_tag == unit_->tag) {
+            count++;
+        }
+    }
+    return count;
 }

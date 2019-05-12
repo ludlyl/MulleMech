@@ -112,19 +112,19 @@ bool MicroPlugin::HasBuff(sc2::BUFF_ID buff) {
     return std::find(m_self->buffs.begin(), m_self->buffs.end(), buff) != m_self->buffs.end();
 }
 
-void MicroPlugin::Cast(sc2::ABILITY_ID ability) {
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, bool queue) {
     if (m_self && CanCast(ability))
-        gAPI->action().Cast(m_self, ability);
+        gAPI->action().Cast(m_self, ability, queue);
 }
 
-void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit* target) {
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, const Unit* target, bool queue) {
     if (m_self && CanCast(ability))
-        gAPI->action().Cast(m_self, ability, target);
+        gAPI->action().Cast(m_self, ability, target, queue);
 }
 
-void MicroPlugin::Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point) {
+void MicroPlugin::Cast(sc2::ABILITY_ID ability, const sc2::Point2D& point, bool queue) {
     if (m_self && CanCast(ability))
-        gAPI->action().Cast(m_self, ability, point);
+        gAPI->action().Cast(m_self, ability, point, queue);
 }
 
 bool MicroPlugin::IsAttacking(const Unit* target) const {
