@@ -16,11 +16,12 @@ private:
     bool m_stopped = false;
 
     // Decision Constants
-    static constexpr float OffCenterRange = 6.0f;         // Fly back to center of units if we get this far away
-    static constexpr float FlyToCastRange = 7.0f;         // How much we're allowed to fly to cast abilities
-    static constexpr float ArmorMissileCooldown = 1.5f;   // Cooldown (in secs) for searching for targets (not same as duration which is 21 secs)
-    static constexpr float ArmorMissileMinValue = 800.0f; // Must hit this much value to activate
-    static constexpr float TurretCooldown = 4.0f;         // Don't use all energy on turret (cooldown in seconds)
+    static constexpr float OffCenterRange = 6.0f;          // Fly back to center of units if we get this far away
+    static constexpr float FlyToCastRange = 7.0f;          // How much we're allowed to fly to cast abilities
+    static constexpr float ArmorMissileCooldown = 1.5f;    // Cooldown (in secs) for searching for targets (not same as duration which is 21 secs)
+    static constexpr float ArmorMissileMinValue = 1200.0f; // Must hit this much value to activate
+    static constexpr int ArmorMissileMinUnits = 5;         // Must hit this many units to activate
+    static constexpr float TurretCooldown = 4.0f;          // Don't use all energy on turret (cooldown in seconds)
 
     // Spell Data
     static constexpr float ArmorMissileRange = 10.0f;

@@ -51,6 +51,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
 
             // Value of all affected targets
             int affected_value = 0;
+            int count = 0;
             for (auto& inner_enemy : enemies) {
                 if (std::find(inner_enemy->buffs.begin(), inner_enemy->buffs.end(), AntiArmorMissileDebuffId) != inner_enemy->buffs.end())
                     continue;
@@ -59,9 +60,10 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
                 if (!IsCombatUnit()(*enemy))
                     continue;
                 affected_value += inner_enemy->GetValue();
+                ++count;
             }
 
-            if (ArmorMissileMinValue > affected_value && affected_value > max_value) {
+            if (count >= ArmorMissileMinUnits && ArmorMissileMinValue > affected_value && affected_value > max_value) {
                 max_value_target = enemy;
                 max_value = affected_value;
             }
