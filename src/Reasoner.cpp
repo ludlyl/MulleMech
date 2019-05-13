@@ -36,7 +36,7 @@ PlayStyle Reasoner::CalculatePlayStyle() {
         float own_combat_unit_value = 0;
 
         for (auto& unit : gIntelligenceHolder->GetEnemyUnits()) {
-            if (IsCombatUnit()(*unit))
+            if (IsCombatUnit()(unit))
                 enemy_combat_unit_value += unit->GetValue();
         }
 
@@ -127,7 +127,7 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
     float own_anti_air_unit_value = 0;
 
     for (auto& unit : gIntelligenceHolder->GetEnemyUnits()) {
-        if (IsCombatUnit()(*unit) && unit->is_flying)
+        if (IsCombatUnit()(unit) && unit->is_flying)
             enemy_air_unit_value += unit->GetValue();
     }
 

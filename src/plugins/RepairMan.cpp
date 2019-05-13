@@ -55,7 +55,7 @@ void RepairMan::OnStep(Builder*) {
             }
 
             // Check if the building is a "combat building" (i.e. a turret, bunker or pf)
-            if (!free_workers.empty() && IsCombatUnit()(*building)) {
+            if (!free_workers.empty() && IsCombatUnit()(building)) {
                 int maximum_repair_count = GetMaximumScvRepairCountFor(free_workers.front(), building);
 
                 if (number_of_currently_repairing_scvs < maximum_repair_count) {
@@ -96,7 +96,7 @@ void RepairMan::OnUnitIdle(Unit* unit_, Builder*) {
 }
 
 void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
-    if (!IsBuilding()(*unit_))
+    if (!IsBuilding()(unit_))
         return;
 
     // Add upgrades that was researched by the building (or it's addon) back into the queue

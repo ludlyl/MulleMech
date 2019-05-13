@@ -43,7 +43,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
                 continue;
             if (std::find(enemy->buffs.begin(), enemy->buffs.end(), AntiArmorMissileDebuffId) != enemy->buffs.end())
                 continue;
-            if (!IsCombatUnit()(*enemy))
+            if (!IsCombatUnit()(enemy))
                 continue;
             // Make sure we wouldn't hit our own units
             if (sc2::DistanceSquared2D(allies.GetClosestUnit(enemy->pos)->pos, enemy->pos) < ArmorMissileRadius * ArmorMissileRadius)
@@ -57,7 +57,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
                     continue;
                 if (sc2::DistanceSquared2D(enemy->pos, inner_enemy->pos) > ArmorMissileRadius * ArmorMissileRadius)
                     continue;
-                if (!IsCombatUnit()(*enemy))
+                if (!IsCombatUnit()(enemy))
                     continue;
                 affected_value += inner_enemy->GetValue();
                 ++count;

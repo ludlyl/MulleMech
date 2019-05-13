@@ -178,8 +178,8 @@ std::vector<Units> CombatCommander::GroupEnemiesInBase() {
 
     // Consider defense in regards to every building we have, making a perimeter circle
     // for our base does not work in the general case
-    Units enemyUnits = gAPI->observer().GetUnits([&ourBuildings](auto& enemy) {
-        return sc2::DistanceSquared2D(enemy.pos, ourBuildings.GetClosestUnit(enemy.pos)->pos) <=
+    Units enemyUnits = gAPI->observer().GetUnits([&ourBuildings](auto enemy) {
+        return sc2::DistanceSquared2D(enemy->pos, ourBuildings.GetClosestUnit(enemy->pos)->pos) <=
                 SearchEnemyPadding * SearchEnemyPadding;
     }, sc2::Unit::Alliance::Enemy);
 
@@ -253,7 +253,7 @@ void CombatCommander::DefenseCheck() {
         float theirValue = 0;
         for (auto& group : enemyGroups) {
             for (auto& enemy : group) {
-                if (IsCombatUnit()(*enemy)) {
+                if (IsCombatUnit()(enemy)) {
                     theirValue += enemy->GetValue();
                 }
             }
@@ -268,7 +268,7 @@ void CombatCommander::DefenseCheck() {
 }
 
 void CombatCommander::OnUnitCreated(Unit* unit_){
-    if (!IsCombatUnit()(*unit_))
+    if (!IsCombatUnit()(unit_))
         return;
 
     // Use unit for harass?

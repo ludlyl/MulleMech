@@ -54,7 +54,7 @@ Hub::Hub(sc2::Race current_race_, Expansions expansions_):
 }
 
 void Hub::OnUnitCreated(Unit* unit_) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         for (auto& i : m_expansions) {
             if (std::floor(i->town_hall_location.x) != std::floor(unit_->pos.x) ||
                 std::floor(i->town_hall_location.y) != std::floor(unit_->pos.y))
@@ -68,7 +68,7 @@ void Hub::OnUnitCreated(Unit* unit_) {
             }
             break;
         }
-    } else if (IsRefinery()(*unit_)) {
+    } else if (IsRefinery()(unit_)) {
         // Would it be better to use GetClosestExpansion?
         for (auto& i : m_expansions) {
             for (const auto& geyser_position : i->geysers_positions) {
@@ -82,7 +82,7 @@ void Hub::OnUnitCreated(Unit* unit_) {
 }
 
 void Hub::OnUnitDestroyed(Unit* unit_) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         for (const auto& i : m_expansions) {
             if (unit_ == i->town_hall) {
                 i->alliance = sc2::Unit::Alliance::Neutral;
@@ -91,7 +91,7 @@ void Hub::OnUnitDestroyed(Unit* unit_) {
                 break;
             }
         }
-    } else if (IsRefinery()(*unit_)) {
+    } else if (IsRefinery()(unit_)) {
         // Would it be better to use GetClosestExpansion?
         for (auto& i : m_expansions) {
             for (auto it = i->refineries.begin(); it != i->refineries.end(); it++) {
@@ -114,7 +114,7 @@ sc2::UNIT_TYPEID Hub::GetCurrentWorkerType() const {
 
 Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPEID building_) {
     if (order_->assignee) {
-        if (IsIdleUnit(order_->assignee->unit_type)(*order_->assignee)) {
+        if (IsIdleUnit(order_->assignee->unit_type)(order_->assignee)) {
             return order_->assignee;
         }
     } else {
@@ -142,7 +142,7 @@ Unit* Hub::GetFreeBuildingProductionAssignee(const Order *order_, sc2::UNIT_TYPE
 }
 
 bool Hub::AssignBuildingProduction(Order* order_, Unit* assignee_) {
-    if (assignee_ && IsIdleUnit(assignee_->unit_type)(*assignee_)) {
+    if (assignee_ && IsIdleUnit(assignee_->unit_type)(assignee_)) {
         order_->assignee = assignee_;
         return true;
     }
