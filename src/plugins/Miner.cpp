@@ -47,6 +47,7 @@ void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
     if (IsTownHall()(*unit_)) {
         // A Town Hall died => Reassing workers
         auto expo = gHub->GetClosestExpansion(unit_->pos);
+        ClearWorkersHomeBaseIfNoActiveExpansion(expo);
         SplitWorkersOf(expo);
     }
 
@@ -283,6 +284,24 @@ void Miner::CallDownMULE() {
             continue;
 
         gAPI->action().Cast(orbitals[i], sc2::ABILITY_ID::EFFECT_CALLDOWNMULE, mineral_target);
+    }
+}
+
+void Miner::ClearWorkersHomeBaseIfNoActiveExpansion(const std::shared_ptr<Expansion>& expansion_) {
+    bool active_expansion_exists = false;
+
+    // We ignore mined out bases
+    for (auto& expo : gHub->GetExpansions()) {
+        if (expo->alliance == sc2::Unit::Alliance::Self && expo != expansion_ && expo->town_hall->ideal_harvesters > 0) {
+            active_expansion_exists = true;
+            break;
+        }
+    }
+
+    if (!active_expansion_exists) {
+        for (auto& worker : gAPI->observer().GetUnits(IsWorkerWithHomeBase(expansion_), sc2::Unit::Alliance::Self)) {
+            worker->AsWorker()->SetHomeBase(nullptr);
+        }
     }
 }
 
