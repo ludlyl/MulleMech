@@ -8,7 +8,7 @@ public:
 
     void OnCombatStep(const Units& enemies, const Units& allies) override;
 
-    void OnCombatEnded() override { m_stopped = false; }
+    void OnCombatEnded() override;
 
 private:
     float m_armorMissileCooldown = 0;
