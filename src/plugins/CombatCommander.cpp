@@ -401,7 +401,7 @@ void CombatCommander::AddDefenders(Units& defenders, const sc2::Point2D& locatio
     // Use SCVs as a last resort
     auto scv_pull_value = their_value - our_value * DefendWithSCVValueRatio;
     while (scv_pull_value > 0) {
-        auto worker = GetClosestFreeWorker(location);
+        auto worker = GetClosestFreeWorker(location, true);
         if (!worker)
             break;
         scv_pull_value -= worker->GetValue() * DefendWithSCVValueRatio;

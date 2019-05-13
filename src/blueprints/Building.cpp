@@ -9,7 +9,7 @@
 #include "BuildingPlacer.h"
 
 bool bp::Building::CanBeBuilt(const Order*) {
-    return FreeWorkerExists();
+    return FreeWorkerExists(true);
 }
 
 bool bp::Building::Build(Order* order_) {
@@ -19,6 +19,11 @@ bool bp::Building::Build(Order* order_) {
     auto optional_pos = gBuildingPlacer->ReserveBuildingSpace(*order_, include_add_on_space);
     if (optional_pos.has_value()) {
         Worker* worker = GetClosestFreeWorker(optional_pos.value());
+        // If no unemployed or mineral workers exists, try getting a free gas worker
+        // (this is a pretty inefficient way to solve this)
+        if (!worker) {
+            worker = GetClosestFreeWorker(optional_pos.value(), true);
+        }
         if (worker) {
             worker->Build(order_, optional_pos.value());
             worker->construction = std::make_unique<Construction>(optional_pos.value(), order_->unit_type_id,

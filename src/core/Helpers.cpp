@@ -600,21 +600,28 @@ sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_) {
     }
 }
 
-Units GetFreeWorkers() {
+Units GetFreeWorkers(bool include_gas_workers_) {
     // Might be a bit too ineffective to do it this way
-    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or,
-            {IsWorkerWithJob(Worker::Job::unemployed),
-             IsWorkerWithJob(Worker::Job::gathering_minerals)}), sc2::Unit::Alliance::Self);
+    if (include_gas_workers_) {
+        return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or,
+                {IsWorkerWithJob(Worker::Job::unemployed),
+                 IsWorkerWithJob(Worker::Job::gathering_minerals),
+                 IsWorkerWithJob(Worker::Job::gathering_vespene)}), sc2::Unit::Alliance::Self);
+    } else {
+        return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or,
+                {IsWorkerWithJob(Worker::Job::unemployed),
+                 IsWorkerWithJob(Worker::Job::gathering_minerals)}), sc2::Unit::Alliance::Self);
+    }
 }
 
-Worker* GetClosestFreeWorker(const sc2::Point2D& location_) {
-    Unit* closest_unit = GetFreeWorkers().GetClosestUnit(location_);
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_, bool include_gas_workers_) {
+    Unit* closest_unit = GetFreeWorkers(include_gas_workers_).GetClosestUnit(location_);
     if (!closest_unit)
         return nullptr;
 
     return closest_unit->AsWorker();
 }
 
-bool FreeWorkerExists() {
-    return !GetFreeWorkers().empty();
+bool FreeWorkerExists(bool include_gas_workers_) {
+    return !GetFreeWorkers(include_gas_workers_).empty();
 }
