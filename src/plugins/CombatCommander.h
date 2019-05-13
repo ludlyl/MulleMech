@@ -62,5 +62,4 @@ private:
     static constexpr float ReinforceSquadDist = 50.0f;          // Use ReinforceSquad if main squad is this far away
     static constexpr float DefenseResourcesOveredo = 1.25f;     // Spend this much more resources on defense compared to enemy
     static constexpr float DefendWithAllValueRatio = 0.25f;     // If enemy value to our value ratio is this or above => involve entire mainsquad
-    static constexpr float DefendWithSCVValueRatio = 1.5f;      // Our value times this value must be less than enemy value to pull SCVs
 };
