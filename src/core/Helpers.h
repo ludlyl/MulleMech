@@ -246,6 +246,8 @@ private:
     sc2::Unit::CloakState m_state;
 };
 
+bool IsThereTooManyEnemiesToBuildAt(const sc2::Point2D& pos);
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints = 12);
 
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints = 12);

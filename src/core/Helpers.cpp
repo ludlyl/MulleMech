@@ -422,6 +422,14 @@ bool CloakState::operator()(const sc2::Unit& unit_) const {
     return unit_.cloak == m_state;
 }
 
+bool IsThereTooManyEnemiesToBuildAt(const sc2::Point2D& pos) {
+    constexpr float ConsideredDistance = 20.0f;
+    constexpr std::size_t ErrorOnEnemyCount = 3;
+
+    return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
+        {IsCombatUnit(), IsWithinDist(pos, ConsideredDistance)}), sc2::Unit::Alliance::Enemy).size() >= ErrorOnEnemyCount;
+}
+
 std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
     std::vector<sc2::Point2D> points;
     points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
