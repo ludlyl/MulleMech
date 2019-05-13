@@ -24,28 +24,36 @@ void Builder::OnStep() {
 
     int max_minerals_needed = 0;
     int max_vespene_needed = 0;
-    auto nonseq_order_it = m_nonsequential_construction_orders.begin();
-    while (nonseq_order_it != m_nonsequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
-        if (!AreNoneResourceRequirementsFulfilled(&(*nonseq_order_it))) {
-            ++nonseq_order_it;
+    auto it = m_nonsequential_construction_orders.begin();
+    while (it != m_nonsequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        // Clear out the order if the order has an assignee and that assignee has died
+        if (it->assignee && !it->assignee->is_alive)
+            it = m_training_orders.erase(it);
+
+        if (!AreNoneResourceRequirementsFulfilled(&(*it))) {
+            ++it;
             continue;
         }
 
-        if (Build(&(*nonseq_order_it))) {
-            nonseq_order_it = m_nonsequential_construction_orders.erase(nonseq_order_it);
+        if (Build(&(*it))) {
+            it = m_nonsequential_construction_orders.erase(it);
         } else {
             // We want to save enough resources to afford the most expensive thing we can build in the queue
-            max_minerals_needed = std::max(max_minerals_needed, nonseq_order_it->mineral_cost);
-            max_vespene_needed = std::max(max_vespene_needed, nonseq_order_it->vespene_cost);
-            ++nonseq_order_it;
+            max_minerals_needed = std::max(max_minerals_needed, it->mineral_cost);
+            max_vespene_needed = std::max(max_vespene_needed, it->vespene_cost);
+            ++it;
         }
     }
 
     m_minerals = std::max(0, m_minerals - max_minerals_needed);
     m_vespene = std::max(0, m_vespene - max_vespene_needed);
 
-    auto it = m_sequential_construction_orders.begin();
+    it = m_sequential_construction_orders.begin();
     while (it != m_sequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        // Clear out the order if the order has an assignee and that assignee has died
+        if (it->assignee && !it->assignee->is_alive)
+            it = m_training_orders.erase(it);
+
         if (!Build(&(*it)))
             break;
 
@@ -55,6 +63,10 @@ void Builder::OnStep() {
     bool reserved = false;
     it = m_training_orders.begin();
     while (it != m_training_orders.end() && m_minerals >= MinimumUnitMineralCost) {
+        // Clear out the order if the order has an assignee and that assignee has died
+        if (it->assignee && !it->assignee->is_alive)
+            it = m_training_orders.erase(it);
+
         if (!AreNoneResourceRequirementsFulfilled(&*it)) {
             ++it;
             continue;
@@ -75,16 +87,29 @@ void Builder::OnStep() {
 }
 
 void Builder::OnUnitCreated(Unit* unit_) {
-    if (IsBuilding()(*unit_) && !IsAddon()(*unit_)) {
-        auto building_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::building), sc2::Unit::Alliance::Self);
-        if (!building_workers.empty()) {
-            auto worker = building_workers.GetClosestUnit(unit_->pos)->AsWorker();
-            if (worker->construction) {
-                worker->construction->building = unit_;
-            } else {
-                assert(false && "Worker set as builder but does not have a construction");
+    // build_progress has to be checked as this function is called for the town hall at the start of the game
+    if (unit_->build_progress < 1.0f && IsBuilding()(*unit_) && !IsAddon()(*unit_)) {
+        // This should only ever return one worker
+        // Checking IsWorkerWithJob is actually unnecessary and removing it would be a small performance improvement
+        // (but it's there to make sure the jobs are set correctly and to help assert if this isn't the case)
+        // Note: target tag is only set for refineries (and refineries doesn't have a pos, thereby the ugly solution...)
+        Units building_workers = gAPI->observer().GetUnits([&unit_](auto& unit) {
+            if (IsWorkerWithJob(Worker::Job::building)(unit) && !unit.orders.empty() &&
+                unit.orders.front().ability_id == unit_->GetTypeData()->ability_id) {
+                if (IsRefinery()(*unit_))
+                    return unit.orders.front().target_unit_tag ==
+                           gAPI->observer().GetUnits(IsGeyser(), sc2::Unit::Alliance::Neutral).GetClosestUnit(unit_->pos)->tag;
+                else
+                    return unit.orders.front().target_pos.x == unit_->pos.x &&
+                           unit.orders.front().target_pos.y == unit_->pos.y;
             }
-        }
+            return false;
+        }, sc2::Unit::Alliance::Self);
+
+        assert(building_workers.size() == 1 && "More or less than 1 worker was found building a new construction");
+        auto worker = building_workers.front()->AsWorker();
+        assert(worker->construction && "Worker set as builder but does not have a construction");
+        worker->construction->building = unit_;
     }
 }
 
@@ -270,12 +295,6 @@ bool Builder::AreNoneResourceRequirementsFulfilled(Order* order_, std::shared_pt
 }
 
 bool Builder::Build(Order* order_) {
-    // If the unit (building) that the order is assigned to has died we just return true
-    // (as that will lead to the order being deleted from the queue)
-    if (order_->assignee && !order_->assignee->is_alive) {
-        return true;
-    }
-
     if (m_minerals < order_->mineral_cost || m_vespene < order_->vespene_cost)
         return false;
 
