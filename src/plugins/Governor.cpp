@@ -317,7 +317,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
              if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
-                 if (num_of_ravens > OptimalNumOfRavens) { // If we have enough ravens, build other units
+                 if (num_of_ravens >= OptimalNumOfRavens) { // If we have enough ravens, build other units
                      if (num_of_hellbats != 0 &&
                          (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                          builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
@@ -325,10 +325,10 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                          return;
                      }
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER, false, unit_);
-                     gHistory.info() << "Schedule Hellion training" << std::endl;
+                     gHistory.info() << "Schedule Viking training" << std::endl;
                      return;
                  }
-                     // We want to use ravens for spotting stealth units.
+                 // We want to use ravens for spotting stealth units.
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_RAVEN, false, unit_);
                  gHistory.info() << "Schedule Raven training" << std::endl;
              }
@@ -347,6 +347,11 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  }
              }
              else { //case of no addon
+                 // Don't schedule if we're about to build a reactor/techlab (which is the normal case)
+                 if (builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB) != 0 ||
+                     builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR) != 0)
+                     return;
+
                  if (num_of_hellbats != 0 &&
                      (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);

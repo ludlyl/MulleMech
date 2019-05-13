@@ -164,7 +164,7 @@ int RepairMan::GetMaximumScvRepairCountFor(Unit* scv_, Unit* unit_) const {
     auto scv_radius = static_cast<double>(scv_->radius);
     auto unit_radius = static_cast<double>(unit_->radius);
 
-    return static_cast<int>(std::floor(M_PI / (std::asin(scv_radius / (scv_radius + unit_radius)))));
+    return static_cast<int>(std::floor(F_PI / (std::asin(scv_radius / (scv_radius + unit_radius)))));
 }
 
 int RepairMan::CountRepairingScvs(const Units& scvs, Unit* unit_) const {
