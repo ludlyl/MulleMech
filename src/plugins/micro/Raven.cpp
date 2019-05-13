@@ -116,3 +116,9 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
         }
     }
 }
+
+void Raven::OnCombatEnded() {
+    m_stopped = false;
+    m_armorMissileCooldown = 0;
+    m_turretCooldown = 0;
+}

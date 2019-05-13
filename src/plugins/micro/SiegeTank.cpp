@@ -69,4 +69,7 @@ void SiegeTank::OnCombatEnded() {
     // As the tank might be in the process of sieging,
     // just checking type = TERRAN_SIEGETANKSIEGED before calling this doesn't work
     Cast(sc2::ABILITY_ID::MORPH_UNSIEGE);
+
+    m_currentMaxRange = SiegeMaxRange + sc2::GetRandomScalar() * RangeRNG;
+    m_unsiegeCooldown = 0;
 }
