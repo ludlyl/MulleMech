@@ -27,8 +27,10 @@ void Builder::OnStep() {
     auto it = m_nonsequential_construction_orders.begin();
     while (it != m_nonsequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
         // Clear out the order if the order has an assignee and that assignee has died
-        if (it->assignee && !it->assignee->is_alive)
-            it = m_training_orders.erase(it);
+        if (it->assignee && !it->assignee->is_alive) {
+            it = m_nonsequential_construction_orders.erase(it);
+            continue;
+        }
 
         if (!AreNoneResourceRequirementsFulfilled(&(*it))) {
             ++it;
@@ -51,8 +53,10 @@ void Builder::OnStep() {
     it = m_sequential_construction_orders.begin();
     while (it != m_sequential_construction_orders.end() && m_minerals >= MinimumUnitMineralCost) {
         // Clear out the order if the order has an assignee and that assignee has died
-        if (it->assignee && !it->assignee->is_alive)
-            it = m_training_orders.erase(it);
+        if (it->assignee && !it->assignee->is_alive) {
+            it = m_sequential_construction_orders.erase(it);
+            continue;
+        }
 
         if (!Build(&(*it)))
             break;
@@ -64,8 +68,10 @@ void Builder::OnStep() {
     it = m_training_orders.begin();
     while (it != m_training_orders.end() && m_minerals >= MinimumUnitMineralCost) {
         // Clear out the order if the order has an assignee and that assignee has died
-        if (it->assignee && !it->assignee->is_alive)
+        if (it->assignee && !it->assignee->is_alive) {
             it = m_training_orders.erase(it);
+            continue;
+        }
 
         if (!AreNoneResourceRequirementsFulfilled(&*it)) {
             ++it;
