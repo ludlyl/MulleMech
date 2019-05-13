@@ -18,6 +18,9 @@ bool bp::Building::Build(Order* order_) {
     bool include_add_on_space = IsBuildingWithSupportForAddon()(order_->unit_type_id);
     auto optional_pos = gBuildingPlacer->ReserveBuildingSpace(*order_, include_add_on_space);
     if (optional_pos.has_value()) {
+        if (IsThereTooManyEnemiesToBuildAt(optional_pos.value()))
+            return false;
+
         Worker* worker = GetClosestFreeWorker(optional_pos.value());
         // If no unemployed or mineral workers exists, try getting a free gas worker
         // (this is a pretty inefficient way to solve this)

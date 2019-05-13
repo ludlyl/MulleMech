@@ -33,7 +33,8 @@ bool bp::Refinery::Build(Order* order_) {
         for (auto& geyser_position : expansion->geysers_positions) {
             auto geyser = visible_geysers.GetClosestUnit(geyser_position);
             // Note: only geysers that are in vision will report a vespene content > 0
-            if (geyser->vespene_contents > 0 && gBuildingPlacer->ReserveGeyser(geyser)) {
+            if (geyser->vespene_contents > 0 && !IsThereTooManyEnemiesToBuildAt(geyser_position) &&
+                gBuildingPlacer->ReserveGeyser(geyser)) {
                 Worker* worker = GetClosestFreeWorker(geyser->pos);
                 // If no unemployed or mineral workers exists, try getting a free gas worker
                 // (this is a pretty inefficient way to solve this)

@@ -49,6 +49,9 @@ Unit* bp::Addon::GetValidAssignee(const Order* order_) {
                 sc2::Unit::Alliance::Self);
 
         for (auto& building : parent_buildings) {
+            // Check if too many enemies are nearby
+            if (IsThereTooManyEnemiesToBuildAt(building->pos))
+                continue;
             // Check if the addon can be placed
             if (gAPI->query().CanBePlaced(supplyDepotOrder, GetTerranAddonPosition(gAPI->observer().GetUnit(building->tag)))) {
                 assignee = building;
