@@ -10,30 +10,30 @@
 
 #include <cmath>
 
-IsUnit::IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished):
+IsUnit::IsUnit(sc2::UNIT_TYPEID type_, bool with_not_finished_):
     m_type(type_), m_build_progress(1.0f) {
-    if (with_not_finished)
+    if (with_not_finished_)
         m_build_progress = 0.0f;
 }
 
-bool IsUnit::operator()(const sc2::Unit& unit_) const {
+bool IsUnit::operator()(const Unit* unit_) const {
     // Note for future development of function:
     // Returning true if the unit is a tech alias as default is NOT ok here
     // (as that would break e.g. IsIdleUnit (a flying factory can be assigned to produce a helion))
     // Instead add another parameter to the constructor or create a new Helper function
-    return unit_.unit_type == m_type &&
-        unit_.build_progress >= m_build_progress;
+    return unit_->unit_type == m_type &&
+        unit_->build_progress >= m_build_progress;
 }
 
-bool IsDamaged::operator()(const sc2::Unit& unit_) const {
+bool IsDamaged::operator()(const Unit* unit_) const {
     // Epsilon shouldn (probably) not be needed here
-    return unit_.health < unit_.health_max * unit_.build_progress;
+    return unit_->health < unit_->health_max * unit_->build_progress;
 }
 
-bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
+bool IsCombatUnit::operator()(const Unit* unit_) const {
     // TODO: Check hallucinations
 
-    switch (unit_.unit_type.ToType()) {
+    switch (unit_->unit_type.ToType()) {
        case sc2::UNIT_TYPEID::TERRAN_BANSHEE:
        case sc2::UNIT_TYPEID::TERRAN_CYCLONE:
        case sc2::UNIT_TYPEID::TERRAN_GHOST:
@@ -111,8 +111,8 @@ bool IsCombatUnit::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsTemporaryUnit::operator()(const sc2::Unit& unit_) const {
-    return (*this)(unit_.unit_type);
+bool IsTemporaryUnit::operator()(const Unit* unit_) const {
+    return (*this)(unit_->unit_type);
 }
 
 bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
@@ -135,15 +135,15 @@ bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
     }
 }
 
-bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
-    auto data = gAPI->observer().GetUnitTypeData(unit_.unit_type);
+bool IsAntiAirUnit::operator()(const Unit* unit_) const {
+    auto data = gAPI->observer().GetUnitTypeData(unit_->unit_type);
     for (const auto& weapon : data->weapons) {
         if (weapon.type == sc2::Weapon::TargetType::Air || weapon.type == sc2::Weapon::TargetType::Any) {
             return true;
         }
     }
     // Special cases. TODO: Put in more units here (raven? ht?)
-    switch (unit_.unit_type.ToType()) {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::TERRAN_WIDOWMINE:
             return true;
         default:
@@ -152,16 +152,16 @@ bool IsAntiAirUnit::operator()(const sc2::Unit& unit_) const {
     return false;
 }
 
-bool IsBuilding::operator()(const sc2::Unit& unit_) const {
-    return (*this)(unit_.unit_type);
+bool IsBuilding::operator()(const Unit* unit_) const {
+    return (*this)(unit_->unit_type);
 }
 
-bool IsFinishedBuilding::operator()(const sc2::Unit& unit_) const {
-    return IsBuilding()(unit_) && unit_.build_progress >= 1.0f;
+bool IsFinishedBuilding::operator()(const Unit* unit_) const {
+    return IsBuilding()(unit_) && unit_->build_progress >= 1.0f;
 }
 
-bool IsUnfinishedBuilding::operator()(const sc2::Unit& unit_) const {
-    return IsBuilding()(unit_) && unit_.build_progress < 1.0f;
+bool IsUnfinishedBuilding::operator()(const Unit* unit_) const {
+    return IsBuilding()(unit_) && unit_->build_progress < 1.0f;
 }
 
 bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
@@ -169,8 +169,8 @@ bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
     return std::find(data->attributes.begin(), data->attributes.end(), sc2::Attribute::Structure) != data->attributes.end();
 }
 
-bool IsBuildingWithSupportForAddon::operator()(const sc2::Unit& unit_) const {
-    return (*this)(unit_.unit_type);
+bool IsBuildingWithSupportForAddon::operator()(const Unit* unit_) const {
+    return (*this)(unit_->unit_type);
 }
 
 bool IsBuildingWithSupportForAddon::operator()(sc2::UNIT_TYPEID type_) const {
@@ -188,8 +188,8 @@ bool IsBuildingWithSupportForAddon::operator()(sc2::UNIT_TYPEID type_) const {
     }
 }
 
-bool IsAddon::operator()(const sc2::Unit& unit_) const {
-    return (*this)(unit_.unit_type);
+bool IsAddon::operator()(const Unit* unit_) const {
+    return (*this)(unit_->unit_type);
 }
 
 bool IsAddon::operator()(sc2::UNIT_TYPEID type_) const {
@@ -209,12 +209,12 @@ bool IsAddon::operator()(sc2::UNIT_TYPEID type_) const {
     }
 }
 
-bool IsVisibleMineralPatch::operator()(const sc2::Unit& unit_) const {
-    return unit_.mineral_contents > 0;
+bool IsVisibleMineralPatch::operator()(const Unit* unit_) const {
+    return unit_->mineral_contents > 0;
 }
 
-bool IsMineralPatch::operator()(const sc2::Unit& unit_) const {
-    switch (unit_.unit_type.ToType()) {
+bool IsMineralPatch::operator()(const Unit* unit_) const {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD:
         case sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750:
         case sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD:
@@ -234,8 +234,8 @@ bool IsMineralPatch::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsGeyser::operator()(const sc2::Unit& unit_) const {
-    switch (unit_.unit_type.ToType()) {
+bool IsGeyser::operator()(const Unit* unit_) const {
+    switch (unit_->unit_type.ToType()) {
         case sc2::UNIT_TYPEID::NEUTRAL_VESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_PROTOSSVESPENEGEYSER:
         case sc2::UNIT_TYPEID::NEUTRAL_SPACEPLATFORMGEYSER:
@@ -248,53 +248,51 @@ bool IsGeyser::operator()(const sc2::Unit& unit_) const {
     }
 }
 
-bool IsVisibleUndepletedGeyser::operator()(const sc2::Unit& unit_) const {
-    return unit_.vespene_contents > 0 && unit_.alliance == sc2::Unit::Alliance::Neutral;
+bool IsVisibleUndepletedGeyser::operator()(const Unit* unit_) const {
+    return unit_->vespene_contents > 0 && unit_->alliance == sc2::Unit::Alliance::Neutral;
 }
 
-bool IsFoggyResource::operator()(const sc2::Unit& unit_) const {
+bool IsFoggyResource::operator()(const Unit* unit_) const {
     if (IsMineralPatch()(unit_) || IsGeyser()(unit_)) {
-        return unit_.display_type != sc2::Unit::DisplayType::Visible;
+        return unit_->display_type != sc2::Unit::DisplayType::Visible;
     }
     return false;
 }
 
 
-bool IsRefinery::operator()(const sc2::Unit& unit_) const {
-    return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR ||
-        unit_.unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR ||
-        unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
+bool IsRefinery::operator()(const Unit* unit_) const {
+    return unit_->unit_type == sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR ||
+           unit_->unit_type == sc2::UNIT_TYPEID::ZERG_EXTRACTOR ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_REFINERY;
 }
 
 IsIdleUnit::IsIdleUnit(sc2::UNIT_TYPEID type_, bool count_non_full_reactor_as_idle) :
         m_type(type_), m_count_non_full_reactor_as_idle(count_non_full_reactor_as_idle) {
 }
 
-bool IsIdleUnit::operator()(const sc2::Unit& unit_) const {
+bool IsIdleUnit::operator()(const Unit* unit_) const {
     if (IsUnit(m_type)(unit_)) {
-        Unit* wrappedUnit = gAPI->WrapUnit(&unit_);
         if (m_count_non_full_reactor_as_idle && HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
-            return wrappedUnit->NumberOfOrders() < 2;
+            return unit_->NumberOfOrders() < 2;
         } else {
-            return wrappedUnit->IsIdle();
+            return unit_->IsIdle();
         }
     }
     return false;
 }
 
-bool IsWorker::operator()(const sc2::Unit& unit_) const {
-    return unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_SCV ||
-        unit_.unit_type == sc2::UNIT_TYPEID::ZERG_DRONE ||
-        unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_PROBE;
+bool IsWorker::operator()(const Unit* unit_) const {
+    return unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_SCV ||
+           unit_->unit_type == sc2::UNIT_TYPEID::ZERG_DRONE ||
+           unit_->unit_type == sc2::UNIT_TYPEID::PROTOSS_PROBE;
 }
 
 IsWorkerWithJob::IsWorkerWithJob(Worker::Job job_) : m_job(job_) {
 }
 
-bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
+bool IsWorkerWithJob::operator()(const Unit* unit_) const {
     if (IsWorker()(unit_)) {
-        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
-        if (worker && worker->GetJob() == m_job) {
+        if (unit_->AsWorker()->GetJob() == m_job) {
             return true;
         }
     }
@@ -304,10 +302,9 @@ bool IsWorkerWithJob::operator()(const sc2::Unit& unit_) const {
 IsWorkerWithHomeBase::IsWorkerWithHomeBase(const std::shared_ptr<Expansion>& home_base_) : m_home_base(home_base_) {
 }
 
-bool IsWorkerWithHomeBase::operator()(const sc2::Unit& unit_) const {
+bool IsWorkerWithHomeBase::operator()(const Unit* unit_) const {
     if (IsWorker()(unit_)) {
-        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
-        if (worker && worker->GetHomeBase() == m_home_base) {
+        if (unit_->AsWorker()->GetHomeBase() == m_home_base) {
             return true;
         }
     }
@@ -317,11 +314,10 @@ bool IsWorkerWithHomeBase::operator()(const sc2::Unit& unit_) const {
 IsWorkerWithUnstartedConstructionOrderFor::IsWorkerWithUnstartedConstructionOrderFor(sc2::UNIT_TYPEID type_) : m_type(type_) {
 }
 
-bool IsWorkerWithUnstartedConstructionOrderFor::operator()(const sc2::Unit& unit_) const {
+bool IsWorkerWithUnstartedConstructionOrderFor::operator()(const Unit* unit_) const {
     if (IsWorker()(unit_)) {
-        Worker* worker = gAPI->WrapUnit(&unit_)->AsWorker();
-        if (worker && worker->construction &&
-            worker->construction->building_type == m_type &&
+        auto worker = unit_->AsWorker();
+        if (worker->construction && worker->construction->building_type == m_type &&
             worker->construction->building == nullptr) {
             return true;
         }
@@ -329,20 +325,20 @@ bool IsWorkerWithUnstartedConstructionOrderFor::operator()(const sc2::Unit& unit
     return false;
 }
 
-bool IsTownHall::operator()(const sc2::Unit& unit_) const {
-    return unit_.unit_type == sc2::UNIT_TYPEID::PROTOSS_NEXUS ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
-           unit_.unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS ||
-           unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
-           unit_.unit_type == sc2::UNIT_TYPEID::ZERG_HIVE ||
-           unit_.unit_type == sc2::UNIT_TYPEID::ZERG_LAIR;
+bool IsTownHall::operator()(const Unit* unit_) const {
+    return unit_->unit_type == sc2::UNIT_TYPEID::PROTOSS_NEXUS ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTERFLYING ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMANDFLYING ||
+           unit_->unit_type == sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS ||
+           unit_->unit_type == sc2::UNIT_TYPEID::ZERG_HATCHERY ||
+           unit_->unit_type == sc2::UNIT_TYPEID::ZERG_HIVE ||
+           unit_->unit_type == sc2::UNIT_TYPEID::ZERG_LAIR;
 }
 
-bool IsIdleTownHall::operator()(const sc2::Unit& unit_) const {
-    return IsTownHall()(unit_) && unit_.orders.empty() && unit_.build_progress == 1.0f;
+bool IsIdleTownHall::operator()(const Unit* unit_) const {
+    return IsTownHall()(unit_) && unit_->NumberOfOrders() == 0 && unit_->build_progress == 1.0f;
 }
 
 IsOrdered::IsOrdered(sc2::UNIT_TYPEID type_): m_type(type_) {
@@ -352,95 +348,94 @@ bool IsOrdered::operator()(const Order& order_) const {
     return order_.unit_type_id == m_type;
 }
 
-bool IsWithinDist::operator()(const sc2::Unit& unit_) const {
+bool IsWithinDist::operator()(const Unit* unit_) const {
     if (m_2d)
-        return sc2::DistanceSquared2D(m_center, unit_.pos) < m_distSq;
-    return sc2::DistanceSquared3D(m_center, unit_.pos) < m_distSq;
+        return sc2::DistanceSquared2D(m_center, unit_->pos) < m_distSq;
+    return sc2::DistanceSquared3D(m_center, unit_->pos) < m_distSq;
 }
 
 HasAddon::HasAddon(sc2::UNIT_TYPEID addon_type_): m_addon_type(addon_type_) {
 }
 
-bool HasAddon::operator()(const sc2::Unit& unit_) const {
+bool HasAddon::operator()(const Unit* unit_) const {
     // I.e. does unit_ have "no add-on" (INVALID)?
-    if (unit_.add_on_tag == sc2::NullTag && m_addon_type == sc2::UNIT_TYPEID::INVALID) {
+    if (unit_->add_on_tag == sc2::NullTag && m_addon_type == sc2::UNIT_TYPEID::INVALID) {
         return true;
     }
-    if (unit_.add_on_tag == sc2::NullTag && m_addon_type != sc2::UNIT_TYPEID::INVALID) {
+    if (unit_->add_on_tag == sc2::NullTag && m_addon_type != sc2::UNIT_TYPEID::INVALID) {
         return false;
     }
 
-    auto addonAsUnit = gAPI->observer().GetUnit(unit_.add_on_tag);
+    auto addonAsUnit = gAPI->observer().GetUnit(unit_->add_on_tag);
     auto addonType = addonAsUnit->unit_type.ToType();
     // The second part (after the or) is needed for the function to return true
     // if you send in e.g. just TECHLAB (instead of e.g. FACTORY_TECHLAB)
     return addonType == m_addon_type || addonAsUnit->GetTypeData()->tech_alias.front() == m_addon_type;
 }
 
-MultiFilter::MultiFilter(Selector selector, std::initializer_list<std::function<bool(const sc2::Unit& unit)>> fns_)
-    : m_functors(fns_), m_selector(selector)
+MultiFilter::MultiFilter(Selector selector_, std::initializer_list<API::Filter> filters_)
+    : m_filters(filters_), m_selector(selector_)
 {
 }
 
-bool MultiFilter::operator()(const sc2::Unit& unit_) const {
+bool MultiFilter::operator()(const Unit* unit_) const {
     if (m_selector == Selector::And) {
-        for (auto& fn : m_functors) {
-            if (!fn(unit_))
+        for (auto& filter : m_filters) {
+            if (!filter(unit_))
                 return false;
         }
         return true;
     }
     else if (m_selector == Selector::Or) {
-        for (auto& fn : m_functors) {
-            if (fn(unit_))
+        for (auto& filter : m_filters) {
+            if (filter(unit_))
                 return true;
         }
         return false;
     }
-
     return false;
 }
 
-Inverse::Inverse(std::function<bool(const sc2::Unit& unit)> functor) : m_functor(std::move(functor)) {}
+Inverse::Inverse(API::Filter filter_) : m_filter(std::move(filter_)) {}
 
-bool Inverse::operator()(const sc2::Unit& unit_) const {
-    return !m_functor(unit_);
+bool Inverse::operator()(const Unit* unit_) const {
+    return !m_filter(unit_);
 }
 
 sc2::Point2D GetTerranAddonPosition(const Unit* unit_) {
     return GetTerranAddonPosition(unit_->pos);
 }
 
-sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parentBuildingPosition) {
-    sc2::Point2D pos = parentBuildingPosition;
+sc2::Point2D GetTerranAddonPosition(const sc2::Point2D& parent_building_position_) {
+    sc2::Point2D pos = parent_building_position_;
     pos.x += ADDON_DISPLACEMENT_IN_X;
     pos.y += ADDON_DISPLACEMENT_IN_Y;
     return pos;
 }
 
-bool CloakState::operator()(const sc2::Unit& unit_) const {
-    return unit_.cloak == m_state;
+bool CloakState::operator()(const Unit* unit_) const {
+    return unit_->cloak == m_state;
 }
 
-bool IsThereTooManyEnemiesToBuildAt(const sc2::Point2D& pos) {
+bool IsThereTooManyEnemiesToBuildAt(const sc2::Point2D& pos_) {
     constexpr float ConsideredDistance = 20.0f;
     constexpr std::size_t ErrorOnEnemyCount = 3;
 
     return gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::And,
-        {IsCombatUnit(), IsWithinDist(pos, ConsideredDistance)}), sc2::Unit::Alliance::Enemy).size() >= ErrorOnEnemyCount;
+        {IsCombatUnit(), IsWithinDist(pos_, ConsideredDistance)}), sc2::Unit::Alliance::Enemy).size() >= ErrorOnEnemyCount;
 }
 
-std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, int numPoints) {
+std::vector<sc2::Point2D> PointsInCircle(float radius_, const sc2::Point2D& center_, int num_points_) {
     std::vector<sc2::Point2D> points;
-    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(num_points_));
 
-    float angleSplit = F_2PI / numPoints;
-    for (int i = 0; i < numPoints; ++i) {
+    float angleSplit = F_2PI / num_points_;
+    for (int i = 0; i < num_points_; ++i) {
         sc2::Point2D p;
 
-        p.x = std::cos(i * angleSplit) * radius;
-        p.y = std::sin(i * angleSplit) * radius;
-        p += center;
+        p.x = std::cos(i * angleSplit) * radius_;
+        p.y = std::sin(i * angleSplit) * radius_;
+        p += center_;
 
         points.push_back(p);
     }
@@ -448,26 +443,26 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     return points;
 }
 
-std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& center, float forcedHeight, int numPoints) {
+std::vector<sc2::Point2D> PointsInCircle(float radius_, const sc2::Point2D& center_, float forced_height_, int num_points_) {
     std::vector<sc2::Point2D> points;
-    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(numPoints));
+    points.reserve(static_cast<std::vector<sc2::Point2D>::size_type>(num_points_));
 
-    float angleSplit = F_2PI / numPoints;
-    for (int i = 0; i < numPoints; ++i) {
+    float angleSplit = F_2PI / num_points_;
+    for (int i = 0; i < num_points_; ++i) {
         sc2::Point2D p;
 
         // At most 4 attempts per point
         bool found = false;
         for (int j = 0; j < 4 && !found; ++j) {
             // Reduce radius a bit for each attempt
-            float magnitude = radius - j * (radius / 5.0f);
+            float magnitude = radius_ - j * (radius_ / 5.0f);
             p.x = std::cos(i * angleSplit) * magnitude;
             p.y = std::sin(i * angleSplit) * magnitude;
             auto testVec = p * (magnitude + 0.75f) / magnitude; // Test with a slightly longer vector
-            testVec += center;
-            p += center;
+            testVec += center_;
+            p += center_;
 
-            if (std::abs(gAPI->observer().TerrainHeight(testVec) - forcedHeight) < 0.05f)
+            if (std::abs(gAPI->observer().TerrainHeight(testVec) - forced_height_) < 0.05f)
                 found = true;
         }
 
@@ -478,13 +473,13 @@ std::vector<sc2::Point2D> PointsInCircle(float radius, const sc2::Point2D& cente
     return points;
 }
 
-sc2::Point2D Rotate2D(sc2::Point2D vector, float rotation) {
+sc2::Point2D Rotate2D(sc2::Point2D vector_, float rotation_) {
     sc2::Point2D vector_prime;
-    float cos_angle = std::cos(rotation);
-    float sin_angle = std::sin(rotation);
+    float cos_angle = std::cos(rotation_);
+    float sin_angle = std::sin(rotation_);
 
-    vector_prime.x = vector.x * cos_angle - vector.y * sin_angle;
-    vector_prime.y = vector.x * sin_angle + vector.y * cos_angle;
+    vector_prime.x = vector_.x * cos_angle - vector_.y * sin_angle;
+    vector_prime.y = vector_.x * sin_angle + vector_.y * cos_angle;
 
     return vector_prime;
 }
@@ -498,7 +493,7 @@ std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(const sc2::UnitType
 }
 
 std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
-                                                             sc2::UnitTypeID suppliedTechRequirement_) {
+                                                             sc2::UnitTypeID supplied_tech_requirements_) {
     switch (id_.ToType()) {
         case sc2::ABILITY_ID::RESEARCH_COMBATSHIELD:
         case sc2::ABILITY_ID::RESEARCH_CONCUSSIVESHELLS:
@@ -571,10 +566,10 @@ std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
             return {sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB, sc2::UNIT_TYPEID::TERRAN_FUSIONCORE};
 
         default: {
-            if (suppliedTechRequirement_ == sc2::UNIT_TYPEID::INVALID) {
+            if (supplied_tech_requirements_ == sc2::UNIT_TYPEID::INVALID) {
                 return {};
             }
-            return {suppliedTechRequirement_};
+            return {supplied_tech_requirements_};
         }
     }
 }

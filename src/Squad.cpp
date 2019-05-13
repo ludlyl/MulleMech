@@ -44,7 +44,7 @@ void Squad::RemoveUnit(Unit* unit) {
 
 void Squad::Absorb(Squad& other) {
     for (auto& unit : other.GetUnits()) {
-        if (IsWorker()(*unit)) { // don't absorb workers, mark them unemployed instead
+        if (IsWorker()(unit)) { // don't absorb workers, mark them unemployed instead
             unit->AsWorker()->SetAsUnemployed();
         } else {
             gAPI->action().MoveTo(unit, GetCenter()); // send to us

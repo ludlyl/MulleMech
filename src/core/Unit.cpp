@@ -59,7 +59,7 @@ const Worker* Unit::AsWorker() const {
     if (auto worker = dynamic_cast<const Worker*>(this)) {
         return worker;
     } else {
-        if (IsWorker()(*this))
+        if (IsWorker()(this))
             throw std::runtime_error("Unit with worker typeid must be of type Worker");
     }
     return nullptr;

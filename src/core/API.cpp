@@ -167,8 +167,9 @@ void Debug::SendDebug() const {
     m_debug->SendDebug();
 }
 
-Observer::Observer(const sc2::ObservationInterface* observer_):
-    m_observer(observer_) {
+Observer::Observer(const sc2::ObservationInterface* observer_,
+                   std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_):
+    m_observer(observer_), m_unit_map(unit_map_) {
 }
 
 void Observer::OnUpgradeCompleted() {
@@ -176,31 +177,56 @@ void Observer::OnUpgradeCompleted() {
 }
 
 Unit* Observer::GetUnit(sc2::Tag tag_) const {
-    auto unit = m_observer->GetUnit(tag_);
-    if (!unit)
-        return nullptr;
-    return gAPI->WrapUnit(unit);
+    auto itr = m_unit_map.find(tag_);
+    if (itr != m_unit_map.end()) {
+        return itr->second.get();
+    } else {
+        auto unit = m_observer->GetUnit(tag_);
+        if (unit == nullptr) {
+            assert(false && "Unit not in unit_map but existed!");
+            return nullptr;
+        }
+        return gAPI->WrapAndUpdateUnit(unit);
+    }
 }
 
 Units Observer::GetUnits() const {
-    return Units(m_observer->GetUnits());
+    Units units;
+    units.reserve(m_unit_map.size());
+    for (auto& [ tag, unit ] : m_unit_map) {
+        units.push_back(unit.get());
+    }
+    return units;
 }
 
 Units Observer::GetUnits(sc2::Unit::Alliance alliance_) const {
-    return Units(m_observer->GetUnits(alliance_));
+    Units units; // Do we want to reserve for example half of all units in m_unit_map here?
+    for (auto& [ tag, unit ] : m_unit_map) {
+        if (unit->alliance == alliance_) {
+            units.push_back(unit.get());
+        }
+    }
+    return units;
 }
 
-Units Observer::GetUnits(const sc2::Filter& filter_) const {
-    // NOTE: The documentation for this function is wrong, in sc2_client.cc it
-    //       does ForEachExistingUnit, and only applies the filter, it doesn't
-    //       force alliance Self
-    auto units = m_observer->GetUnits(filter_);
-    return Units(units);
+Units Observer::GetUnits(const Filter& filter_) const {
+    Units units;
+    for (auto& [ tag, unit ] : m_unit_map) {
+        if (filter_(unit.get())) {
+            units.push_back(unit.get());
+        }
+    }
+    return units;
 }
 
-Units Observer::GetUnits(const sc2::Filter& filter_,
-    sc2::Unit::Alliance alliance_) const {
-    return Units(m_observer->GetUnits(alliance_, filter_));
+Units Observer::GetUnits(const Filter& filter_, sc2::Unit::Alliance alliance_) const {
+    Units units;
+    for (auto& [ tag, unit ] : m_unit_map) {
+        if (unit->alliance == alliance_ && filter_(unit.get())) {
+            units.push_back(unit.get());
+        }
+    }
+    return units;
 }
 
 size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished, bool count_tech_alias) const {
@@ -209,17 +235,17 @@ size_t Observer::CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished, b
     // As the API thinks of depots and lowered depots as different buildings, we handle this as a special case
     // (by actually counting how many supply depots you have when the type_ is TERRAN_SUPPLYDEPOT)
     if (type_ == sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT) {
-        return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, with_not_finished)).size() +
-                m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished)).size();
+        return GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOT, with_not_finished), sc2::Unit::Alliance::Self).size() +
+                GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_SUPPLYDEPOTLOWERED, with_not_finished), sc2::Unit::Alliance::Self).size();
     }
     // Same with Orbital Command, Planetary Fortress and Command Center
     if (count_tech_alias && type_ == sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER) {
-        return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, with_not_finished)).size() +
-            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, with_not_finished)).size() +
-            m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, with_not_finished)).size();
+        return GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER, with_not_finished), sc2::Unit::Alliance::Self).size() +
+            GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_ORBITALCOMMAND, with_not_finished), sc2::Unit::Alliance::Self).size() +
+            GetUnits(IsUnit(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS, with_not_finished), sc2::Unit::Alliance::Self).size();
     }
 
-    return m_observer->GetUnits(sc2::Unit::Alliance::Self, IsUnit(type_, with_not_finished)).size();
+    return GetUnits(IsUnit(type_, with_not_finished), sc2::Unit::Alliance::Self).size();
 }
 
 const std::vector<sc2::UpgradeID>& Observer::GetUpgrades() const {
@@ -473,7 +499,7 @@ Interface::Interface(sc2::ActionInterface* action_,
     sc2::ControlInterface* control_, sc2::DebugInterface* debug_,
     const sc2::ObservationInterface* observer_, sc2::QueryInterface* query_):
     m_action(action_), m_control(control_), m_debug(debug_),
-    m_observer(observer_), m_query(query_) {
+    m_observer(observer_, m_unit_map), m_query(query_) {
 }
 
 void Interface::Init() {
@@ -489,15 +515,17 @@ void Interface::Init() {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
+    // We want to populate m_unit_map
+    OnStep();
 }
 
-Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
+Unit* Interface::WrapAndUpdateUnit(const sc2::Unit* unit_) {
     assert(unit_ != nullptr);
 
-    auto itr = m_unitObjects.find(unit_->tag);
-    if (itr == m_unitObjects.end()) {
-        m_unitObjects[unit_->tag] = Unit::Make(*unit_);
-        return m_unitObjects[unit_->tag].get();
+    auto itr = m_unit_map.find(unit_->tag);
+    if (itr == m_unit_map.end()) {
+        m_unit_map[unit_->tag] = Unit::Make(*unit_);
+        return m_unit_map[unit_->tag].get();
     }
 
     itr->second->UpdateAPIData(*unit_);
@@ -505,14 +533,14 @@ Unit* Interface::WrapUnit(const sc2::Unit* unit_) {
 }
 
 void Interface::OnStep() {
-    for (auto& pair : m_unitObjects)
+    for (auto& pair : m_unit_map)
         pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
 
     sc2::Units units = observer().m_observer->GetUnits();
     for (const sc2::Unit* unit : units) {
-        auto itr = m_unitObjects.find(unit->tag);
-        if (itr == m_unitObjects.end()) {
-            m_unitObjects[unit->tag] = Unit::Make(*unit);
+        auto itr = m_unit_map.find(unit->tag);
+        if (itr == m_unit_map.end()) {
+            m_unit_map[unit->tag] = Unit::Make(*unit);
         } else {
             itr->second->IsInVision = true;
             itr->second->m_order_queued_in_current_step = false;

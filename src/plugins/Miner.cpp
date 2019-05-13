@@ -30,7 +30,7 @@ void Miner::OnStep(Builder* builder_) {
 }
 
 void Miner::OnUnitCreated(Unit* unit_) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         // Put our TownHall's rally point
         auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
             sc2::Unit::Alliance::Neutral);
@@ -44,7 +44,7 @@ void Miner::OnUnitCreated(Unit* unit_) {
 }
 
 void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         // A Town Hall died => Reassing workers
         auto expo = gHub->GetClosestExpansion(unit_->pos);
         ClearWorkersHomeBaseIfNoActiveExpansion(expo);

@@ -25,6 +25,8 @@ constexpr float OrbitalScanCost = 50.0f;
 constexpr float OrbitalMuleCost = 50.0f;
 constexpr float OrbitalScanRadius = 12.3f;
 
+typedef std::function<bool(const Unit* unit)> Filter;
+
 struct Action {
     explicit Action(sc2::ActionInterface* action_);
 
@@ -90,7 +92,8 @@ private:
 };
 
 struct Observer {
-    explicit Observer(const sc2::ObservationInterface* observer_);
+    explicit Observer(const sc2::ObservationInterface* observer_,
+                      std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_);
 
     Unit* GetUnit(sc2::Tag tag_) const;
 
@@ -101,12 +104,12 @@ struct Observer {
     Units GetUnits(sc2::Unit::Alliance alliance_) const;
 
     // Get Units by filter
-    Units GetUnits(const sc2::Filter& filter_) const;
+    Units GetUnits(const Filter& filter_) const;
 
     // Get Units by alliance and a filter
-    Units GetUnits(const sc2::Filter& filter_, sc2::Unit::Alliance alliance_) const;
+    Units GetUnits(const Filter& filter_, sc2::Unit::Alliance alliance_) const;
 
-    // Count how many we have of said unit type
+    // Count how many we have of said unit type, NOTE: This only count or own units!
     size_t CountUnitType(sc2::UNIT_TYPEID type_, bool with_not_finished = false, bool count_tech_alias = true) const;
 
     const std::vector<sc2::UpgradeID>& GetUpgrades() const;
@@ -162,6 +165,7 @@ private:
     const sc2::ObservationInterface* m_observer;
 
     std::unordered_map<sc2::UNIT_TYPEID, std::unique_ptr<sc2::UnitTypeData>> m_unitDataCache;
+    std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& m_unit_map;
 };
 
 struct Query {
@@ -201,7 +205,7 @@ struct Interface {
     Query& query() { return m_query; }
 
     // Returned Unit object has life time until end of game and can be saved & accessed without concern
-    Unit* WrapUnit(const sc2::Unit* unit_);
+    Unit* WrapAndUpdateUnit(const sc2::Unit* unit_);
 
     void Init();
 
@@ -215,7 +219,7 @@ private:
     Debug m_debug;
     Observer m_observer;
     Query m_query;
-    std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unitObjects;
+    std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unit_map;
 };
 
 }  // namespace API

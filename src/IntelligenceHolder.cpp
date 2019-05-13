@@ -19,9 +19,9 @@ void IntelligenceHolder::OnGameStart() {
 
 void IntelligenceHolder::OnUnitEnterVision(Unit* unit_) {
     if (unit_->alliance == sc2::Unit::Alliance::Enemy) {
-        if (!IsTemporaryUnit()(*unit_) && !m_enemyUnits.contains(unit_)) {
+        if (!IsTemporaryUnit()(unit_) && !m_enemyUnits.contains(unit_)) {
             m_enemyUnits.push_back(unit_);
-            if (IsTownHall()(*unit_)) {
+            if (IsTownHall()(unit_)) {
                 MarkEnemyExpansion(unit_);
             }
         }
@@ -31,7 +31,7 @@ void IntelligenceHolder::OnUnitEnterVision(Unit* unit_) {
 void IntelligenceHolder::OnUnitDestroyed(Unit* unit_) {
     // Clear out unit from internal list if dead
     if (unit_->alliance == sc2::Unit::Alliance::Enemy) {
-         if (IsTownHall()(*unit_)) {
+         if (IsTownHall()(unit_)) {
             for (const auto& i : gHub->GetExpansions()) {
                 if (unit_ == i->town_hall) {
                     // Special case for if we destroyed the enemies main
@@ -122,7 +122,7 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBaseFurthestFrom(const st
 }
 
 void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
-    assert(IsTownHall()(*unit_));
+    assert(IsTownHall()(unit_));
 
     auto exp = gHub->GetClosestExpansion(unit_->pos);
     if (exp->alliance == sc2::Unit::Alliance::Neutral) {

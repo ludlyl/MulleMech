@@ -129,12 +129,12 @@ sc2::Point3D GetCenterBehindMinerals(const sc2::Point3D& baseLocation) {
 std::vector<MineralLine> GetMineralLines() {
     auto mineral_patches = gAPI->observer().GetUnits(
         [](const auto& unit) {
-        return unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750 ||
-            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750 ||
-            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750 ||
-            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750 ||
-            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750 ||
-            unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD || unit.unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750;
+        return unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_MINERALFIELD750 ||
+            unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_RICHMINERALFIELD750 ||
+            unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERMINERALFIELD750 ||
+            unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_PURIFIERRICHMINERALFIELD750 ||
+            unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_LABMINERALFIELD750 ||
+            unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD || unit->unit_type == sc2::UNIT_TYPEID::NEUTRAL_BATTLESTATIONMINERALFIELD750;
     });
 
     // Find all mineral lines (rather inefficient method, but guarantees no accidents,
