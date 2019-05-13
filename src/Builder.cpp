@@ -149,7 +149,7 @@ void Builder::OnUnitDestroyed(Unit* unit_) {
         if (worker->GetJob() == Worker::Job::building && construction) {
             // Worker got killed while constructing a building
             if (construction->building && construction->building->build_progress < 1.f) {
-                auto new_worker = GetClosestFreeWorker(construction->building->pos);
+                auto new_worker = GetClosestFreeWorker(construction->building->pos, true);
                 if (new_worker) {
                     new_worker->Build(construction->building);
                     new_worker->construction = std::move(worker->construction);

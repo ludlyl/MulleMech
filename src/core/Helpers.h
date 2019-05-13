@@ -268,8 +268,8 @@ std::vector<sc2::UnitTypeID> GetAllStructureTechRequirements(sc2::AbilityID id_,
 sc2::UPGRADE_ID GetUpgradeTechRequirement(sc2::AbilityID id_);
 
 // I.e. get mining and unemployed workers
-Units GetFreeWorkers();
+Units GetFreeWorkers(bool include_gas_workers_ = false);
 
-Worker* GetClosestFreeWorker(const sc2::Point2D& location_);
+Worker* GetClosestFreeWorker(const sc2::Point2D& location_, bool include_gas_workers_ = false);
 
-bool FreeWorkerExists();
+bool FreeWorkerExists(bool include_gas_workers_ = false);

@@ -32,7 +32,7 @@ void RepairMan::OnStep(Builder*) {
     if (!damaged_buildings.empty()) {
         auto repairing_workers = gAPI->observer().GetUnits(IsWorkerWithJob(Worker::Job::repairing), sc2::Unit::Alliance::Self);
         // This is only needed as we do not cache the free workers. If we start to cache them this can be removed
-        auto free_workers = GetFreeWorkers();
+        auto free_workers = GetFreeWorkers(true);
 
         // TODO: Do not send units to buildings with a lot of enemy units nearby
         //  (the scvs are currently just sent to their deaths)
