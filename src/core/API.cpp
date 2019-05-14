@@ -168,42 +168,40 @@ void Debug::SendDebug() const {
 }
 
 Observer::Observer(const sc2::ObservationInterface* observer_,
-                   std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_):
-    m_observer(observer_), m_unit_map(unit_map_) {
+                   std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_,
+                   std::vector<Unit*>& last_step_units_):
+    m_observer(observer_), m_unit_map(unit_map_), m_last_step_units(last_step_units_) {
 }
 
 void Observer::OnUpgradeCompleted() {
-    m_unitDataCache.clear();
+    m_unit_data_cache.clear();
 }
 
 Unit* Observer::GetUnit(sc2::Tag tag_) const {
     auto itr = m_unit_map.find(tag_);
-    if (itr != m_unit_map.end()) {
+    if (itr != m_unit_map.end() && itr->second->IsInVision) {
         return itr->second.get();
     } else {
+        // Would it maybe be better to just return nullptr directly here?
         auto unit = m_observer->GetUnit(tag_);
         if (unit == nullptr) {
-            assert(false && "Unit not in unit_map but existed!");
             return nullptr;
+        } else {
+            assert(false && "Unit not in unit_map but existed!");
+            return gAPI->WrapAndUpdateUnit(unit);
         }
-        return gAPI->WrapAndUpdateUnit(unit);
     }
 }
 
 Units Observer::GetUnits() const {
-    Units units;
-    units.reserve(m_unit_map.size());
-    for (auto& [ tag, unit ] : m_unit_map) {
-        units.push_back(unit.get());
-    }
-    return units;
+    return Units(m_last_step_units);
 }
 
 Units Observer::GetUnits(sc2::Unit::Alliance alliance_) const {
     Units units; // Do we want to reserve for example half of all units in m_unit_map here?
-    for (auto& [ tag, unit ] : m_unit_map) {
+    for (auto& unit : m_last_step_units) {
         if (unit->alliance == alliance_) {
-            units.push_back(unit.get());
+            units.push_back(unit);
         }
     }
     return units;
@@ -211,9 +209,9 @@ Units Observer::GetUnits(sc2::Unit::Alliance alliance_) const {
 
 Units Observer::GetUnits(const Filter& filter_) const {
     Units units;
-    for (auto& [ tag, unit ] : m_unit_map) {
-        if (filter_(unit.get())) {
-            units.push_back(unit.get());
+    for (auto& unit : m_last_step_units) {
+        if (filter_(unit)) {
+            units.push_back(unit);
         }
     }
     return units;
@@ -221,9 +219,9 @@ Units Observer::GetUnits(const Filter& filter_) const {
 
 Units Observer::GetUnits(const Filter& filter_, sc2::Unit::Alliance alliance_) const {
     Units units;
-    for (auto& [ tag, unit ] : m_unit_map) {
-        if (unit->alliance == alliance_ && filter_(unit.get())) {
-            units.push_back(unit.get());
+    for (auto& unit : m_last_step_units) {
+        if (unit->alliance == alliance_ && filter_(unit)) {
+            units.push_back(unit);
         }
     }
     return units;
@@ -298,12 +296,12 @@ float Observer::GetVespeneIncomeRate() const {
 }
 
 sc2::UnitTypeData* Observer::GetUnitTypeData(sc2::UNIT_TYPEID id_) {
-    auto itr = m_unitDataCache.find(id_);
-    if (itr != m_unitDataCache.end())
+    auto itr = m_unit_data_cache.find(id_);
+    if (itr != m_unit_data_cache.end())
         return itr->second.get();
 
-    m_unitDataCache.emplace(id_, std::make_unique<sc2::UnitTypeData>());
-    sc2::UnitTypeData* data = m_unitDataCache.find(id_)->second.get();
+    m_unit_data_cache.emplace(id_, std::make_unique<sc2::UnitTypeData>());
+    sc2::UnitTypeData* data = m_unit_data_cache.find(id_)->second.get();
 
     *data = m_observer->GetUnitTypeData()[convert::ToUnitTypeID(id_)];
 
@@ -499,7 +497,7 @@ Interface::Interface(sc2::ActionInterface* action_,
     sc2::ControlInterface* control_, sc2::DebugInterface* debug_,
     const sc2::ObservationInterface* observer_, sc2::QueryInterface* query_):
     m_action(action_), m_control(control_), m_debug(debug_),
-    m_observer(observer_, m_unit_map), m_query(query_) {
+    m_observer(observer_, m_unit_map, m_last_step_units), m_query(query_) {
 }
 
 void Interface::Init() {
@@ -515,7 +513,7 @@ void Interface::Init() {
         if (data.ability_id != sc2::ABILITY_ID::INVALID)
             AbilityToUpgradeMap[data.ability_id] = sc2::UpgradeID(data.upgrade_id);
     }
-    // We want to populate m_unit_map
+    // We want to populate m_last_step_units
     OnStep();
 }
 
@@ -536,15 +534,19 @@ void Interface::OnStep() {
     for (auto& pair : m_unit_map)
         pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
 
+    m_last_step_units.clear();
     sc2::Units units = observer().m_observer->GetUnits();
     for (const sc2::Unit* unit : units) {
         auto itr = m_unit_map.find(unit->tag);
         if (itr == m_unit_map.end()) {
-            m_unit_map[unit->tag] = Unit::Make(*unit);
+            auto wrapped_unit = Unit::Make(*unit);
+            m_last_step_units.emplace_back(wrapped_unit.get());
+            m_unit_map[unit->tag] = std::move(wrapped_unit);
         } else {
             itr->second->IsInVision = true;
             itr->second->m_order_queued_in_current_step = false;
             itr->second->UpdateAPIData(*unit);
+            m_last_step_units.emplace_back(itr->second.get());
         }
     }
 }

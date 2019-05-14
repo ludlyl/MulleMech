@@ -18,7 +18,7 @@ public:
     using T = std::vector<Unit*>;
 
     Units() = default;
-    explicit Units(const sc2::Units& units_);
+    explicit Units(std::vector<Unit*> units_);
 
     Unit* GetClosestUnit(const sc2::Point2D& point_);
     const Unit* GetClosestUnit(const sc2::Point2D& point_) const;
