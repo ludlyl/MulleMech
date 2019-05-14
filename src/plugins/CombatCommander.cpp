@@ -123,6 +123,9 @@ void CombatCommander::UpdateMainAttackTarget() {
     Expansions expos = gIntelligenceHolder->GetKnownEnemyExpansions();
     if (!expos.empty()) {
         m_mainAttackTarget = expos.back()->town_hall_location;
+    // Does gIntelligenceHolder hold enemy units that has been revealed (i.e. is OnUnitEnterVision called on them?)
+    } else if (auto enemy_buildings = gIntelligenceHolder->GetEnemyUnits(IsBuilding()); !enemy_buildings.empty()) {
+        m_mainAttackTarget = enemy_buildings.front()->pos;
     } else {
         if (m_attackTargets.empty()) {
             m_attackTargets = GetListOfAttackPoints();
