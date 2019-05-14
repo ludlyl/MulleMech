@@ -8,6 +8,7 @@
 #include "Historican.h"
 #include "Hub.h"
 #include "Reasoner.h"
+#include "IntelligenceHolder.h"
 
 #include <sc2api/sc2_agent.h>
 
@@ -34,10 +35,13 @@ void Governor::OnStep(Builder* builder_) {
     case PlayStyle::all_in:
     case PlayStyle::defensive:
     case PlayStyle::very_defensive:
+        greed_modifier = 1.f;
+        break;
+
     case PlayStyle::offensive:
     case PlayStyle::scout:
     case PlayStyle::normal:
-        greed_modifier = 1.f;
+        greed_modifier = 1.5f;
         break;
 
     case PlayStyle::greedy:
@@ -110,11 +114,13 @@ void Governor::OnStep(Builder* builder_) {
     }
 
     //TODO expand our base based on enum from higher-order plugin.
-    auto command_centers = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
+    auto town_halls = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);
     auto refineries = gAPI->observer().GetUnits(IsRefinery(), sc2::Unit::Alliance::Self);
     auto num_workers = static_cast<int>(gAPI->observer().GetUnits(IsWorker(), sc2::Unit::Alliance::Self).size());
     // Variable used for measuring when we want to expand or not.
-    int optimal_workers = 0;
+    // Represents how many "productive" jobs/positions there are for workers collection resrouces
+    // (i.e. a refinery always has 3 productive positions and a normal fresh base usually has 16*1.5=24)
+    int available_productive_worker_positions = 0;
 
     //Counting plans of expansion
     int scheduled_ccs = static_cast<int>(builder_->CountScheduledStructures(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER));
@@ -126,16 +132,35 @@ void Governor::OnStep(Builder* builder_) {
 
     if (scheduled_ccs == 0) {
         // Calculate Optimal Workers
-        for (auto& cc : command_centers)
-            optimal_workers += static_cast<int>(std::ceil(1.5f * cc->ideal_harvesters));    // Assume ~50% overproduction for mining
-        for (auto& refinery : refineries)
-            optimal_workers += refinery->ideal_harvesters;
+        // TODO: Fix a better solution for town halls & refineries that are currently constructed
+        for (auto& town_hall : town_halls) {
+            // If it's a town hall that's currently being constructed
+            if (town_hall->build_progress < 1.0f) {
+                available_productive_worker_positions += AssumedProductiveWorkerPositionsForUnfinishedTownHall;
+            // If it's a finished (fully constructed) town hall
+            } else {
+                available_productive_worker_positions += static_cast<int>(std::ceil(1.5f * town_hall->ideal_harvesters));    // Assume ~50% overproduction for mining
+            }
+        }
+        for (auto& refinery : refineries) {
+            // If it's a refinery that's currently being constructed
+            if (refinery->build_progress < 1.0f) {
+                available_productive_worker_positions += AssumedProductiveWorkerPositionsForUnfinishedRefinery;
+            // If it's a finished (fully constructed) refinery
+            } else {
+                available_productive_worker_positions += refinery->ideal_harvesters;
+            }
+        }
 
         //If we greed, we want to increase the rate at which we expand by a multiple of 2.
-        optimal_workers = static_cast<int>(std::ceil(optimal_workers / greed_modifier));
+        available_productive_worker_positions = static_cast<int>(std::ceil(available_productive_worker_positions / greed_modifier));
 
-        //If we have more workers than the optimal amount we want to expand in order to place them at new commandcenters
-        if (num_workers >= optimal_workers) {
+        // If we have more workers than the "available productive worker positions" (adjusted for greed) we expand
+        // We also expand if we have more minerals than MassExpandMineralsThreshold
+        // and (we think) there are free expansions left
+        if (num_workers >= available_productive_worker_positions ||
+            (gAPI->observer().GetMinerals() >= MassExpandMineralsThreshold && town_halls.size() <
+             gHub->GetExpansions().size() - static_cast<size_t>(gIntelligenceHolder->GetKnownEnemyExpansionCount()))) {
             if (playstyle == PlayStyle::greedy) {
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);

@@ -42,6 +42,12 @@ private:
     std::list<sc2::UNIT_TYPEID> m_planner_queue;
     BuildOrderStage m_build_order_stage = BuildOrderStage::Early;
 
+    // See the to-do in governor (a better solution should be made and these constants removed)
+    static constexpr int AssumedProductiveWorkerPositionsForUnfinishedTownHall = 24;
+    static constexpr int AssumedProductiveWorkerPositionsForUnfinishedRefinery = 3;
+
+    static constexpr int MassExpandMineralsThreshold = 3500;
+
     static constexpr float ThorsToTanksRatio = 1.f / 3.f;
     static constexpr int OptimalNumOfRavens = 2;
     static constexpr float MedivacsToHellbatsRatio = 1.f / 4.f;
