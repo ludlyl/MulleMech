@@ -534,8 +534,9 @@ void Interface::OnStep() {
     for (auto& pair : m_unit_map)
         pair.second->IsInVision = false; // If unit went into FoW it'll no longer be in GetUnits()
 
-    m_last_step_units.clear();
     sc2::Units units = observer().m_observer->GetUnits();
+    m_last_step_units.clear();
+    m_last_step_units.reserve(units.size());
     for (const sc2::Unit* unit : units) {
         auto itr = m_unit_map.find(unit->tag);
         if (itr == m_unit_map.end()) {
