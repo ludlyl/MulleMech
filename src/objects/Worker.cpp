@@ -9,8 +9,10 @@ Worker::Worker(const sc2::Unit& unit_):
 
 void Worker::BuildRefinery(Order* order_, const Unit* geyser_) {
     assert(alliance == sc2::Unit::Alliance::Self);
+    // Needed for when the bot plays vs humans (and might also help avoid bugs when playing vs built in AI)
+    gAPI->action().Stop(this);
     order_->assignee = this;
-    gAPI->action().Build(*order_, geyser_);
+    gAPI->action().Build(*order_, geyser_, true);
     // As the worker will go over to collecting gas as fast as the building is completed,
     // settings it's job to "building" here is a bit problematic. The way we currently fix
     // this is by calling SetAsUnemployed on workers that finishes refineries in Hub::OnBuildingConstructionComplete
@@ -20,7 +22,8 @@ void Worker::BuildRefinery(Order* order_, const Unit* geyser_) {
 
 void Worker::Build(Order* order_, const sc2::Point2D& point_) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Stop(this); // This shouldn't be needed
+    // Needed for when the bot plays vs humans (and might also help avoid bugs when playing vs built in AI)
+    gAPI->action().Stop(this);
     order_->assignee = this;
     gAPI->action().Build(*order_, point_, true);
     m_job = Job::building;
@@ -28,7 +31,8 @@ void Worker::Build(Order* order_, const sc2::Point2D& point_) {
 
 void Worker::Build(const Unit* building_) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Stop(this); // This shouldn't be needed
+    // Needed for when the bot plays vs humans (and might also help avoid bugs when playing vs built in AI)
+    gAPI->action().Stop(this);
     gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, building_, true);
     m_job = Job::building;
 }
@@ -46,7 +50,8 @@ void Worker::Repair(const Unit* target_) {
 
 void Worker::GatherVespene(const Unit* target_) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Stop(this); // This shouldn't be needed
+    // Needed for when the bot plays vs humans (and might also help avoid bugs when playing vs built in AI)
+    gAPI->action().Stop(this);
     gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_, true);
     m_job = Job::gathering_vespene;
 

@@ -12,6 +12,19 @@
 #include <sc2utils/sc2_manage_process.h>
 
 #ifdef DEBUG
+class Human : public sc2::Agent {
+public:
+    void OnGameStart() final {
+        Debug()->DebugTextOut("Human");
+        Debug()->SendDebug();
+
+    }
+    void OnStep()
+    {
+        Control()->GetObservation();
+    }
+};
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Provide either name of the map file or path to it!" << std::endl;
@@ -29,11 +42,18 @@ int main(int argc, char* argv[]) {
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);
 
-    Dispatcher bot("TrainingDummy");
+    Dispatcher mulle_mech("MulleMech");
+    Human human;
     coordinator.SetParticipants({
-        CreateParticipant(sc2::Race::Terran, &bot),
+        //CreateParticipant(sc2::Race::Terran, &human), // Uncomment this and comment out CreateComputer to play vs the AI
+        CreateParticipant(sc2::Race::Terran, &mulle_mech),
         CreateComputer(sc2::Race::Random, sc2::Difficulty::CheatInsane)
     });
+
+    // Uncomment these lines to play vs the AI in realtime (without realtime it seems buggy)
+    // The AI is not really tested when playing in realtime when if stepsize > 1 though
+    //coordinator.SetStepSize(1);
+    //coordinator.SetRealtime(true);
 
     coordinator.LaunchStarcraft();
     coordinator.StartGame(argv[1]);
