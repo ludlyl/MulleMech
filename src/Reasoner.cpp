@@ -26,10 +26,12 @@ PlayStyle Reasoner::CalculatePlayStyle() {
 
     if (gIntelligenceHolder->GetKnownEnemyExpansionCount() >=
         (gHub->GetOurExpansionCount() + ExpansionDisadvantageBeforeExtremeMeasures)) {
-        if (GreedToAllInChanceRatio > sc2::GetRandomFraction()) {
-            m_latest_play_style = PlayStyle::greedy;
-        } else {
-            m_latest_play_style = PlayStyle::all_in;
+        if (old_play_style != PlayStyle::greedy && old_play_style != PlayStyle::all_in) {
+            if (GreedToAllInChanceRatio > sc2::GetRandomFraction()) {
+                m_latest_play_style = PlayStyle::greedy;
+            } else {
+                m_latest_play_style = PlayStyle::all_in;
+            }
         }
     } else {
         float enemy_combat_unit_value = 0;

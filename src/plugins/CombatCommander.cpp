@@ -101,7 +101,7 @@ void CombatCommander::PlayOffensive(){ // TODO
 void CombatCommander::PlayDefensive(){ // TODO
     if(m_changedPlayStyle){
         m_mainSquad->AbortTakeOver();
-        gAPI->action().MoveTo(m_mainSquad->GetUnits(), gAPI->observer().StartingLocation());
+        gAPI->action().MoveTo(m_mainSquad->GetUnits(), GetArmyIdlePosition());
         if (!m_harassSquad.IsSent())
             m_mainSquad->Absorb(m_harassSquad);
     }

@@ -180,7 +180,7 @@ void Miner::SecureVespeneIncome() {
     float vespene = gAPI->observer().GetVespene();
 
     if (m_vespene_gathering_stopped) {
-        if (vespene <= VespeneStartThreshold || (minerals == 0 || (vespene / minerals) <= VespeneToMineralsStartRatio)) {
+        if (vespene <= VespeneStartThreshold || (minerals != 0 && (vespene / minerals) <= VespeneToMineralsStartRatio)) {
             m_vespene_gathering_stopped = false;
         } else {
             // This code is needed to bring out the workers that was inside
@@ -240,6 +240,11 @@ float Miner::SaveEnergy() {
     auto needed_unit_classes = gReasoner->GetNeededUnitClasses();
     if (std::find(needed_unit_classes.begin(), needed_unit_classes.end(), UnitClass::detection) != needed_unit_classes.end())
         return std::numeric_limits<float>::max();
+
+    // If Reasoner doesn't want detection and PlayStyle == greedy, don't save any energy
+    if (gReasoner->GetPlayStyle() == PlayStyle::greedy) {
+        return 0;
+    }
 
     // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
     constexpr int minutes_per_scan_increase = 4;

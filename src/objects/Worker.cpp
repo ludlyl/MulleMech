@@ -20,14 +20,16 @@ void Worker::BuildRefinery(Order* order_, const Unit* geyser_) {
 
 void Worker::Build(Order* order_, const sc2::Point2D& point_) {
     assert(alliance == sc2::Unit::Alliance::Self);
+    gAPI->action().Stop(this); // This shouldn't be needed
     order_->assignee = this;
-    gAPI->action().Build(*order_, point_);
+    gAPI->action().Build(*order_, point_, true);
     m_job = Job::building;
 }
 
 void Worker::Build(const Unit* building_) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, building_);
+    gAPI->action().Stop(this); // This shouldn't be needed
+    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, building_, true);
     m_job = Job::building;
 }
 
@@ -35,13 +37,17 @@ void Worker::Repair(const Unit* target_) {
     // Calling a non const method inside an assert is not very good (can lead to bugs that only show up in release builds)
     assert(HasAttribute(sc2::Attribute::Mechanical));
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Cast(this, sc2::ABILITY_ID::EFFECT_REPAIR, target_);
+    // Effect repair doesn't always seem to work so this is needed for e.g. gas workers not to keep mining gas
+    // (Might be that the command is ignored if we have no resrouces for the repair)
+    gAPI->action().Stop(this);
+    gAPI->action().Cast(this, sc2::ABILITY_ID::EFFECT_REPAIR, target_, true);
     m_job = Job::repairing;
 }
 
 void Worker::GatherVespene(const Unit* target_) {
     assert(alliance == sc2::Unit::Alliance::Self);
-    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_);
+    gAPI->action().Stop(this); // This shouldn't be needed
+    gAPI->action().Cast(this, sc2::ABILITY_ID::SMART, target_, true);
     m_job = Job::gathering_vespene;
 
     Units ccs = gAPI->observer().GetUnits(IsTownHall(), sc2::Unit::Alliance::Self);

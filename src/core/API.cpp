@@ -127,7 +127,7 @@ void Control::SaveReplay() {
     std::stringstream ss;
     auto timestamp = std::time(nullptr);
     auto localtime = *std::localtime(&timestamp);
-    ss << "MulleMech_" << std::put_time(&localtime, "%Y%m%d__%H_%S") << ".SC2Replay";
+    ss << "MulleMech_" << std::put_time(&localtime, "%Y%m%d__%H_%M") << ".SC2Replay";
     auto replay_name = ss.str();
     if (m_control->SaveReplay(replay_name))
         gHistory.info() << "Replay saved to " << replay_name << std::endl;
