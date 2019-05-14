@@ -180,7 +180,7 @@ void Miner::SecureVespeneIncome() {
     float vespene = gAPI->observer().GetVespene();
 
     if (m_vespene_gathering_stopped) {
-        if (vespene <= VespeneStartThreshold || (minerals == 0 || (vespene / minerals) <= VespeneToMineralsStartRatio)) {
+        if (vespene <= VespeneStartThreshold || (minerals != 0 && (vespene / minerals) <= VespeneToMineralsStartRatio)) {
             m_vespene_gathering_stopped = false;
         } else {
             // This code is needed to bring out the workers that was inside
