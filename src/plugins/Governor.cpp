@@ -162,15 +162,17 @@ void Governor::OnStep(Builder* builder_) {
             (gAPI->observer().GetMinerals() >= MassExpandMineralsThreshold && town_halls.size() <
              gHub->GetExpansions().size() - static_cast<size_t>(gIntelligenceHolder->GetKnownEnemyExpansionCount()))) {
             if (playstyle == PlayStyle::greedy) {
+                m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+                m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_REFINERY);
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
                 m_planner_queue.emplace_front(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
             }
             else {
                 m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_COMMANDCENTER);
                 m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_PLANETARYFORTRESS);
+                m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
+                m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
             }
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
-            m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_REFINERY);
         }
     }
 }
