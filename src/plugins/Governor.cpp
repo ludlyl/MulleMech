@@ -181,8 +181,11 @@ void Governor::AddMidGameBuildOrder(Builder* builder_) {
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_ARMORY);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
     m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTTECHLAB);
-    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
-    m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR);
+
+    // As we currently don't build air upgrades and don't support "situational" buildings
+    // in "CurrentConsumption" this is commented out for now
+    //m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORT);
+    //m_planner_queue.emplace_back(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR);
 
     // Armory Upgrades
     builder_->ScheduleUpgrade(sc2::UPGRADE_ID::TERRANVEHICLEWEAPONSLEVEL1);
