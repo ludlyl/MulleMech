@@ -303,7 +303,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             break;
         case sc2::UNIT_TYPEID::TERRAN_FACTORY:
             //TODO sometimes we might want to produce cyclons
-            if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
+            if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(unit_)) {
                 int num_of_thors = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_THOR);
                 int num_of_tanks = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_SIEGETANK);
 
@@ -317,7 +317,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                 }
                 return;
             }
-            else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
+            else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
                 //TODO We don't always want to schedule 2 units here...
                 if (anti_air) {
                     builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_WIDOWMINE, false, unit_);
@@ -343,7 +343,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
             }
             break;
          case sc2::UNIT_TYPEID::TERRAN_STARPORT:
-             if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(*unit_)) {
+             if (HasAddon(sc2::UNIT_TYPEID::TERRAN_TECHLAB)(unit_)) {
                  int num_of_ravens = CountTotalUnits(builder_, sc2::UNIT_TYPEID::TERRAN_RAVEN);
                  if (num_of_ravens >= OptimalNumOfRavens) { // If we have enough ravens, build other units
                      if (num_of_hellbats != 0 &&
@@ -360,7 +360,7 @@ void Governor::OnUnitIdle(Unit *unit_, Builder *builder_) {
                  builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_RAVEN, false, unit_);
                  gHistory.info() << "Schedule Raven training" << std::endl;
              }
-             else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(*unit_)) {
+             else if (HasAddon(sc2::UNIT_TYPEID::TERRAN_REACTOR)(unit_)) {
                  if (num_of_hellbats != 0 &&
                      (num_of_medivacs + 1) / static_cast<float>(num_of_hellbats) <= MedivacsToHellbatsRatio) {
                      builder_->ScheduleTraining(sc2::UNIT_TYPEID::TERRAN_MEDIVAC, false, unit_);
@@ -461,7 +461,7 @@ void Governor::TrainSituational(Builder* builder_) {
     auto unit_classes = gReasoner->GetNeededUnitClasses();
     if (std::find(unit_classes.begin(), unit_classes.end(), UnitClass::anti_air) != unit_classes.end()) {
         auto idle_starports = gAPI->observer().GetUnits(IsIdleUnit(sc2::UNIT_TYPEID::TERRAN_STARPORTREACTOR, false));
-        int wanted = idle_starports.size() * 2;
+        int wanted = static_cast<int>(idle_starports.size() * 2);
         int queued_vikings = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_VIKINGFIGHTER);
         int queued_medivacs = builder_->CountScheduledTrainings(sc2::UNIT_TYPEID::TERRAN_MEDIVAC);
         wanted -= queued_medivacs;

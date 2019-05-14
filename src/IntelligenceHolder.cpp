@@ -19,9 +19,9 @@ void IntelligenceHolder::OnGameStart() {
 
 void IntelligenceHolder::OnUnitEnterVision(Unit* unit_) {
     if (unit_->alliance == sc2::Unit::Alliance::Enemy) {
-        if (!IsTemporaryUnit()(*unit_) && !m_enemyUnits.contains(unit_)) {
-            m_enemyUnits.push_back(unit_);
-            if (IsTownHall()(*unit_)) {
+        if (!IsTemporaryUnit()(unit_) && !m_enemy_units.contains(unit_)) {
+            m_enemy_units.push_back(unit_);
+            if (IsTownHall()(unit_)) {
                 MarkEnemyExpansion(unit_);
             }
         }
@@ -31,7 +31,7 @@ void IntelligenceHolder::OnUnitEnterVision(Unit* unit_) {
 void IntelligenceHolder::OnUnitDestroyed(Unit* unit_) {
     // Clear out unit from internal list if dead
     if (unit_->alliance == sc2::Unit::Alliance::Enemy) {
-         if (IsTownHall()(*unit_)) {
+         if (IsTownHall()(unit_)) {
             for (const auto& i : gHub->GetExpansions()) {
                 if (unit_ == i->town_hall) {
                     // Special case for if we destroyed the enemies main
@@ -48,7 +48,7 @@ void IntelligenceHolder::OnUnitDestroyed(Unit* unit_) {
                 }
             }
         }
-        m_enemyUnits.remove(unit_);
+        m_enemy_units.remove(unit_);
     }
 }
 
@@ -122,7 +122,7 @@ std::shared_ptr<Expansion> IntelligenceHolder::GetEnemyBaseFurthestFrom(const st
 }
 
 void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
-    assert(IsTownHall()(*unit_));
+    assert(IsTownHall()(unit_));
 
     auto exp = gHub->GetClosestExpansion(unit_->pos);
     if (exp->alliance == sc2::Unit::Alliance::Neutral) {
@@ -163,19 +163,37 @@ void IntelligenceHolder::MarkEnemyExpansion(Unit* unit_) {
 }
 
 const Units& IntelligenceHolder::GetEnemyUnits() const {
-    return m_enemyUnits;
+    return m_enemy_units;
+}
+
+Units IntelligenceHolder::GetEnemyUnits(API::Filter filter_) const {
+    Units units;
+    for (auto& unit : m_enemy_units) {
+        if (filter_(unit)) {
+            units.push_back(unit);
+        }
+    }
+    return units;
 }
 
 Units IntelligenceHolder::GetEnemyUnits(unsigned int last_seen_by_game_loop_) const {
     Units units;
-
-    for (auto& unit : units) {
+    for (auto& unit : m_enemy_units) {
         if (unit->last_seen_game_loop >= last_seen_by_game_loop_) {
             units.push_back(unit);
         }
     }
+    return units;
+}
 
-    return Units();
+Units IntelligenceHolder::GetEnemyUnits(API::Filter filter_, unsigned int last_seen_by_game_loop_) const {
+    Units units;
+    for (auto& unit : m_enemy_units) {
+        if (filter_(unit) && unit->last_seen_game_loop >= last_seen_by_game_loop_) {
+            units.push_back(unit);
+        }
+    }
+    return units;
 }
 
 std::unique_ptr<IntelligenceHolder> gIntelligenceHolder;

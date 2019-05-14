@@ -10,10 +10,8 @@
 #include <numeric>
 #include <limits>
 
-Units::Units(const sc2::Units& units_) {
-    m_wrappedUnits.reserve(units_.size());
-    for (auto& unit : units_)
-        m_wrappedUnits.emplace_back(gAPI->WrapUnit(unit));
+Units::Units(std::vector<Unit*> units_) {
+    m_wrappedUnits = std::move(units_);
 }
 
 Unit* Units::GetClosestUnit(const sc2::Point2D& point_) {

@@ -41,7 +41,7 @@ void BuildingPlacer::OnGameStart() {
 }
 
 void BuildingPlacer::OnUnitCreated(const Unit* unit_) {
-    if (IsBuilding()(*unit_) && !unit_->is_flying) {
+    if (IsBuilding()(unit_) && !unit_->is_flying) {
         AddBuildingToOccupiedTiles(unit_, TileOccupationStatus::has_building);
     }
 }
@@ -50,14 +50,14 @@ void BuildingPlacer::OnUnitDestroyed(const Unit* unit_) {
     // TODO: This only gets called if we observe the unit being destroyed.
     //  When/if the enemy kills his own units or if they burn down outside our vision the tiles will never be freed
     // TODO: We don't know if the building has reserved space for an add-on (and if so we currently don't free that space)
-    if (IsBuilding()(*unit_) && !unit_->is_flying) {
+    if (IsBuilding()(unit_) && !unit_->is_flying) {
         RemoveBuildingFromOccupiedTiles(unit_);
     }
 }
 
 void BuildingPlacer::OnUnitEnterVision(const Unit* unit_) {
     // The same building will be added over an over again...
-    if (IsBuilding()(*unit_) && !unit_->is_flying) {
+    if (IsBuilding()(unit_) && !unit_->is_flying) {
         AddBuildingToOccupiedTiles(unit_, TileOccupationStatus::has_building);
     }
 }
@@ -212,7 +212,7 @@ void BuildingPlacer::FreeReservedBuildingSpace(sc2::Point3D building_position_, 
 }
 
 bool BuildingPlacer::IsGeyserUnoccupied(const Unit* geyser_) const {
-    assert(IsGeyser()(*geyser_));
+    assert(IsGeyser()(geyser_));
 
     auto radius = geyser_->radius; // Radius seem to be correct for geysers...
     int width = static_cast<int>(radius * 2);
@@ -249,7 +249,7 @@ bool BuildingPlacer::ReserveGeyser(const Unit* geyser_) {
 }
 
 void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupationStatus tile_occupation_status_) {
-    bool is_building = IsBuilding()(*unit_);
+    bool is_building = IsBuilding()(unit_);
     assert(is_building);
     if (unit_->is_flying)
         return;
@@ -277,7 +277,7 @@ void BuildingPlacer::AddBuildingToOccupiedTiles(const Unit* unit_, TileOccupatio
 }
 
 void BuildingPlacer::RemoveBuildingFromOccupiedTiles(const Unit* unit_) {
-    bool is_building = IsBuilding()(*unit_);
+    bool is_building = IsBuilding()(unit_);
     assert(is_building);
     if (unit_->is_flying)
         return;

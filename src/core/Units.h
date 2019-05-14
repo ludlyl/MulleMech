@@ -18,7 +18,7 @@ public:
     using T = std::vector<Unit*>;
 
     Units() = default;
-    explicit Units(const sc2::Units& units_);
+    explicit Units(std::vector<Unit*> units_);
 
     Unit* GetClosestUnit(const sc2::Point2D& point_);
     const Unit* GetClosestUnit(const sc2::Point2D& point_) const;
@@ -41,6 +41,7 @@ public:
     T::const_iterator begin() const { return m_wrappedUnits.begin(); }
     T::const_iterator end() const { return m_wrappedUnits.end(); }
     std::size_t size() const { return m_wrappedUnits.size(); }
+    void reserve(size_t n) { return m_wrappedUnits.reserve(n); }
     bool empty() const { return m_wrappedUnits.empty(); }
     Unit* at(std::size_t i) { return m_wrappedUnits.at(i); }
     const Unit* at(std::size_t i) const { return m_wrappedUnits.at(i); }

@@ -58,7 +58,7 @@ bool Thor::SwitchAntiAirWeaponIfNeeded(const Units& enemies) {
 
     Units light_flying_units_in_proximity;
     for (auto& enemy : enemies) {
-        if (!IsTemporaryUnit()(*enemy) && enemy->is_flying &&
+        if (!IsTemporaryUnit()(enemy) && enemy->is_flying &&
             enemy->HasAttribute(sc2::Attribute::Light) && sc2::Distance2D(m_self->pos, enemy->pos) <= LightFlyingProximityRange) {
             light_flying_units_in_proximity.push_back(enemy);
         }

@@ -103,7 +103,7 @@ void Dispatcher::OnBuildingConstructionComplete(const sc2::Unit* building_) {
     gHistory.info() << sc2::UnitTypeToName(building_->unit_type) <<
         ": construction complete" << std::endl;
 
-    auto building = gAPI->WrapUnit(building_);
+    auto building = gAPI->WrapAndUpdateUnit(building_);
 
     for (auto& plugin : m_plugins)
         plugin->OnBuildingConstructionComplete(building);
@@ -133,9 +133,9 @@ void Dispatcher::OnStep() {
 }
 
 void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
-    auto unit = gAPI->WrapUnit(unit_);
+    auto unit = gAPI->WrapAndUpdateUnit(unit_);
     // NOTE (alkurbatov): Could be just a worker exiting a refinery.
-    if (unit_->alliance != sc2::Unit::Alliance::Self || IsWorkerWithJob(Worker::Job::gathering_vespene)(*unit))
+    if (unit_->alliance != sc2::Unit::Alliance::Self || IsWorkerWithJob(Worker::Job::gathering_vespene)(unit))
         return;
 
     gHistory.info() << sc2::UnitTypeToName(unit_->unit_type) <<
@@ -150,7 +150,7 @@ void Dispatcher::OnUnitCreated(const sc2::Unit* unit_) {
 }
 
 void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
-    auto unit = gAPI->WrapUnit(unit_);
+    auto unit = gAPI->WrapAndUpdateUnit(unit_);
     m_builder->OnUnitIdle(unit);
 
     for (const auto& i : m_plugins)
@@ -160,7 +160,7 @@ void Dispatcher::OnUnitIdle(const sc2::Unit* unit_) {
 void Dispatcher::OnUnitDestroyed(const sc2::Unit* unit_) {
     // The documentation for this function says that it's only called for our own units, but that ins't the case
 
-    auto unit = gAPI->WrapUnit(unit_);
+    auto unit = gAPI->WrapAndUpdateUnit(unit_);
     gHub->OnUnitDestroyed(unit);
     gBuildingPlacer->OnUnitDestroyed(unit);
     gIntelligenceHolder->OnUnitDestroyed(unit);
@@ -187,7 +187,7 @@ void Dispatcher::OnUpgradeCompleted(sc2::UpgradeID id_) {
 }
 
 void Dispatcher::OnUnitEnterVision(const sc2::Unit* unit_) {
-    auto unit = gAPI->WrapUnit(unit_);
+    auto unit = gAPI->WrapAndUpdateUnit(unit_);
     gBuildingPlacer->OnUnitEnterVision(unit);
     gIntelligenceHolder->OnUnitEnterVision(unit);
     for (const auto& i : m_plugins)

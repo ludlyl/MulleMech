@@ -30,7 +30,7 @@ void Miner::OnStep(Builder* builder_) {
 }
 
 void Miner::OnUnitCreated(Unit* unit_) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         // Put our TownHall's rally point
         auto units = gAPI->observer().GetUnits(IsVisibleMineralPatch(),
             sc2::Unit::Alliance::Neutral);
@@ -44,7 +44,7 @@ void Miner::OnUnitCreated(Unit* unit_) {
 }
 
 void Miner::OnUnitDestroyed(Unit* unit_, Builder*) {
-    if (IsTownHall()(*unit_)) {
+    if (IsTownHall()(unit_)) {
         // A Town Hall died => Reassing workers
         auto expo = gHub->GetClosestExpansion(unit_->pos);
         ClearWorkersHomeBaseIfNoActiveExpansion(expo);
@@ -107,11 +107,12 @@ void Miner::OnUnitIdle(Unit* unit_, Builder*) {
 }
 
 int Miner::IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
-    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
+    auto gather_structures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
                                                                                               IsRefinery()}), sc2::Unit::Alliance::Self);
 
     int needed = 0;
-    for (auto& structure : gatherStructures) {
+    for (auto& structure : gather_structures) {
+        // What is this "if" even used for? Ideal harvesters are reported correctly even for macro bases..
         if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < MaximumResourceDistance)
             needed += structure->ideal_harvesters;
     }

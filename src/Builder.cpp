@@ -94,20 +94,20 @@ void Builder::OnStep() {
 
 void Builder::OnUnitCreated(Unit* unit_) {
     // build_progress has to be checked as this function is called for the town hall at the start of the game
-    if (unit_->build_progress < 1.0f && IsBuilding()(*unit_) && !IsAddon()(*unit_)) {
+    if (unit_->build_progress < 1.0f && IsBuilding()(unit_) && !IsAddon()(unit_)) {
         // This should only ever return one worker
         // Checking IsWorkerWithJob is actually unnecessary and removing it would be a small performance improvement
         // (but it's there to make sure the jobs are set correctly and to help assert if this isn't the case)
         // Note: target tag is only set for refineries (and refineries doesn't have a pos, thereby the ugly solution...)
-        Units building_workers = gAPI->observer().GetUnits([&unit_](auto& unit) {
-            if (IsWorkerWithJob(Worker::Job::building)(unit) && !unit.orders.empty() &&
-                unit.orders.front().ability_id == unit_->GetTypeData()->ability_id) {
-                if (IsRefinery()(*unit_))
-                    return unit.orders.front().target_unit_tag ==
+        Units building_workers = gAPI->observer().GetUnits([&unit_](auto unit) {
+            if (IsWorkerWithJob(Worker::Job::building)(unit) && !unit->GetPreviousStepOrders().empty() &&
+                unit->GetPreviousStepOrders().front().ability_id == unit_->GetTypeData()->ability_id) {
+                if (IsRefinery()(unit_))
+                    return unit->GetPreviousStepOrders().front().target_unit_tag ==
                            gAPI->observer().GetUnits(IsGeyser(), sc2::Unit::Alliance::Neutral).GetClosestUnit(unit_->pos)->tag;
                 else
-                    return unit.orders.front().target_pos.x == unit_->pos.x &&
-                           unit.orders.front().target_pos.y == unit_->pos.y;
+                    return unit->GetPreviousStepOrders().front().target_pos.x == unit_->pos.x &&
+                           unit->GetPreviousStepOrders().front().target_pos.y == unit_->pos.y;
             }
             return false;
         }, sc2::Unit::Alliance::Self);
