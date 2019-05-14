@@ -93,7 +93,8 @@ private:
 
 struct Observer {
     explicit Observer(const sc2::ObservationInterface* observer_,
-                      std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_);
+                      std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& unit_map_,
+                      std::vector<Unit*>& last_step_units_);
 
     Unit* GetUnit(sc2::Tag tag_) const;
 
@@ -164,8 +165,9 @@ private:
     friend struct Interface;
     const sc2::ObservationInterface* m_observer;
 
-    std::unordered_map<sc2::UNIT_TYPEID, std::unique_ptr<sc2::UnitTypeData>> m_unitDataCache;
+    std::unordered_map<sc2::UNIT_TYPEID, std::unique_ptr<sc2::UnitTypeData>> m_unit_data_cache;
     std::unordered_map<sc2::Tag, std::unique_ptr<Unit>>& m_unit_map;
+    std::vector<Unit*>& m_last_step_units;
 };
 
 struct Query {
@@ -219,7 +221,8 @@ private:
     Debug m_debug;
     Observer m_observer;
     Query m_query;
-    std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unit_map;
+    std::unordered_map<sc2::Tag, std::unique_ptr<Unit>> m_unit_map; // Holds all units that has ever been seen (+ snapshots)
+    std::vector<Unit*> m_last_step_units; // Represents the units gotten from sc2::api->GetUnits in the last step
 };
 
 }  // namespace API
