@@ -2,6 +2,7 @@
 
 #include "core/Map.h"
 #include "core/Units.h"
+#include "core/API.h"
 
 #include <memory>
 
@@ -37,12 +38,14 @@ public:
     const Units& GetEnemyUnits() const;
 
     // Returns a copy
+    Units GetEnemyUnits(API::Filter filter_) const;
     Units GetEnemyUnits(unsigned int last_seen_by_game_loop_) const;
+    Units GetEnemyUnits(API::Filter filter_, unsigned int last_seen_by_game_loop_) const;
 
 private:
     std::shared_ptr<Expansion> m_enemy_main_base = nullptr;
     bool m_enemy_main_base_destroyed = false; // Needed to not "recalculate" which would be the enemies main if it has been destroyed
-    Units m_enemyUnits;
+    Units m_enemy_units;
 };
 
 extern std::unique_ptr<IntelligenceHolder> gIntelligenceHolder;
