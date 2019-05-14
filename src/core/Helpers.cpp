@@ -120,6 +120,7 @@ bool IsTemporaryUnit::operator()(sc2::UNIT_TYPEID type_) const {
 
     switch (type_) {
         case sc2::UNIT_TYPEID::TERRAN_MULE:
+        case sc2::UNIT_TYPEID::TERRAN_AUTOTURRET:
 
         case sc2::UNIT_TYPEID::ZERG_INFESTORTERRAN:
         case sc2::UNIT_TYPEID::ZERG_BROODLING:
@@ -156,17 +157,21 @@ bool IsBuilding::operator()(const Unit* unit_) const {
     return (*this)(unit_->unit_type);
 }
 
+bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
+    auto data = gAPI->observer().GetUnitTypeData(type_);
+    // Filter out some units here. Might want to make this into a switch
+    // (Would it be better to check IsTemporay?)
+    if (type_ == sc2::UNIT_TYPEID::TERRAN_AUTOTURRET)
+        return false;
+    return std::find(data->attributes.begin(), data->attributes.end(), sc2::Attribute::Structure) != data->attributes.end();
+}
+
 bool IsFinishedBuilding::operator()(const Unit* unit_) const {
     return IsBuilding()(unit_) && unit_->build_progress >= 1.0f;
 }
 
 bool IsUnfinishedBuilding::operator()(const Unit* unit_) const {
     return IsBuilding()(unit_) && unit_->build_progress < 1.0f;
-}
-
-bool IsBuilding::operator()(sc2::UNIT_TYPEID type_) const {
-    auto data = gAPI->observer().GetUnitTypeData(type_);
-    return std::find(data->attributes.begin(), data->attributes.end(), sc2::Attribute::Structure) != data->attributes.end();
 }
 
 bool IsBuildingWithSupportForAddon::operator()(const Unit* unit_) const {
