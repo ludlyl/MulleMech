@@ -241,6 +241,11 @@ float Miner::SaveEnergy() {
     if (std::find(needed_unit_classes.begin(), needed_unit_classes.end(), UnitClass::detection) != needed_unit_classes.end())
         return std::numeric_limits<float>::max();
 
+    // If Reasoner doesn't want detection and PlayStyle == greedy, don't save any energy
+    if (gReasoner->GetPlayStyle() == PlayStyle::greedy) {
+        return 0;
+    }
+
     // Save one extra scan per 4 minutes of game time (0 scans saved first 4 minutes)
     constexpr int minutes_per_scan_increase = 4;
     float passed_minutes = gAPI->observer().GetGameLoop() / (API::StepsPerSecond * 60.0f);
