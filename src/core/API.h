@@ -59,6 +59,10 @@ struct Action {
 
 private:
     sc2::ActionInterface* m_action;
+
+    // Decreases apm significantly, only filters attack and move actions
+    static constexpr bool FilterSimilarActions = true;
+    static constexpr float FilterOnLessThanDistanceSquared = 0.1f * 0.1f;
 };
 
 struct Control {
