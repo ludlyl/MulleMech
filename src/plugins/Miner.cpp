@@ -107,11 +107,12 @@ void Miner::OnUnitIdle(Unit* unit_, Builder*) {
 }
 
 int Miner::IdealWorkerCount(const std::shared_ptr<Expansion>& expansion) {
-    auto gatherStructures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
+    auto gather_structures = gAPI->observer().GetUnits(MultiFilter(MultiFilter::Selector::Or, {IsTownHall(),
                                                                                               IsRefinery()}), sc2::Unit::Alliance::Self);
 
     int needed = 0;
-    for (auto& structure : gatherStructures) {
+    for (auto& structure : gather_structures) {
+        // What is this "if" even used for? Ideal harvesters are reported correctly even for macro bases..
         if (sc2::Distance2D(expansion->town_hall_location, structure->pos) < MaximumResourceDistance)
             needed += structure->ideal_harvesters;
     }

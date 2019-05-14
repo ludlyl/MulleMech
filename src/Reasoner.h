@@ -60,12 +60,29 @@ class Reasoner {
         // If we know our opponent has this many bases/expansions more than us we turn into "extreme measures" (all in or greed)
         static constexpr int ExpansionDisadvantageBeforeExtremeMeasures = 2;
 
+        // If worker count / "ideal workers" < this then we turn into "extreme measures" (all in or greed)
+        static constexpr float WorkersToIdealWorkersRatioBeforeExtremeMeasures = 0.25f;
+
+        // If worker count / "known opponent worker count" < this then we turn into "extreme measures" (all in or greed)
+        static constexpr float WorkersToOpponentWorkersRatioBeforeExtremeMeasures = 0.3f;
+
         // How big is the chance that we will greed compared to all in
         static constexpr float GreedToAllInChanceRatio = 0.5f;
 
         // If our opponent has this much more combat unit value than we do we (are likely to) turn on defensive mode
         // This should be made more advanced though and take things like counters into consideration
         static constexpr float OpponentUnitValueAdvantageBeforeDefensiveRatio = 1.75f;
+
+        // If we have this much more combat unit value than we think our opponent has and have have scouted him recently
+        // we (are likely to) turn on offensive mode
+        // This should be made more advanced though and take things like counters into consideration
+        static constexpr float OurUnitValueAdvantageBeforeOffensiveRatio = 1.75f;
+
+        // We at least need to be above this value for offensive mode to be able to activate
+        static constexpr float OffensiveUnitValueThreshold = 2500;
+
+        // We need to have seen "the relevant" town halls of our opponent in the last ... seconds
+        static constexpr float OffensiveOpponentTownHallLastSeenLimitInSeconds = 60.f;
 
         // Our opponent at least need to be above this value for defensive mode to be able to activate
         static constexpr float DefensiveUnitValueThreshold = 500;

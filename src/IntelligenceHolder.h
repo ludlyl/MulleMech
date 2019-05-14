@@ -21,7 +21,7 @@ public:
 
     void MarkEnemyMainBasePosition(const sc2::Point2D& pos_);
 
-    // Returns a list of our expansions sorted with walking distance to starting location;
+    // Returns a list of our expansions sorted with walking distance to enemy main base;
     // index: 0=>main base, 1=>natural, etc
     Expansions GetKnownEnemyExpansions() const;
 
