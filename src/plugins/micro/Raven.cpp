@@ -101,7 +101,7 @@ void Raven::OnCombatStep(const Units& enemies, const Units& allies) {
     // Auto-turret
     if (m_self->energy >= TurretEnergyCost && m_turretCooldown <= 0) {
         auto enemy = enemies.GetRandomUnit();
-        if (!IsCombatUnit()(*enemy))
+        if (!IsCombatUnit()(enemy))
             return;
         float enemy_distance = sc2::Distance2D(enemy->pos, m_self->pos);
         if (enemy_distance > 2 * (BuildTurretRange + FlyToCastRange))
