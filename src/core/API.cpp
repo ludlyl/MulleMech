@@ -39,7 +39,7 @@ void Action::Build(Order& order_, const sc2::Point2D& point_, bool queue_) {
 void Action::Attack(Unit* unit_, const sc2::Point2D& point_, bool queue_) {
     unit_->m_order_queued_in_current_step = true;
     if (FilterSimilarActions && !queue_ && !unit_->GetPreviousStepOrders().empty() &&
-        unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK) {
+        unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK_ATTACK) {
         auto difference = unit_->GetPreviousStepOrders().front().target_pos - point_;
         float distance_squared = difference.x * difference.x + difference.y * difference.y;
         if (distance_squared < FilterOnLessThanDistanceSquared) {
@@ -60,7 +60,7 @@ void Action::Attack(Units& units_, const sc2::Point2D& point_, bool queue_) {
 
         for (auto& unit : units_) {
             if (!unit->GetPreviousStepOrders().empty() &&
-                unit->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK) {
+                unit->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK_ATTACK) {
                 auto difference = unit->GetPreviousStepOrders().front().target_pos - point_;
                 float distance_squared = difference.x * difference.x + difference.y * difference.y;
                 if (distance_squared < FilterOnLessThanDistanceSquared) {
@@ -69,9 +69,9 @@ void Action::Attack(Units& units_, const sc2::Point2D& point_, bool queue_) {
             }
             filtrated_units.push_back(unit);
         }
-        m_action->UnitCommand(filtrated_units.ToAPI(), sc2::ABILITY_ID::ATTACK, point_, queue_);
+        m_action->UnitCommand(filtrated_units.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
     } else {
-        m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK, point_, queue_);
+        m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, point_, queue_);
     }
 }
 
@@ -79,7 +79,7 @@ void Action::Attack(Unit* unit_, const Unit* target_, bool queue_) {
     unit_->m_order_queued_in_current_step = true;
     if (FilterSimilarActions && !queue_ && !unit_->GetPreviousStepOrders().empty() &&
         unit_->GetPreviousStepOrders().front().target_unit_tag == target_->tag &&
-        unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK) {
+        unit_->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK_ATTACK) {
         return;
     }
     m_action->UnitCommand(unit_, sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
@@ -97,14 +97,14 @@ void Action::Attack(Units& units_, const Unit* target_, bool queue_) {
         for (auto& unit : units_) {
             if (FilterSimilarActions && !queue_ && !unit->GetPreviousStepOrders().empty() &&
                 unit->GetPreviousStepOrders().front().target_unit_tag == target_->tag &&
-                unit->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK) {
+                unit->GetPreviousStepOrders().front().ability_id == sc2::ABILITY_ID::ATTACK_ATTACK) {
                 continue;
             }
             filtrated_units.push_back(unit);
         }
-        m_action->UnitCommand(filtrated_units.ToAPI(), sc2::ABILITY_ID::ATTACK, target_, queue_);
+        m_action->UnitCommand(filtrated_units.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
     } else {
-        m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK, target_, queue_);
+        m_action->UnitCommand(units_.ToAPI(), sc2::ABILITY_ID::ATTACK_ATTACK, target_, queue_);
     }
 }
 
