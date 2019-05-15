@@ -156,14 +156,17 @@ const std::vector<UnitClass>& Reasoner::CalculateNeededUnitClasses() {
         int number_of_expansions = gHub->GetOurExpansionCount();
         int number_of_ravens = static_cast<int>(gAPI->observer().GetUnits(
                 IsUnit(sc2::UNIT_TYPEID::TERRAN_RAVEN), sc2::Unit::Alliance::Self).size());
-        int number_of_turrets = static_cast<int>(gAPI->observer().GetUnits(
-                IsUnit(sc2::UNIT_TYPEID::TERRAN_MISSILETURRET), sc2::Unit::Alliance::Self).size());
+
+        // NOTE: The missile turrets requirement is commented out as no code for building them exists yet
+
+        //int number_of_turrets = static_cast<int>(gAPI->observer().GetUnits(
+        //        IsUnit(sc2::UNIT_TYPEID::TERRAN_MISSILETURRET), sc2::Unit::Alliance::Self).size());
 
         if (number_of_expansions <= 2) {
             if (number_of_ravens < 1) {
                 m_latest_needed_unit_classes.emplace_back(UnitClass::detection);
             }
-        } else if (number_of_turrets < number_of_expansions || number_of_ravens < 1) {
+        } else if (/*number_of_turrets < number_of_expansions ||*/ number_of_ravens < 1) {
             m_latest_needed_unit_classes.emplace_back(UnitClass::detection);
         }
     }
