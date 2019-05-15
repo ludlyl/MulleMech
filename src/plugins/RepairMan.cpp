@@ -124,6 +124,17 @@ void RepairMan::OnUnitDestroyed(Unit* unit_, Builder* builder_) {
             builder_->ScheduleNonsequentialConstruction(unit_->unit_type.ToType());                     // Mutation
             return;
 
+        // Could check "IsRefinery" instead
+        // This is needed as if a refinery is before a town hall in the seq queue that might block the queue
+        // (note how we the urgent argument is not set, i.e. it's false)
+        // TODO: Make a better solution for refineries not blocking the queue
+        //  (we don't support macro bases or maps with 1 gas locations because of this).
+        //  Might be better to just place refineries in the non seq queue
+        case sc2::UNIT_TYPEID::TERRAN_REFINERY:
+        case sc2::UNIT_TYPEID::PROTOSS_ASSIMILATOR:
+        case sc2::UNIT_TYPEID::ZERG_EXTRACTOR:
+            builder_->ScheduleConstructionInRecommendedQueue(unit_->unit_type.ToType());
+
         default:
             // Schedule an addon if the building had one
             if (auto addon = unit_->GetAttachedAddon()) {
