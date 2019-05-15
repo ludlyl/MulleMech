@@ -4,10 +4,11 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 diffs = ['Hard', 'VeryHard', 'CheatInsane']
 races = ['terran', 'protoss', 'zerg']
-map_names = ['map1', 'map2', 'map3']
+map_names = ['(4)DarknessSanctuaryLE.SC2Map', 'KingsCoveLE.SC2Map', 'AutomatonLE.SC2Map']
 matchups = list(itertools.product(diffs, races, map_names))
 
 class Matchup:
@@ -28,6 +29,7 @@ def main():
 
     while True:
         run_game(exe, matches)
+        time.sleep(10)
 
 def run_game(exe, matches):
     results = {}
@@ -40,7 +42,10 @@ def run_game(exe, matches):
 
     matchup = pick_matchup(matches, results)
     print("Playing versus " + matchup.difficulty + " " + matchup.race + " on " + matchup.map_name)
-    output = subprocess.check_output([exe, '-c', '-a', matchup.race, '-d', matchup.difficulty, '-p', matchup.map_name])
+    try:
+        output = subprocess.check_output([exe, '-c', '-a', matchup.race, '-d', matchup.difficulty, '-p', matchup.map_name])
+    except subprocess.CalledProcessError as e:
+        return
     last_line = output[-256:].decode('utf-8').splitlines()[-1]
     second_last_line = output[-256:].decode('utf-8').splitlines()[-2]
     print('Game ended with last two lines:')
