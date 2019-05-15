@@ -62,4 +62,8 @@ private:
     static constexpr float ReinforceSquadDist = 50.0f;          // Use ReinforceSquad if main squad is this far away
     static constexpr float DefenseResourcesOveredo = 1.25f;     // Spend this much more resources on defense compared to enemy
     static constexpr float DefendWithAllValueRatio = 0.25f;     // If enemy value to our value ratio is this or above => involve entire mainsquad
+    // Max length in seconds since we last saw the building for it to be used as an attack point
+    // This is needed as some buildings might die while outside of our vision (e.g. burn down)
+    // and IntelligenceHolder only clear units that we've seen die
+    static constexpr int AttackTargetBuildingLastSeenInThreshold = 120;
 };
