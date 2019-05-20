@@ -81,6 +81,7 @@ struct Options {
     sc2::Race LocalOpponentRace = sc2::Race::Random;
     sc2::Difficulty ComputerDifficulty = sc2::Difficulty::VeryHard;
     bool RealTime = false;
+    int StepSize = 1;
     std::string ExePath;
 };
 
@@ -97,6 +98,7 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
             {"-a", "--LocalOpponentRace", "Race of computer/human opponent", false},
             {"-d", "--ComputerDifficulty", "Difficulty of computer opponent", false},
             {"-t", "--RealTime", "Race of human opponent", false},
+            {"-s", "--StepSize", "StepSize", false},
             {"-e", "--ExePath", "Path to the 4.8.4 exe", false}
         });
 
@@ -129,23 +131,27 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
         arg_parser.Get("PlayLocalMap", options_->PlayLocalMap);
 
     } else {
-        std::string GamePortStr;
-        if (arg_parser.Get("GamePort", GamePortStr))
-            options_->GamePort = std::stoi(GamePortStr);
+        std::string game_port_str;
+        if (arg_parser.Get("GamePort", game_port_str))
+            options_->GamePort = std::stoi(game_port_str);
 
-        std::string StartPortStr;
-        if (arg_parser.Get("StartPort", StartPortStr))
-            options_->StartPort = std::stoi(StartPortStr);
+        std::string start_port_str;
+        if (arg_parser.Get("StartPort", start_port_str))
+            options_->StartPort = std::stoi(start_port_str);
 
-        std::string OpponentId;
-        if (arg_parser.Get("OpponentId", OpponentId))
-            options_->OpponentId = OpponentId;
+        std::string opponent_id;
+        if (arg_parser.Get("OpponentId", opponent_id))
+            options_->OpponentId = opponent_id;
 
         arg_parser.Get("LadderServer", options_->ServerAddress);
     }
 
     if (arg_parser.Get("RealTime", dummy))
         options_->RealTime = true;
+
+    std::string step_size;
+    if (arg_parser.Get("StepSize", step_size))
+        options_->StepSize = std::stoi(step_size);
 
     arg_parser.Get("ExePath", options_->ExePath);
 }
@@ -164,6 +170,7 @@ int main(int argc, char* argv[]) {
     Human human;
 
     coordinator.SetRealtime(options.RealTime);
+    coordinator.SetStepSize(options.StepSize);
 
     // 4.8.4 EXE
     if (!options.ExePath.empty()) {
