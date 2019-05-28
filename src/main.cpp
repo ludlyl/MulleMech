@@ -11,7 +11,6 @@
 #include <sc2utils/sc2_arg_parser.h>
 #include <sc2utils/sc2_manage_process.h>
 
-#ifdef DEBUG
 class Human : public sc2::Agent {
 public:
     void OnGameStart() final {
@@ -25,6 +24,7 @@ public:
     }
 };
 
+#ifdef DEBUG
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Provide either name of the map file or path to it!" << std::endl;
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     sc2::Coordinator coordinator;
     coordinator.LoadSettings(1, argv);
 
-    Dispatcher mulle_mech("MulleMech");
+    Dispatcher mulle_mech("SC2 Default AI");
     Human human;
     coordinator.SetParticipants({
         //CreateParticipant(sc2::Race::Terran, &human), // Uncomment this and comment out CreateComputer to play vs the AI
@@ -71,17 +71,18 @@ int main(int argc, char* argv[]) {
 namespace {
 
 struct Options {
-    Options(): GamePort(0), StartPort(0), ComputerOpponent(false) {
-    }
-
-    int32_t GamePort;
-    int32_t StartPort;
+    int32_t GamePort = 0;
+    int32_t StartPort = 0;
     std::string ServerAddress;
     std::string OpponentId;
-    bool ComputerOpponent;
     std::string PlayLocalMap;
-    sc2::Difficulty ComputerDifficulty;
-    sc2::Race ComputerRace;
+    bool ComputerOpponent = false;
+    bool HumanOpponent = false;
+    sc2::Race LocalOpponentRace = sc2::Race::Random;
+    sc2::Difficulty ComputerDifficulty = sc2::Difficulty::VeryHard;
+    bool RealTime = false;
+    int StepSize = 1;
+    std::string ExePath;
 };
 
 void ParseArguments(int argc, char* argv[], Options* options_) {
@@ -91,43 +92,68 @@ void ParseArguments(int argc, char* argv[], Options* options_) {
             {"-o", "--StartPort", "Starting server port", false},
             {"-l", "--LadderServer", "Ladder server address", false},
             {"-x", "--OpponentId", "PlayerId of opponent", false},
-            {"-p", "--PlayLocalMap", "If we play only on this PC using specified map", false},
+            {"-p", "--PlayLocalMap", "If we play only on this PC using specified map", false}, // NOTE: If this is set ComputerOpponent or HumanOpponent HAS to be set to
             {"-c", "--ComputerOpponent", "If we set up a computer opponent", false},
-            {"-a", "--ComputerRace", "Race of computer oppent", false},
-            {"-d", "--ComputerDifficulty", "Difficulty of computer opponent", false}
+            {"-h", "--HumanOpponent", "If we set up a human opponent", false}, // This will be ignored if ComputerOpponent is set
+            {"-a", "--LocalOpponentRace", "Race of computer/human opponent", false},
+            {"-d", "--ComputerDifficulty", "Difficulty of computer opponent", false},
+            {"-t", "--RealTime", "Race of human opponent", false},
+            {"-s", "--StepSize", "StepSize", false},
+            {"-e", "--ExePath", "Path to the 4.8.4 exe", false}
         });
 
     arg_parser.Parse(argc, argv);
 
-    std::string GamePortStr;
-    if (arg_parser.Get("GamePort", GamePortStr))
-        options_->GamePort = atoi(GamePortStr.c_str());
-
-    std::string StartPortStr;
-    if (arg_parser.Get("StartPort", StartPortStr))
-        options_->StartPort = atoi(StartPortStr.c_str());
-
-    std::string OpponentId;
-    if (arg_parser.Get("OpponentId", OpponentId))
-        options_->OpponentId = OpponentId;
-
-    arg_parser.Get("LadderServer", options_->ServerAddress);
-
     std::string dummy;
+
     if (arg_parser.Get("ComputerOpponent", dummy)) {
         options_->ComputerOpponent = true;
-        std::string CompRace;
+        std::string OpponentId = "SC2 Default AI";
 
-        if (arg_parser.Get("ComputerRace", CompRace))
-            options_->ComputerRace = convert::StringToRace(CompRace);
+        std::string local_opponent_race;
+        if (arg_parser.Get("LocalOpponentRace", local_opponent_race))
+            options_->LocalOpponentRace = convert::StringToRace(local_opponent_race);
 
-        std::string CompDiff;
-        if (arg_parser.Get("ComputerDifficulty", CompDiff))
-            options_->ComputerDifficulty = convert::StringToDifficulty(CompDiff);
-    } else
-        options_->ComputerOpponent = false;
+        std::string computer_difficulty;
+        if (arg_parser.Get("ComputerDifficulty", computer_difficulty))
+            options_->ComputerDifficulty = convert::StringToDifficulty(computer_difficulty);
 
-    arg_parser.Get("PlayLocalMap", options_->PlayLocalMap);
+        arg_parser.Get("PlayLocalMap", options_->PlayLocalMap);
+
+    } else if (arg_parser.Get("HumanOpponent", dummy)) {
+        options_->HumanOpponent = true;
+        std::string OpponentId = "Human";
+
+        std::string local_opponent_race;
+        if (arg_parser.Get("LocalOpponentRace", local_opponent_race))
+            options_->LocalOpponentRace = convert::StringToRace(local_opponent_race);
+
+        arg_parser.Get("PlayLocalMap", options_->PlayLocalMap);
+
+    } else {
+        std::string game_port_str;
+        if (arg_parser.Get("GamePort", game_port_str))
+            options_->GamePort = std::stoi(game_port_str);
+
+        std::string start_port_str;
+        if (arg_parser.Get("StartPort", start_port_str))
+            options_->StartPort = std::stoi(start_port_str);
+
+        std::string opponent_id;
+        if (arg_parser.Get("OpponentId", opponent_id))
+            options_->OpponentId = opponent_id;
+
+        arg_parser.Get("LadderServer", options_->ServerAddress);
+    }
+
+    if (arg_parser.Get("RealTime", dummy))
+        options_->RealTime = true;
+
+    std::string step_size;
+    if (arg_parser.Get("StepSize", step_size))
+        options_->StepSize = std::stoi(step_size);
+
+    arg_parser.Get("ExePath", options_->ExePath);
 }
 
 }  // namespace
@@ -140,30 +166,44 @@ int main(int argc, char* argv[]) {
     gHistory.SetSeverity(LogSeverity::info);
 
     sc2::Coordinator coordinator;
-    Dispatcher bot(options.OpponentId);
+    Dispatcher mulle_mech(options.OpponentId);
+    Human human;
 
-    size_t num_agents;
-    if (options.ComputerOpponent) {
-        num_agents = 1;
-        coordinator.SetParticipants({
-            CreateParticipant(sc2::Race::Terran, &bot),
-            CreateComputer(options.ComputerRace, options.ComputerDifficulty)
-            });
-    } else {
-        num_agents = 2;
-        coordinator.SetParticipants({CreateParticipant(sc2::Race::Terran, &bot)});
+    coordinator.SetRealtime(options.RealTime);
+    coordinator.SetStepSize(options.StepSize);
+
+    // 4.8.4 EXE
+    if (!options.ExePath.empty()) {
+        coordinator.SetDataVersion("CD040C0675FD986ED37A4CA3C88C8EB5");
+        coordinator.SetProcessPath(options.ExePath);
     }
 
-    if (options.PlayLocalMap.empty()) {
+    if (!options.PlayLocalMap.empty()) {
+        if (options.ComputerOpponent) {
+            coordinator.SetParticipants({
+                CreateParticipant(sc2::Race::Terran, &mulle_mech),
+                CreateComputer(options.LocalOpponentRace, options.ComputerDifficulty)
+            });
+
+        } else if (options.HumanOpponent) {
+            coordinator.SetParticipants({
+                CreateParticipant(options.LocalOpponentRace, &human),
+                CreateParticipant(sc2::Race::Terran, &mulle_mech)
+            });
+        }
+
+        coordinator.LaunchStarcraft();
+        coordinator.StartGame(options.PlayLocalMap);
+
+    // Playing on ladder manager
+    } else {
+        coordinator.SetParticipants({CreateParticipant(sc2::Race::Terran, &mulle_mech)});
         std::cout << "Connecting to port " << options.GamePort << std::endl;
         coordinator.Connect(options.GamePort);
-        coordinator.SetupPorts(num_agents, options.StartPort, false);
+        coordinator.SetupPorts(2, options.StartPort, false);
         coordinator.JoinGame();
         coordinator.SetTimeoutMS(10000);
         std::cout << " Successfully joined game" << std::endl;
-    } else {
-        coordinator.LaunchStarcraft();
-        coordinator.StartGame(options.PlayLocalMap);
     }
 
     while (coordinator.Update()) {
